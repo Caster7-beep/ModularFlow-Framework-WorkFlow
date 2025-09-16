@@ -1,0 +1,126 @@
+:root {
+  /* Core Palette */
+  --bg: #282c34;
+  --panel: rgba(58, 63, 75, 0.8);
+  --panel-solid: #3a3f4b;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --accent: #D3D3D3;
+  --accent-600: #C0C0C0;
+  --accent-700: #A9A9A9;
+  --text-on-accent: #333333;
+
+  /* Semantic Colors */
+  --success: #10b981;
+  --danger: #ef4444;
+  --danger-dark: #dc2626;
+  --warning: #f59e0b;
+
+  /* Borders & Shadows */
+  --border: rgba(86, 94, 109, 0.6);
+  --border-hover: rgba(211, 211, 211, 0.3);
+  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.37);
+  --shadow-glow: 0 0 20px rgba(211, 211, 211, 0.15);
+  --shadow-light: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+  /* Glass & Gradients */
+  --glass-bg: rgba(40, 44, 52, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --bg-gradient-start: #2c3038;
+  --bg-gradient-end: #21252b;
+  --header-bg: rgba(40, 44, 52, 0.6);
+  
+  /* Component Specific */
+  --assistant-bubble-bg: rgba(58, 63, 75, 0.8);
+  --user-bubble-bg: var(--accent);
+  --section-bg: rgba(40, 44, 52, 0.5);
+  --select-bg: rgba(40, 44, 52, 0.8);
+  --select-hover-bg: rgba(40, 44, 52, 0.9);
+  --disabled: #8b949e;
+  --disabled-bg: #6c757d;
+  --disabled-text: #cccccc;
+
+  /* Code & Markdown */
+  --code-inline-bg: rgba(148, 163, 184, 0.12);
+  --pre-bg: #21252b;
+  --pre-border: #282c34;
+  
+  /* Scrollbar */
+  --scrollbar-track-bg: rgba(40, 44, 52, 0.3);
+  --scrollbar-thumb-start: #6c757d;
+  --scrollbar-thumb-end: #495057;
+  --scrollbar-thumb-hover-start: #868e96;
+  --scrollbar-thumb-hover-end: #5c636a;
+
+  /* Utilities */
+  --white: #ffffff;
+  --black: #000000;
+  --transparent: transparent;
+  --white-t-10: rgba(255, 255, 255, 0.1);
+  --white-t-15: rgba(255, 255, 255, 0.15);
+  --white-t-20: rgba(255, 255, 255, 0.2);
+  --white-t-30: rgba(255, 255, 255, 0.3);
+
+  /* Syntax Highlighting */
+  --hljs-keyword: #c678dd;
+  --hljs-string: #98c379;
+  --hljs-number: #d19a66;
+  --hljs-comment: #5c6370;
+  --hljs-function: #61afef;
+  --hljs-variable: #e06c75;
+  --hljs-builtin: #56b6c2;
+  --hljs-title: #e5c07b;
+
+  /* Sidebar & Drawer */
+  --sidebar-button-active-bg: rgba(211, 211, 211, 0.2);
+  --sidebar-button-bg: rgba(40, 44, 52, 0.6);
+  --sidebar-button-hover-bg: rgba(211, 211, 211, 0.1);
+  --sidebar-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  --backdrop-bg: rgba(0, 0, 0, 0.3);
+  --drawer-close-hover-bg: rgba(107, 114, 126, 0.1);
+  --drawer-placeholder-bg: rgba(40, 44, 52, 0.3);
+  --scrollbar-thumb-color: rgba(211, 211, 211, 0.6);
+  --scrollbar-thumb-hover-color: rgba(211, 211, 211, 0.8);
+  --scrollbar-thumb-active-color: rgba(211, 211, 211, 1);
+  --scrollbar-track-color: rgba(255, 255, 255, 0.05);
+
+  /* Character & Preset Panels */
+  --character-card-bg: var(--drawer-placeholder-bg);
+  --character-card-active-hover-bg: rgba(211, 211, 211, 0.2);
+  --character-card-active-bg: rgba(211, 211, 211, 0.15);
+  --character-card-hover-bg: rgba(211, 211, 211, 0.08);
+  --character-card-inactive-bg: rgba(40, 44, 52, 0.4);
+  --character-card-active-border: rgba(211, 211, 211, 0.5);
+  --character-avatar-bg: rgba(40, 44, 52, 0.8);
+  --character-tag-bg: rgba(211, 211, 211, 0.1);
+  --character-tag-text: var(--accent);
+  --character-card-expanded-bg: rgba(40, 44, 52, 0.5);
+  --character-input-bg: rgba(40, 44, 52, 0.8);
+  --character-message-bg: rgba(255, 255, 255, 0.05);
+  --character-date-bg: rgba(255, 255, 255, 0.03);
+  --preset-item-enabled-bg: rgba(16, 185, 129, 0.1);
+  --preset-item-disabled-bg: rgba(107, 114, 126, 0.1);
+  --preset-item-hover-bg: rgba(211, 211, 211, 0.05);
+  --preset-tag-bg: rgba(211, 211, 211, 0.2);
+  --preset-toggle-dot-bg: var(--white);
+  --preset-expanded-bg: rgba(40, 44, 52, 0.5);
+  --modal-backdrop-bg: rgba(0, 0, 0, 0.5);
+  --modal-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --modal-delete-selected-bg: rgba(239, 68, 68, 0.1);
+  --visibility-info-bg: rgba(211, 211, 211, 0.1);
+  --visibility-info-border: rgba(211, 211, 211, 0.2);
+
+  /* 应用设置变量 */
+  --message-panel-width: 100%; /* 消息面板宽度 */
+  --input-panel-width: 100%; /* 输入框宽度 */
+  --floor-buffer-size: 10; /* 显示的楼层数量 */
+
+  /* Generic Panel Styles */
+  --panel-item-bg: var(--character-card-bg);
+  --panel-input-bg: var(--character-input-bg);
+  --panel-item-enabled-bg: var(--preset-item-enabled-bg);
+  --panel-item-disabled-bg: var(--preset-item-disabled-bg);
+  --panel-item-hover-bg: var(--preset-item-hover-bg);
+  --panel-tag-bg: var(--preset-tag-bg);
+  --panel-expanded-bg: var(--preset-expanded-bg);
+}

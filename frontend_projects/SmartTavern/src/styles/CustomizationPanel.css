@@ -1,0 +1,440 @@
+.customization-panel {
+  overflow: hidden;
+  background: var(--character-card-bg);
+  margin: 8px 0;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+}
+
+.customization-panel-content {
+  padding: 12px;
+}
+
+.customization-panel-header {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.customization-panel-header-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.customization-panel-add-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 10px;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+
+.customization-panel-empty {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  padding: 20px;
+}
+
+.customization-package-card {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.customization-package-card-inactive {
+  background: var(--character-card-inactive-bg);
+}
+
+.customization-package-card-hover {
+  background: var(--character-card-hover-bg);
+}
+
+.customization-package-card-active {
+  background: var(--character-card-active-bg);
+  border: 2px solid var(--accent);
+}
+
+.customization-package-icon {
+  width: 60px;
+  height: 60px;
+  background: var(--character-avatar-bg);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.customization-package-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.customization-package-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.customization-package-name {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 150px;
+}
+
+.customization-package-name-active {
+  color: var(--accent);
+}
+
+.customization-package-name-inactive {
+  color: var(--text);
+}
+
+.customization-package-active-indicator {
+  margin-left: 6px;
+  font-size: 11px;
+}
+
+.customization-package-description {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+  margin-bottom: 2px;
+}
+
+.customization-package-meta {
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.4;
+  opacity: 0.8;
+}
+
+.customization-package-expand-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+}
+
+.customization-package-expand-icon {
+  font-size: 10px;
+  color: var(--muted);
+  transition: transform 0.2s;
+}
+
+.customization-package-expand-icon-expanded {
+  transform: rotate(90deg);
+}
+
+.customization-package-expand-icon-collapsed {
+  transform: rotate(0deg);
+}
+
+.customization-package-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
+  min-width: 60px;
+}
+
+.customization-package-use-btn {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 10px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-weight: 500;
+  min-width: 50px;
+  white-space: nowrap;
+}
+
+.customization-package-use-btn-active {
+  background: var(--accent);
+  color: #000000;
+}
+
+.customization-package-use-btn-inactive {
+  background: var(--character-input-bg);
+  color: #ffffff;
+}
+
+.customization-package-delete-btn {
+  background: var(--character-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--danger);
+  font-size: 10px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-weight: 500;
+  min-width: 50px;
+  white-space: nowrap;
+}
+
+.customization-package-expanded {
+  overflow: hidden;
+  margin-top: 4px;
+  padding: 16px;
+  background: var(--character-card-expanded-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.customization-files-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.customization-files-header h4 {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  margin: 0;
+}
+
+.customization-files-count {
+  font-size: 10px;
+  color: var(--muted);
+  opacity: 0.8;
+}
+
+.customization-files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.customization-file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--character-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.customization-file-item:hover {
+  background: var(--character-card-hover-bg);
+  border-color: var(--accent);
+}
+
+.customization-file-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.customization-file-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.customization-file-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.customization-file-name {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text);
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+.customization-file-type {
+  font-size: 10px;
+  color: var(--muted);
+  opacity: 0.8;
+}
+
+.customization-file-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.customization-switch {
+  position: relative;
+  display: inline-block;
+  width: 34px;
+  height: 18px;
+}
+
+.customization-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.customization-switch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--border);
+  transition: .4s;
+  border-radius: 18px;
+}
+
+.customization-switch-slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+.customization-switch input:checked + .customization-switch-slider {
+  background-color: var(--accent);
+}
+
+.customization-switch input:focus + .customization-switch-slider {
+  box-shadow: 0 0 1px var(--accent);
+}
+
+.customization-switch input:checked + .customization-switch-slider:before {
+  transform: translateX(16px);
+}
+
+.customization-file-status {
+  font-size: 10px;
+  font-weight: 500;
+  min-width: 36px;
+  text-align: center;
+}
+
+.customization-file-status.enabled {
+  color: var(--accent);
+}
+
+.customization-file-status.disabled {
+  color: var(--muted);
+  opacity: 0.8;
+}
+
+.customization-files-empty {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  padding: 20px;
+  font-style: italic;
+}
+
+/* OverlayScrollbar 容器样式 */
+.customization-scrollbar-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 美化包配置区域样式 */
+.customization-config-section {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.customization-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  margin: 0 0 12px 0;
+}
+
+.customization-config-field-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+}
+
+.customization-config-field-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.customization-config-input {
+  width: 100%;
+  padding: 6px 8px;
+  background: var(--character-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 11px;
+}
+
+.customization-config-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.customization-config-textarea {
+  width: 100%;
+  padding: 6px 8px;
+  background: var(--character-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 11px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 60px;
+}
+
+.customization-config-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* 美化包卡片容器样式 */
+.customization-package-card-container {
+  margin-bottom: 8px;
+}

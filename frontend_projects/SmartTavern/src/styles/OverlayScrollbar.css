@@ -1,0 +1,80 @@
+/* OverlayScrollbar 组件样式 */
+.overlay-scrollbar-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.hide-native-scrollbar {
+  height: 100%;
+  overflow-y: auto;
+}
+
+.overlay-scrollbar-track {
+  position: absolute;
+  top: 0;
+  right: 0;
+  cursor: pointer;
+  z-index: 1000;
+  /* 默认样式，通过CSS变量或内联样式覆盖 */
+  width: 8px;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.overlay-scrollbar-thumb {
+  position: absolute;
+  left: 0;
+  cursor: grab;
+  transition: background-color 0.2s ease;
+  /* 默认样式，通过CSS变量或内联样式覆盖 */
+  width: 8px;
+  background-color: rgba(59, 130, 246, 0.6);
+  border-radius: 4px;
+}
+
+.overlay-scrollbar-thumb:hover {
+  background-color: rgba(59, 130, 246, 0.8);
+}
+
+.overlay-scrollbar-thumb:active {
+  cursor: grabbing;
+  background-color: rgba(59, 130, 246, 1);
+}
+
+.overlay-scrollbar-thumb.dragging {
+  transition: none;
+}
+
+.overlay-scrollbar-thumb.default-shadow {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.overlay-scrollbar-thumb.dragging-shadow {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+/* 隐藏原生滚动条 */
+.hide-native-scrollbar::-webkit-scrollbar {
+  width: 0;
+  background: transparent;
+}
+
+.hide-native-scrollbar::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+.hide-native-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+/* 为内容容器添加自适应padding */
+.overlay-scrollbar-content {
+  transition: padding-right 0.2s ease, margin-right 0.2s ease;
+}
+
+.overlay-scrollbar-content.scrollable {
+  padding-right: 10px;
+  margin-right: -10px;
+}

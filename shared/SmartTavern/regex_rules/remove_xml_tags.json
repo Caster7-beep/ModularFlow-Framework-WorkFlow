@@ -1,0 +1,22 @@
+[
+    {
+        "id": "remove_xml_tags_rule",
+        "name": "Remove XML Tags",
+        "enabled": false,
+        "find_regex": "<([a-zA-Z0-9]+)>(.|\n)*?</\\1>",
+        "replace_regex": "",
+        "targets": [
+            "user",
+            "assistant",
+            "world_book",
+            "preset",
+            "assistant_thinking"
+        ],
+        "placement": "before_format",
+        "views": [
+            "user_view",
+            "assistant_view"
+        ],
+        "description": "Removes XML tags and their content, affecting only the user_view."
+    }
+]

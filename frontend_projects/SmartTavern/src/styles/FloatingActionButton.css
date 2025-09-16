@@ -1,0 +1,112 @@
+.floating-action-btn {
+  position: fixed;
+  z-index: 50;
+  background: linear-gradient(135deg, var(--accent), var(--accent-700));
+  color: white;
+  border-radius: 50%;
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.floating-action-btn-sm {
+  width: 48px;
+  height: 48px;
+  font-size: 14px;
+}
+
+.floating-action-btn-md {
+  width: 56px;
+  height: 56px;
+  font-size: 16px;
+}
+
+.floating-action-btn-lg {
+  width: 64px;
+  height: 64px;
+  font-size: 18px;
+}
+
+.floating-action-btn-bottom-right {
+  bottom: 24px;
+  right: 24px;
+}
+
+.floating-action-btn-bottom-left {
+  bottom: 24px;
+  left: 24px;
+}
+
+.floating-action-btn-top-right {
+  top: 24px;
+  right: 24px;
+}
+
+.floating-action-btn-top-left {
+  top: 24px;
+  left: 24px;
+}
+
+.floating-action-btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.floating-action-btn-tooltip {
+  position: absolute;
+  right: 100%;
+  margin-right: 12px;
+  padding: 4px 8px;
+  background: var(--panel-solid);
+  color: var(--text);
+  font-size: 12px;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.floating-button-group {
+  position: fixed;
+  display: flex;
+  gap: 12px;
+  z-index: 50;
+}
+
+.floating-button-group-bottom-right {
+  bottom: 24px;
+  right: 24px;
+  flex-direction: column-reverse;
+}
+
+.floating-button-group-bottom-left {
+  bottom: 24px;
+  left: 24px;
+  flex-direction: column-reverse;
+}
+
+.floating-button-group-top-right {
+  top: 24px;
+  right: 24px;
+  flex-direction: column;
+}
+
+.floating-button-group-top-left {
+  top: 24px;
+  left: 24px;
+  flex-direction: column;
+}
+
+/* 新增：动态组合类 */
+.floating-button-group-base {
+  position: fixed;
+  display: flex;
+  gap: 12px;
+  z-index: 50;
+}

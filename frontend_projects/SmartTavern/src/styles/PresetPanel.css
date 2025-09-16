@@ -1,0 +1,779 @@
+/* PresetPanel 组件样式 */
+.preset-panel-container {
+  overflow: hidden;
+  background: var(--character-card-bg);
+  margin: 8px 0;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+}
+
+.preset-panel-content {
+  padding: 12px;
+}
+
+.preset-panel-header {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.preset-panel-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.preset-panel-button {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 10px;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+
+.preset-panel-button:disabled {
+  opacity: 0.5;
+}
+
+.preset-panel-select {
+  width: 100%;
+  padding: 6px 8px;
+  background: var(--character-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 11px;
+  margin-bottom: 8px;
+}
+
+.preset-status-indicator {
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.preset-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.preset-status-dot.active {
+  background: var(--success);
+}
+
+.preset-status-dot.inactive {
+  background: var(--muted);
+}
+
+.preset-content-section {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.preset-items-header {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.preset-items-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.preset-empty-state {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* 可拖拽预设条目样式 */
+.preset-item {
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  position: relative;
+}
+
+.preset-item.enabled {
+  background: var(--preset-item-enabled-bg);
+  border: 1px solid var(--success);
+}
+
+.preset-item.disabled {
+  background: var(--preset-item-disabled-bg);
+  border: 1px solid var(--border);
+}
+
+.preset-item:hover {
+  background: var(--preset-item-hover-bg);
+}
+
+.preset-item-drag-handle {
+  cursor: grab;
+  padding: 2px 4px;
+  margin-right: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  user-select: none;
+}
+
+.preset-item-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.preset-item-expand-icon {
+  font-size: 10px;
+  color: var(--muted);
+  transition: transform 0.2s;
+}
+
+.preset-item-expand-icon.expanded {
+  transform: rotate(90deg);
+}
+
+.preset-item-title {
+  font-weight: 500;
+}
+
+.preset-item-title.enabled {
+  color: var(--text);
+}
+
+.preset-item-title.disabled {
+  color: var(--muted);
+}
+
+.preset-item-tag {
+  font-size: 9px;
+  padding: 1px 4px;
+  background: var(--preset-tag-bg);
+  color: var(--accent);
+  border-radius: 3px;
+}
+
+.preset-item-toggle {
+  position: relative;
+  display: inline-block;
+  width: 32px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.preset-item-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.preset-toggle-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 9px;
+  transition: background-color 0.2s;
+}
+
+.preset-toggle-slider.enabled {
+  background-color: var(--success);
+}
+
+.preset-toggle-slider.disabled {
+  background-color: var(--disabled);
+  border: 1px solid var(--border);
+}
+
+.preset-toggle-dot {
+  position: absolute;
+  top: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--preset-toggle-dot-bg);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  transition: left 0.2s;
+}
+
+.preset-toggle-dot.enabled {
+  left: 16px;
+}
+
+.preset-toggle-dot.disabled {
+  left: 2px;
+}
+
+/* 展开的预设条目编辑区域 */
+.preset-item-expanded {
+  overflow: hidden;
+  margin-top: 4px;
+  margin-left: 0px;
+  padding: 12px;
+  background: var(--preset-expanded-bg);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.preset-item-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 8px;
+  font-size: 10px;
+}
+
+.preset-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.preset-field-label {
+  color: var(--muted);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.preset-field-input {
+  width: 100%;
+  padding: 4px 6px;
+  background: var(--character-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 10px;
+}
+
+.preset-field-select {
+  width: 100%;
+  padding: 4px 6px;
+  background: var(--character-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 10px;
+}
+
+.preset-content-field {
+  flex: 1;
+}
+
+.preset-content-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.preset-content-textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 4px 6px;
+  background: var(--character-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 10px;
+  font-family: monospace;
+  white-space: pre-wrap;
+  resize: vertical;
+}
+
+/* 模态框样式 */
+.preset-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--modal-backdrop-bg);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.preset-modal {
+  background: var(--panel-solid);
+  border-radius: 12px;
+  padding: 24px;
+  width: auto;
+  min-width: 320px;
+  max-width: calc(100vw - 80px);
+  border: 1px solid var(--border);
+  box-shadow: var(--modal-shadow);
+}
+
+.preset-modal.large {
+  height: 80vh;
+  overflow: hidden;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.preset-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.preset-modal-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.preset-modal-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 4px;
+}
+
+.preset-modal-description {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.preset-modal-content {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.preset-modal-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s;
+}
+
+.preset-modal-item:not(:last-child) {
+  border-bottom: 1px solid var(--border);
+}
+
+.preset-modal-item.selected {
+  background: var(--modal-delete-selected-bg);
+}
+
+.preset-modal-item-checkbox {
+  margin-right: 4px;
+  cursor: pointer;
+}
+
+.preset-modal-item-info {
+  flex: 1;
+}
+
+.preset-modal-item-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.preset-modal-item-details {
+  font-size: 10px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.preset-modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.preset-modal-count {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.preset-modal-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.preset-modal-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.preset-modal-button.cancel {
+  background: var(--muted);
+  color: var(--white);
+}
+
+.preset-modal-button.danger {
+  background: var(--danger);
+  color: var(--white);
+}
+
+.preset-modal-button.danger:disabled {
+  background: var(--muted);
+  color: var(--white);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.preset-modal-button.danger:not(:disabled):hover {
+  background: var(--danger-light, #e74c3c);
+  transform: translateY(-1px);
+}
+
+.preset-modal-button.primary {
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+
+.preset-modal-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* 可见性配置模态框特殊样式 */
+.visibility-info-section {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 16px;
+  line-height: 1.5;
+  background: var(--visibility-info-bg);
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid var(--visibility-info-border);
+}
+
+.visibility-info-title {
+  margin: 0 0 8px 0;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.visibility-info-section p {
+  margin: 0 0 4px 0;
+}
+
+.visibility-info-section p:last-child {
+  margin: 0;
+}
+
+.visibility-modal-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background-color 0.2s;
+}
+
+.visibility-modal-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.visibility-modal-item-header {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.visibility-modal-item-name {
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.visibility-modal-item-details {
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.visibility-modal-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 80px;
+  justify-content: flex-end;
+}
+
+.visibility-status-text {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.visibility-status-text.enabled {
+  color: var(--success-dark);
+}
+
+.visibility-status-text.disabled {
+  color: var(--danger);
+}
+
+.visibility-status-text.hidden {
+  color: var(--muted-dark);
+}
+
+.visibility-toggle-button {
+  border: none;
+  border-radius: 6px;
+  color: var(--white);
+  padding: 4px 8px;
+  font-size: 10px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.visibility-toggle-button.enabled {
+  background: var(--success-dark);
+}
+
+.visibility-toggle-button.disabled {
+  background: var(--danger);
+}
+
+.visibility-toggle-button.hidden {
+  background: var(--muted-dark);
+}
+
+/* 新的文字可见性切换按钮样式 */
+.visibility-toggle-button-text {
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--white);
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 48px;
+  text-align: center;
+  display: inline-block;
+}
+
+.visibility-toggle-button-text.enabled {
+  background: #28a745 !important;
+  border-color: #1e7e34 !important;
+  color: #ffffff !important;
+}
+
+.visibility-toggle-button-text.enabled:hover {
+  background: #34ce57 !important;
+  border-color: #28a745 !important;
+  color: #ffffff !important;
+}
+
+.visibility-toggle-button-text.disabled {
+  background: var(--danger);
+  border-color: var(--danger);
+}
+
+.visibility-toggle-button-text.disabled:hover {
+  background: var(--danger-light, #e74c3c);
+  border-color: var(--danger-light, #e74c3c);
+}
+
+.visibility-toggle-button-text.hidden {
+  background: #6c757d !important;
+  border: 2px solid #5a6268 !important;
+  color: #ffffff !important;
+  opacity: 1 !important;
+  /* 确保隐藏状态按钮始终可见 */
+  min-height: 24px;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3) !important;
+  font-weight: 600 !important;
+  text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+}
+
+.visibility-toggle-button-text.hidden:hover {
+  background: #8e9499 !important;
+  border-color: #6c757d !important;
+  color: #ffffff !important;
+  transform: scale(1.05);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.4) !important;
+}
+
+/* 确保按钮在所有状态下都可见 */
+.visibility-toggle-button-text:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.visibility-modal-stats {
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* 拖拽相关样式 */
+.sortable-item {
+  opacity: 1;
+  transition: opacity 0.2s;
+}
+
+.sortable-item.dragging {
+  opacity: 0.5;
+}
+
+/* 额外的预设操作按钮样式 */
+.preset-items-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.preset-action-button {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 10px;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+
+.preset-action-button:hover {
+  background: var(--button-hover-bg);
+}
+
+/* PresetPanel 内联样式类 */
+.preset-scrollbar-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.preset-modal-item-checkbox-wrapper {
+  margin-right: 4px;
+  cursor: pointer;
+}
+
+.preset-modal-item-content-wrapper {
+  flex: 1;
+}
+
+.preset-modal-item-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.preset-modal-item-meta {
+  font-size: 10px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.visibility-modal-item-header-wrapper {
+  flex: 1;
+  min-width: 0;
+}
+
+.visibility-modal-item-title-wrapper {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.visibility-modal-item-title-text {
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.visibility-modal-item-role-tag {
+  font-size: 10px;
+  padding: 2px 6px;
+  background: var(--preset-tag-bg);
+  color: var(--accent);
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.visibility-modal-item-subtitle {
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.visibility-modal-item-id {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -1,0 +1,526 @@
+/* TypewriterText组件样式 */
+
+/* 打字机容器 */
+.typewriter-container {
+  position: relative;
+  display: inline-block;
+  line-height: 1.6;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* 打字机文本 */
+.typewriter-text {
+  display: inline;
+  font-family: inherit;
+  color: inherit;
+  line-height: inherit;
+  white-space: pre-wrap;
+}
+
+/* 打字机光标 */
+.typewriter-cursor {
+  display: inline-block;
+  width: 2px;
+  margin-left: 2px;
+  color: var(--accent, #6495ed);
+  font-weight: bold;
+  font-size: 1.2em;
+  vertical-align: text-top;
+  line-height: 1;
+}
+
+/* 不同尺寸的光标 */
+.typewriter-container.size-sm .typewriter-cursor {
+  width: 1px;
+  font-size: 1em;
+  margin-left: 1px;
+}
+
+.typewriter-container.size-lg .typewriter-cursor {
+  width: 3px;
+  font-size: 1.4em;
+  margin-left: 3px;
+}
+
+/* Markdown内容样式 */
+.typewriter-container .markdown-content {
+  display: inline;
+  line-height: inherit;
+}
+
+.typewriter-container .markdown-content * {
+  margin: 0;
+  padding: 0;
+  display: inline;
+}
+
+.typewriter-container .markdown-content p {
+  display: inline;
+  margin: 0;
+}
+
+.typewriter-container .markdown-content br {
+  display: inline;
+}
+
+.typewriter-container .markdown-content strong {
+  font-weight: 600;
+  color: var(--text-emphasis, var(--text));
+}
+
+.typewriter-container .markdown-content em {
+  font-style: italic;
+  color: var(--text-emphasis, var(--text));
+}
+
+.typewriter-container .markdown-content code {
+  background: rgba(var(--accent-rgb, 100, 149, 237), 0.1);
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-family: 'Courier New', 'Monaco', 'Menlo', monospace;
+  font-size: 0.9em;
+  color: var(--accent, #6495ed);
+}
+
+.typewriter-container .markdown-content pre {
+  display: block;
+  background: var(--code-bg, rgba(40, 44, 52, 0.8));
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  margin: 8px 0;
+  overflow-x: auto;
+  font-family: 'Courier New', 'Monaco', 'Menlo', monospace;
+  font-size: 0.9em;
+  line-height: 1.4;
+}
+
+.typewriter-container .markdown-content pre code {
+  background: none;
+  padding: 0;
+  color: var(--code-text, #abb2bf);
+  font-size: inherit;
+}
+
+.typewriter-container .markdown-content blockquote {
+  display: block;
+  border-left: 3px solid var(--accent, #6495ed);
+  padding-left: 12px;
+  margin: 8px 0;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.typewriter-container .markdown-content ul,
+.typewriter-container .markdown-content ol {
+  display: block;
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.typewriter-container .markdown-content li {
+  display: list-item;
+  margin: 4px 0;
+}
+
+.typewriter-container .markdown-content h1,
+.typewriter-container .markdown-content h2,
+.typewriter-container .markdown-content h3,
+.typewriter-container .markdown-content h4,
+.typewriter-container .markdown-content h5,
+.typewriter-container .markdown-content h6 {
+  display: block;
+  font-weight: 700;
+  margin: 12px 0 8px 0;
+  color: var(--text-emphasis, var(--text));
+}
+
+.typewriter-container .markdown-content h1 { font-size: 1.8em; }
+.typewriter-container .markdown-content h2 { font-size: 1.6em; }
+.typewriter-container .markdown-content h3 { font-size: 1.4em; }
+.typewriter-container .markdown-content h4 { font-size: 1.2em; }
+.typewriter-container .markdown-content h5 { font-size: 1.1em; }
+.typewriter-container .markdown-content h6 { font-size: 1em; }
+
+.typewriter-container .markdown-content a {
+  color: var(--accent, #6495ed);
+  text-decoration: underline;
+  text-decoration-color: rgba(var(--accent-rgb, 100, 149, 237), 0.5);
+  transition: all 0.2s ease;
+}
+
+.typewriter-container .markdown-content a:hover {
+  text-decoration-color: var(--accent, #6495ed);
+  opacity: 0.8;
+}
+
+/* 高亮语法样式 */
+.typewriter-container .markdown-content .hljs {
+  background: var(--code-bg, rgba(40, 44, 52, 0.8)) !important;
+  color: var(--code-text, #abb2bf) !important;
+}
+
+.typewriter-container .markdown-content .hljs-keyword {
+  color: #c678dd !important;
+}
+
+.typewriter-container .markdown-content .hljs-string {
+  color: #98c379 !important;
+}
+
+.typewriter-container .markdown-content .hljs-number {
+  color: #d19a66 !important;
+}
+
+.typewriter-container .markdown-content .hljs-comment {
+  color: #5c6370 !important;
+  font-style: italic;
+}
+
+.typewriter-container .markdown-content .hljs-function {
+  color: #61afef !important;
+}
+
+.typewriter-container .markdown-content .hljs-variable {
+  color: #e06c75 !important;
+}
+
+/* 不同主题的光标颜色 */
+.typewriter-container.theme-primary .typewriter-cursor {
+  color: var(--accent, #6495ed);
+}
+
+.typewriter-container.theme-success .typewriter-cursor {
+  color: #10b981;
+}
+
+.typewriter-container.theme-warning .typewriter-cursor {
+  color: #f59e0b;
+}
+
+.typewriter-container.theme-danger .typewriter-cursor {
+  color: #ef4444;
+}
+
+.typewriter-container.theme-info .typewriter-cursor {
+  color: #3b82f6;
+}
+
+/* 不同速度的光标动画 */
+.typewriter-cursor.speed-slow {
+  animation: typewriterBlink 1.5s ease-in-out infinite;
+}
+
+.typewriter-cursor.speed-normal {
+  animation: typewriterBlink 1s ease-in-out infinite;
+}
+
+.typewriter-cursor.speed-fast {
+  animation: typewriterBlink 0.7s ease-in-out infinite;
+}
+
+@keyframes typewriterBlink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}
+
+/* 流式输入状态 */
+.typewriter-container.streaming {
+  position: relative;
+}
+
+.typewriter-container.streaming::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: -8px;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    var(--accent, #6495ed) 50%,
+    transparent 100%
+  );
+  opacity: 0.6;
+  animation: streamingIndicator 1.5s ease-in-out infinite;
+}
+
+@keyframes streamingIndicator {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scaleY(0.8);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scaleY(1.2);
+  }
+}
+
+/* 完成状态 */
+.typewriter-container.completed .typewriter-cursor {
+  animation: completedPulse 0.5s ease-out;
+  opacity: 0;
+}
+
+@keyframes completedPulse {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+/* 错误状态 */
+.typewriter-container.error {
+  color: #ef4444;
+}
+
+.typewriter-container.error .typewriter-cursor {
+  color: #ef4444;
+  animation: errorBlink 0.3s ease-in-out infinite;
+}
+
+@keyframes errorBlink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* 暂停状态 */
+.typewriter-container.paused .typewriter-cursor {
+  animation-play-state: paused;
+  opacity: 0.5;
+}
+
+/* 不同的光标样式 */
+.typewriter-cursor.style-line {
+  border-right: 2px solid currentColor;
+  width: 0;
+  margin-left: 2px;
+}
+
+.typewriter-cursor.style-block {
+  background: currentColor;
+  width: 0.6em;
+  margin-left: 2px;
+  opacity: 0.7;
+}
+
+.typewriter-cursor.style-underscore {
+  border-bottom: 2px solid currentColor;
+  width: 0.6em;
+  margin-left: 2px;
+  height: 1em;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .typewriter-container {
+    font-size: 0.95em;
+    line-height: 1.5;
+  }
+  
+  .typewriter-cursor {
+    width: 1.5px;
+    font-size: 1.1em;
+  }
+  
+  .typewriter-container .markdown-content pre {
+    padding: 8px;
+    font-size: 0.8em;
+  }
+  
+  .typewriter-container .markdown-content code {
+    font-size: 0.85em;
+    padding: 1px 3px;
+  }
+}
+
+@media (max-width: 480px) {
+  .typewriter-container {
+    font-size: 0.9em;
+    line-height: 1.4;
+  }
+  
+  .typewriter-cursor {
+    width: 1px;
+    font-size: 1em;
+    margin-left: 1px;
+  }
+  
+  .typewriter-container .markdown-content h1 { font-size: 1.5em; }
+  .typewriter-container .markdown-content h2 { font-size: 1.3em; }
+  .typewriter-container .markdown-content h3 { font-size: 1.2em; }
+  .typewriter-container .markdown-content h4 { font-size: 1.1em; }
+  .typewriter-container .markdown-content h5,
+  .typewriter-container .markdown-content h6 { font-size: 1em; }
+}
+
+/* 高对比度模式 */
+@media (prefers-contrast: high) {
+  .typewriter-cursor {
+    font-weight: 900;
+    opacity: 1;
+  }
+  
+  .typewriter-container .markdown-content code {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid var(--border);
+  }
+  
+  .typewriter-container .markdown-content pre {
+    border-width: 2px;
+  }
+}
+
+/* 减少动画模式 */
+@media (prefers-reduced-motion: reduce) {
+  .typewriter-cursor {
+    animation: none;
+    opacity: 0.8;
+  }
+  
+  .typewriter-container.streaming::after {
+    animation: none;
+    opacity: 0.5;
+  }
+  
+  .typewriter-container.completed .typewriter-cursor {
+    animation: none;
+    opacity: 0;
+  }
+  
+  .typewriter-container.error .typewriter-cursor {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* 深色模式优化 */
+@media (prefers-color-scheme: dark) {
+  .typewriter-container .markdown-content pre {
+    background: rgba(20, 24, 32, 0.9);
+  }
+  
+  .typewriter-container .markdown-content blockquote {
+    border-left-color: rgba(var(--accent-rgb, 100, 149, 237), 0.7);
+  }
+}
+
+/* 打印样式 */
+@media print {
+  .typewriter-cursor {
+    display: none !important;
+  }
+  
+  .typewriter-container.streaming::after {
+    display: none !important;
+  }
+  
+  .typewriter-container .markdown-content pre {
+    background: #f5f5f5 !important;
+    color: #333 !important;
+    border: 1px solid #ddd !important;
+  }
+  
+  .typewriter-container .markdown-content code {
+    background: #f0f0f0 !important;
+    color: #666 !important;
+  }
+}
+
+/* 聚焦样式 */
+.typewriter-container:focus-within {
+  outline: 2px solid rgba(var(--accent-rgb, 100, 149, 237), 0.3);
+  outline-offset: 2px;
+}
+
+/* 选中文本样式 */
+.typewriter-text::selection {
+  background: rgba(var(--accent-rgb, 100, 149, 237), 0.2);
+  color: inherit;
+}
+
+.typewriter-text::-moz-selection {
+  background: rgba(var(--accent-rgb, 100, 149, 237), 0.2);
+  color: inherit;
+}
+
+/* 自定义属性支持 */
+.typewriter-container[data-theme="custom"] {
+  color: var(--custom-text-color, inherit);
+}
+
+.typewriter-container[data-theme="custom"] .typewriter-cursor {
+  color: var(--custom-cursor-color, var(--accent, #6495ed));
+}
+
+.typewriter-container[data-theme="custom"] .markdown-content code {
+  background: var(--custom-code-bg, rgba(var(--accent-rgb, 100, 149, 237), 0.1));
+  color: var(--custom-code-color, var(--accent, #6495ed));
+}
+
+/* 加载状态 */
+.typewriter-container.loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.typewriter-container.loading::before {
+  content: '⏳';
+  position: absolute;
+  top: -20px;
+  right: 0;
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+/* 多行文本优化 */
+.typewriter-container.multiline {
+  display: block;
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+.typewriter-container.multiline .typewriter-text {
+  display: block;
+}
+
+/* 代码块滚动优化 */
+.typewriter-container .markdown-content pre {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--accent-rgb, 100, 149, 237), 0.5) transparent;
+}
+
+.typewriter-container .markdown-content pre::-webkit-scrollbar {
+  height: 6px;
+}
+
+.typewriter-container .markdown-content pre::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.typewriter-container .markdown-content pre::-webkit-scrollbar-thumb {
+  background: rgba(var(--accent-rgb, 100, 149, 237), 0.5);
+  border-radius: 3px;
+}
+
+.typewriter-container .markdown-content pre::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--accent-rgb, 100, 149, 237), 0.7);
+}

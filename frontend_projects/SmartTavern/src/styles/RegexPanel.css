@@ -1,0 +1,783 @@
+/* RegexPanel 组件样式 */
+.regex-panel-container {
+  overflow: hidden;
+  background: var(--panel-item-bg);
+  margin: 8px 0;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+}
+
+.regex-panel-content {
+  padding: 12px;
+}
+
+.regex-panel-header {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.regex-panel-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.regex-panel-button {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 10px;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+
+.regex-panel-button:disabled {
+  opacity: 0.5;
+}
+
+.regex-panel-select {
+  width: 100%;
+  padding: 6px 8px;
+  background: var(--panel-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 11px;
+  margin-bottom: 8px;
+}
+
+.regex-status-indicator {
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.regex-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.regex-status-dot.active {
+  background: var(--success);
+}
+
+.regex-status-dot.inactive {
+  background: var(--muted);
+}
+
+.regex-content-section {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.regex-items-header {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.regex-items-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.regex-empty-state {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* 可拖拽正则规则样式 */
+.regex-rule-item {
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  position: relative;
+}
+
+.regex-rule-item.enabled {
+  background: var(--panel-item-enabled-bg);
+  border: 1px solid var(--success);
+}
+
+.regex-rule-item.disabled {
+  background: var(--panel-item-disabled-bg);
+  border: 1px solid var(--border);
+}
+
+.regex-rule-item:hover {
+  background: var(--panel-item-hover-bg);
+}
+
+.regex-rule-drag-handle {
+  cursor: grab;
+  padding: 2px 4px;
+  margin-right: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  user-select: none;
+}
+
+.regex-rule-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.regex-rule-expand-icon {
+  font-size: 10px;
+  color: var(--muted);
+  transition: transform 0.2s;
+}
+
+.regex-rule-expand-icon.expanded {
+  transform: rotate(90deg);
+}
+
+.regex-rule-title {
+  font-weight: 500;
+}
+
+.regex-rule-title.enabled {
+  color: var(--text);
+}
+
+.regex-rule-title.disabled {
+  color: var(--muted);
+}
+
+.regex-rule-tag {
+  font-size: 9px;
+  padding: 1px 4px;
+  background: var(--panel-tag-bg);
+  color: var(--accent);
+  border-radius: 3px;
+}
+
+.regex-rule-toggle {
+  position: relative;
+  display: inline-block;
+  width: 32px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.regex-rule-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.regex-toggle-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 9px;
+  transition: background-color 0.2s;
+}
+
+.regex-toggle-slider.enabled {
+  background-color: var(--success);
+}
+
+.regex-toggle-slider.disabled {
+  background-color: var(--disabled);
+  border: 1px solid var(--border);
+}
+
+.regex-toggle-dot {
+  position: absolute;
+  top: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--preset-toggle-dot-bg);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  transition: left 0.2s;
+}
+
+.regex-toggle-dot.enabled {
+  left: 16px;
+}
+
+.regex-toggle-dot.disabled {
+  left: 2px;
+}
+
+/* 展开的正则规则编辑区域 */
+.regex-rule-expanded {
+  overflow: hidden;
+  margin-top: 4px;
+  margin-left: 0px;
+  padding: 12px;
+  background: var(--panel-expanded-bg);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.regex-rule-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+  font-size: 10px;
+}
+
+.regex-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.regex-field-label {
+  color: var(--muted);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.regex-field-input {
+  width: 100%;
+  padding: 4px 6px;
+  background: var(--panel-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 10px;
+}
+
+.regex-field-select {
+  width: 100%;
+  padding: 4px 6px;
+  background: var(--panel-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 10px;
+}
+
+.regex-content-field {
+  flex: 1;
+}
+
+.regex-content-label {
+  font-size: 10px;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.regex-content-textarea {
+  width: 100%;
+  min-height: 60px;
+  padding: 4px 6px;
+  background: var(--panel-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 10px;
+  font-family: monospace;
+  white-space: pre-wrap;
+  resize: vertical;
+}
+
+.regex-targets-field {
+  flex: 1;
+}
+
+.regex-targets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 10px;
+}
+
+.regex-target-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.regex-target-checkbox {
+  cursor: pointer;
+}
+
+.regex-views-field {
+  flex: 1;
+}
+
+.regex-views-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 10px;
+}
+
+.regex-view-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.regex-view-checkbox {
+  cursor: pointer;
+}
+
+.regex-description-field {
+  flex: 1;
+}
+
+.regex-description-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.regex-description-textarea {
+  width: 100%;
+  min-height: 60px;
+  padding: 4px 6px;
+  background: var(--panel-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 10px;
+  resize: vertical;
+}
+
+/* 删除模态框样式 */
+.regex-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--modal-backdrop-bg);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.regex-modal {
+  background: var(--panel-solid);
+  border-radius: 12px;
+  padding: 20px;
+  width: auto;
+  min-width: 300px;
+  max-width: calc(100vw - 40px);
+  max-height: 60vh;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.regex-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.regex-modal-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.regex-modal-close {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 2px;
+}
+
+.regex-modal-description {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.regex-modal-content {
+  max-height: 250px;
+  overflow-y: auto;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.regex-modal-item {
+  padding: 6px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.2s;
+}
+
+.regex-modal-item:not(:last-child) {
+  border-bottom: 1px solid var(--border);
+}
+
+.regex-modal-item.selected {
+  background: var(--modal-delete-selected-bg);
+}
+
+.regex-modal-item-checkbox {
+  margin-right: 2px;
+  cursor: pointer;
+}
+
+.regex-modal-item-info {
+  flex: 1;
+}
+
+.regex-modal-item-name {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.regex-modal-item-details {
+  font-size: 9px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.regex-modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.regex-modal-count {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.regex-modal-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.regex-modal-button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.regex-modal-button.cancel {
+  background: var(--muted);
+  color: var(--white);
+}
+
+.regex-modal-button.danger {
+  background: var(--danger);
+  color: var(--white);
+}
+
+.regex-modal-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* 拖拽相关样式 */
+.sortable-regex-item {
+  opacity: 1;
+  transition: opacity 0.2s;
+}
+
+.sortable-regex-item.dragging {
+  opacity: 0.5;
+}
+
+/* 额外的正则操作按钮样式 */
+.regex-items-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.regex-action-button {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 10px;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+
+.regex-action-button:hover {
+  background: var(--button-hover-bg);
+}
+
+/* SortableRegexRule 组件专用样式 */
+.sortable-regex-wrapper {
+  opacity: 1;
+  transition: opacity 0.2s;
+}
+
+.sortable-regex-wrapper.dragging {
+  opacity: 0.5;
+}
+
+/* 输入框通用样式 */
+.regex-common-input {
+  width: 100%;
+  padding: 4px 6px;
+  background: var(--panel-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 10px;
+}
+
+/* 主内容区域样式补充 */
+.regex-content-divider {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.regex-empty-message {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* 删除模态框完整样式 */
+.regex-delete-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--modal-backdrop-bg);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.regex-delete-modal {
+  background: var(--panel-solid);
+  border-radius: 12px;
+  padding: 20px;
+  width: auto;
+  min-width: 300px;
+  max-width: calc(100vw - 40px);
+  max-height: 60vh;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.regex-delete-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.regex-delete-modal-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.regex-delete-modal-close {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 2px;
+}
+
+.regex-delete-modal-description {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.regex-delete-modal-content {
+  max-height: 250px;
+  overflow-y: auto;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.regex-delete-modal-item {
+  padding: 6px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.2s;
+}
+
+.regex-delete-modal-item:not(:last-child) {
+  border-bottom: 1px solid var(--border);
+}
+
+.regex-delete-modal-item.selected {
+  background: var(--modal-delete-selected-bg);
+}
+
+.regex-delete-modal-item-checkbox {
+  margin-right: 2px;
+  cursor: pointer;
+}
+
+.regex-delete-modal-item-info {
+  flex: 1;
+}
+
+.regex-delete-modal-item-name {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.regex-delete-modal-item-details {
+  font-size: 9px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.regex-delete-modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.regex-delete-modal-count {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.regex-delete-modal-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.regex-delete-modal-button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.regex-delete-modal-button.cancel {
+  background: var(--muted);
+  color: var(--white);
+}
+
+.regex-delete-modal-button.delete {
+  background: var(--danger);
+  color: var(--white);
+}
+
+.regex-delete-modal-button.delete:disabled {
+  background: var(--muted);
+  color: var(--white);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.regex-delete-modal-button.delete:not(:disabled):hover {
+  background: var(--danger-light, #e74c3c);
+  transform: translateY(-1px);
+}
+
+.regex-delete-modal-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* 按钮状态样式 */
+.regex-panel-button-active {
+  opacity: 1;
+}
+
+.regex-panel-button-inactive {
+  opacity: 0.5;
+}
+
+/* OverlayScrollbar 容器样式 */
+.regex-scrollbar-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 拖拽样式类 */
+.sortable-regex-style {
+  opacity: 1;
+  transition: all 0.2s ease;
+}
+
+.sortable-regex-style.dragging {
+  opacity: 0.5;
+}
+
+/* 删除模态框按钮样式 */
+.regex-delete-modal-button.enabled {
+  background: var(--danger);
+  opacity: 1;
+}
+
+.regex-delete-modal-button.disabled {
+  background: var(--muted);
+  opacity: 0.5;
+}

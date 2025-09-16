@@ -1,0 +1,514 @@
+.character-panel {
+  overflow: hidden;
+  background: var(--character-card-bg);
+  margin: 8px 0;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+}
+
+.character-panel-content {
+  padding: 12px;
+}
+
+.character-panel-header {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.character-panel-header-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.character-panel-add-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 10px;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+
+.character-panel-empty {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  padding: 20px;
+}
+
+.character-card {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.character-card-inactive {
+  background: var(--character-card-inactive-bg);
+}
+
+.character-card-hover {
+  background: var(--character-card-hover-bg);
+}
+
+.character-avatar {
+  width: 60px;
+  height: 60px;
+  background: var(--character-avatar-bg);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.character-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.character-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.character-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.character-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 150px;
+}
+
+.character-description {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.character-expand-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+}
+
+.character-expand-icon {
+  font-size: 10px;
+  color: var(--muted);
+  transition: transform 0.2s;
+}
+
+.character-expand-icon-expanded {
+  transform: rotate(90deg);
+}
+
+.character-expand-icon-collapsed {
+  transform: rotate(0deg);
+}
+
+.character-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
+  min-width: 60px;
+}
+
+.character-delete-btn {
+  background: var(--character-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--danger);
+  font-size: 10px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-weight: 500;
+  min-width: 50px;
+  white-space: nowrap;
+}
+
+.character-expanded {
+  overflow: hidden;
+  margin-top: 4px;
+  padding: 16px;
+  background: var(--character-card-expanded-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.character-field-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.character-field-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.character-input {
+  width: 100%;
+  padding: 6px 8px;
+  background: var(--character-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 11px;
+}
+
+.character-textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 6px 8px;
+  background: var(--character-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 11px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.character-messages-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.character-messages-add-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 10px;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+
+.character-messages-container {
+  max-height: 200px;
+  overflow: auto;
+  background: var(--character-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.character-message-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: var(--character-message-bg);
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+.character-message-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.character-message-number {
+  font-size: 9px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.character-message-delete-btn {
+  background: none;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  font-size: 10px;
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+
+.character-message-textarea {
+  width: 100%;
+  min-height: 60px;
+  padding: 6px 8px;
+  background: var(--character-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 10px;
+  font-family: inherit;
+  resize: vertical;
+  line-height: 1.4;
+}
+
+.character-messages-empty {
+  padding: 20px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 10px;
+  background: var(--character-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  border-style: dashed;
+}
+
+.character-date-display {
+  font-size: 10px;
+  color: var(--muted);
+  text-align: center;
+  padding: 8px;
+  background: var(--character-date-bg);
+  border-radius: 4px;
+}
+
+/* 新增的内嵌样式类 */
+.character-expand-button-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+}
+
+.character-expand-icon-inline {
+  font-size: 10px;
+  color: var(--muted);
+  transform: rotate(0deg);
+  transition: transform 0.2s;
+}
+
+.character-expand-icon-inline.expanded {
+  transform: rotate(90deg);
+}
+
+.character-actions-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
+  min-width: 60px;
+}
+
+.character-delete-button-inline {
+  background: var(--character-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--danger);
+  font-size: 10px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-weight: 500;
+  min-width: 50px;
+  white-space: nowrap;
+}
+
+.character-delete-button-inline:hover {
+  background: var(--button-hover-bg, rgba(220, 53, 69, 0.1));
+  border-color: var(--danger);
+}
+
+.character-expanded-form {
+  overflow: hidden;
+  margin-top: 4px;
+  padding: 16px;
+  background: var(--character-card-expanded-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.character-form-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.character-form-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.character-form-input {
+  width: 100%;
+  padding: 6px 8px;
+  background: var(--character-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 11px;
+}
+
+.character-form-textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 6px 8px;
+  background: var(--character-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 11px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.character-messages-label-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.character-messages-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  display: block;
+}
+
+.character-messages-add-button {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 10px;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+
+.character-message-container-wrapper {
+  max-height: 200px;
+  overflow: auto;
+  background: var(--character-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.character-message-item-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: var(--character-message-bg);
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+.character-message-header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.character-message-number-label {
+  font-size: 9px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.character-message-delete-button {
+  background: none;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  font-size: 10px;
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+
+.character-message-input-textarea {
+  width: 100%;
+  min-height: 60px;
+  padding: 6px 8px;
+  background: var(--character-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 10px;
+  font-family: inherit;
+  resize: vertical;
+  line-height: 1.4;
+}
+
+.character-messages-empty-state {
+  padding: 20px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 10px;
+  background: var(--character-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  border-style: dashed;
+}
+
+.character-create-date-display {
+  font-size: 10px;
+  color: var(--muted);
+  text-align: center;
+  padding: 8px;
+  background: var(--character-date-bg);
+  border-radius: 4px;
+}
+
+/* OverlayScrollbar 容器样式 */
+.character-scrollbar-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 角色卡容器样式 */
+.character-card-container {
+  margin-bottom: 8px;
+}

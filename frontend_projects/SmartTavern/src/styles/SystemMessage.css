@@ -1,0 +1,192 @@
+/* SystemMessage 组件样式 */
+.system-message {
+  background: linear-gradient(135deg, var(--system-message-bg-start), var(--system-message-bg-end));
+  border: 1px solid var(--system-message-border);
+  border-radius: 12px;
+  padding: 1em;
+  margin: 1em 0;
+  position: relative;
+  backdrop-filter: blur(8px);
+}
+
+.system-message::before {
+  content: '🔧';
+  position: absolute;
+  top: -8px;
+  left: 12px;
+  background: var(--bg);
+  padding: 0 8px;
+  font-size: 14px;
+}
+
+.system-message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.8em;
+}
+
+.system-title {
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 0.5em;
+  font-size: 0.9em;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.system-icon {
+  font-size: 14px;
+}
+
+.system-dismiss {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.system-dismiss:hover {
+  background: var(--white-t-10);
+  color: var(--text);
+}
+
+.system-content {
+  color: var(--muted);
+  font-size: 0.9em;
+  line-height: 1.5;
+}
+
+.system-content p {
+  margin: 0.5em 0;
+}
+
+.system-content p:last-child {
+  margin-bottom: 0;
+}
+
+.system-content ul {
+  margin: 0.8em 0;
+  padding-left: 1.5em;
+}
+
+.system-content li {
+  margin: 0.3em 0;
+}
+
+/* 欢迎消息特殊样式 */
+.system-message .system-content ul li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 不同类型的消息样式 */
+.warning-message {
+  background: linear-gradient(135deg, var(--warning-bg-start), var(--warning-bg-end));
+  border-color: var(--warning-border);
+}
+
+.warning-message::before {
+  content: '⚠️';
+}
+
+.error-message {
+  background: linear-gradient(135deg, var(--error-bg-start), var(--error-bg-end));
+  border-color: var(--error-border);
+}
+
+.error-message::before {
+  content: '❌';
+}
+
+.success-message {
+  background: linear-gradient(135deg, var(--success-bg-start), var(--success-bg-end));
+  border-color: var(--success-border);
+}
+
+.success-message::before {
+  content: '✅';
+}
+
+.info-message {
+  background: linear-gradient(135deg, var(--info-bg-start), var(--info-bg-end));
+  border-color: var(--info-border);
+}
+
+.info-message::before {
+  content: 'ℹ️';
+}
+
+/* 增强的消息气泡样式，用于不同角色 */
+.msg.system .bubble {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.msg.system .avatar {
+  background: linear-gradient(45deg, var(--brand-gradient-start), var(--brand-gradient-end));
+  color: var(--text-on-accent);
+  font-size: 10px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .system-message {
+    padding: 0.8em;
+    margin: 0.8em 0;
+  }
+  
+  .system-title {
+    font-size: 0.8em;
+  }
+  
+  .system-content {
+    font-size: 0.8em;
+  }
+}
+
+/* 高对比度模式支持 */
+@media (prefers-contrast: high) {
+  .system-message {
+    border-width: 2px;
+  }
+}
+
+/* 减少动画偏好支持 */
+@media (prefers-reduced-motion: reduce) {
+  .system-dismiss {
+    transition: none;
+  }
+}
+
+/* 加载动画样式 */
+.loading-spinner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.loading-spinner-icon {
+  font-size: 16px;
+  display: inline-block;
+}
+
+/* 打印样式 */
+@media print {
+  .system-message::before {
+    display: none;
+  }
+  
+  .system-dismiss {
+    display: none;
+  }
+}

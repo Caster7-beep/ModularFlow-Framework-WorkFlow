@@ -1,0 +1,21 @@
+{
+  "projects": [
+    {
+      "name": "SmartTavern",
+      "display_name": "SmartTavern 对话系统",
+      "type": "html",
+      "path": "frontend_projects/SmartTavern",
+      "port": 6601,
+      "enabled": true,
+      "description": "基于SmartTavern工作流的AI对话系统"
+    }
+  ],
+  "global_config": {
+    "cors_origins": [
+      "http://localhost:3000",
+      "http://localhost:3001"
+    ],
+    "api_base_url": "http://localhost:8000",
+    "websocket_url": "ws://localhost:8000/ws"
+  }
+}

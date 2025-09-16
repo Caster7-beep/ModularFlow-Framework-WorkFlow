@@ -1,0 +1,310 @@
+.api-config-panel {
+  overflow: hidden;
+  background: var(--character-card-bg);
+  margin: 8px 0;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+}
+
+.api-config-panel-content {
+  padding: 12px;
+}
+
+.api-config-panel-header {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.api-config-panel-header-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.api-config-panel-add-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 10px;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+
+.api-config-panel-empty {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  padding: 20px;
+}
+
+.api-provider-card {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.api-provider-card-inactive {
+  background: var(--character-card-inactive-bg);
+}
+
+.api-provider-card-hover {
+  background: var(--character-card-hover-bg);
+}
+
+.api-provider-card-active {
+  background: var(--character-card-active-bg);
+  border: 2px solid var(--accent);
+}
+
+.api-provider-icon {
+  width: 60px;
+  height: 60px;
+  background: var(--character-avatar-bg);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.api-provider-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.api-provider-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.api-provider-name {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 150px;
+}
+
+.api-provider-name-active {
+  color: var(--accent);
+}
+
+.api-provider-name-inactive {
+  color: var(--text);
+}
+
+.api-provider-active-indicator {
+  margin-left: 6px;
+  font-size: 11px;
+}
+
+.api-provider-type {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+}
+
+.api-provider-expand-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+}
+
+.api-provider-expand-icon {
+  font-size: 10px;
+  color: var(--muted);
+  transition: transform 0.2s;
+}
+
+.api-provider-expand-icon-expanded {
+  transform: rotate(90deg);
+}
+
+.api-provider-expand-icon-collapsed {
+  transform: rotate(0deg);
+}
+
+.api-provider-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
+  min-width: 60px;
+}
+
+.api-provider-use-btn {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 10px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-weight: 500;
+  min-width: 50px;
+  white-space: nowrap;
+}
+
+.api-provider-use-btn-active {
+  background: var(--accent);
+  color: #000000;
+}
+
+.api-provider-use-btn-inactive {
+  background: var(--character-input-bg);
+  color: #ffffff;
+}
+
+.api-provider-delete-btn {
+  background: var(--character-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--danger);
+  font-size: 10px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-weight: 500;
+  min-width: 50px;
+  white-space: nowrap;
+}
+
+.api-provider-expanded {
+  overflow: hidden;
+  margin-top: 4px;
+  padding: 16px;
+  background: var(--character-card-expanded-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.api-config-field-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.api-config-field-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.api-config-input {
+  width: 100%;
+  padding: 6px 8px;
+  background: var(--character-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 11px;
+}
+
+.api-config-select {
+  width: 100%;
+  padding: 6px 8px;
+  background: var(--character-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 11px;
+}
+
+.api-config-field-hint {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 4px;
+  line-height: 1.4;
+  opacity: 0.8;
+}
+
+.api-config-textarea {
+  width: 100%;
+  padding: 6px 8px;
+  background: var(--character-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 11px;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  resize: vertical;
+  min-height: 60px;
+}
+
+.api-config-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* 字段开关相关样式 */
+.api-config-field-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.api-config-field-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.api-config-field-toggle input[type="checkbox"] {
+  width: 12px;
+  height: 12px;
+  cursor: pointer;
+}
+
+.toggle-label {
+  font-size: 10px;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.api-config-input:disabled,
+.api-config-textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--character-input-bg-disabled, var(--character-input-bg));
+}
+
+/* OverlayScrollbar 容器样式 */
+.api-config-scrollbar-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* API提供商卡片容器样式 */
+.api-provider-card-container {
+  margin-bottom: 8px;
+}
