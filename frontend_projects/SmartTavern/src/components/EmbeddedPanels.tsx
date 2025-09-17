@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Api } from '@/services/api'
 import OverlayScrollbar from './OverlayScrollbar'
@@ -35,9 +35,9 @@ interface SortableEmbeddedWorldBookItemProps {
   index: number;
   isEnabled: boolean;
   expandedItem: number | null;
-  onToggle: (id: number, enabled: boolean) => void;
+  onToggle: (id: number, enabled: boolean) => Promise<void>;
   onExpand: (id: number) => void;
-  onUpdate: (id: number, updatedItem: any) => void;
+  onUpdate: (id: number, updatedItem: any) => Promise<void>;
   onDelete: (id: number) => void;
 }
 
@@ -66,25 +66,22 @@ function SortableEmbeddedWorldBookItem({
     opacity: isDragging ? 0.5 : 1,
   }
 
+  // 使用本地状态管理编辑的项
   const [editedItem, setEditedItem] = useState(item);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setEditedItem(item);
   }, [item]);
 
-  const handleInputChange = (field: string, value: string | number | string[]) => {
+  // 即时更新本地状态
+  const handleInputChange = useCallback((field: string, value: string | number | string[]) => {
     setEditedItem((prev: any) => ({ ...prev, [field]: value }));
-  };
+  }, []);
 
-  const handleBlur = (field: string) => {
-    if (item[field] === undefined && editedItem[field] === '') {
-      const { [field]: _, ...rest } = editedItem;
-      onUpdate(item.id, rest);
-      return;
-    }
-    onUpdate(item.id, editedItem);
-  };
-
+  // 保存时使用最新状态
+  const handleBlur = useCallback(async (field: string) => {
+    await onUpdate(item.id, editedItem);
+  }, [editedItem, item.id, onUpdate]);
 
   return (
     <div ref={setNodeRef} style={style}>
@@ -146,22 +143,44 @@ function SortableEmbeddedWorldBookItem({
             <div className="sortable-worldbook-form-grid">
               <div className="sortable-worldbook-form-field">
                 <label className="sortable-worldbook-form-label">ID</label>
-                <input type="number" className="sortable-worldbook-form-input" value={editedItem.id} readOnly />
+                <input
+                  type="text"
+                  className="sortable-worldbook-form-input"
+                  value={editedItem.id}
+                  onChange={(e) => handleInputChange('id', e.target.value)}
+                  onBlur={() => handleBlur('id')}
+                />
               </div>
               <div className="sortable-worldbook-form-field">
                 <label className="sortable-worldbook-form-label">名称</label>
-                <input type="text" className="sortable-worldbook-form-input" value={editedItem.name || ''} onChange={(e) => handleInputChange('name', e.target.value)} onBlur={() => handleBlur('name')} />
+                <input 
+                  type="text" 
+                  className="sortable-worldbook-form-input" 
+                  value={editedItem.name || ''} 
+                  onChange={(e) => handleInputChange('name', e.target.value)} 
+                  onBlur={() => handleBlur('name')} 
+                />
               </div>
               <div className="sortable-worldbook-form-field">
                 <label className="sortable-worldbook-form-label">模式</label>
-                <select className="sortable-worldbook-form-input" value={editedItem.mode || 'always'} onChange={(e) => handleInputChange('mode', e.target.value)} onBlur={() => handleBlur('mode')}>
+                <select 
+                  className="sortable-worldbook-form-input" 
+                  value={editedItem.mode || 'always'} 
+                  onChange={(e) => handleInputChange('mode', e.target.value)} 
+                  onBlur={() => handleBlur('mode')}
+                >
                   <option value="always">Always</option>
                   <option value="conditional">Conditional</option>
                 </select>
               </div>
               <div className="sortable-worldbook-form-field">
                 <label className="sortable-worldbook-form-label">位置</label>
-                <select className="sortable-worldbook-form-input" value={editedItem.position || 'before_char'} onChange={(e) => handleInputChange('position', e.target.value)} onBlur={() => handleBlur('position')}>
+                <select 
+                  className="sortable-worldbook-form-input" 
+                  value={editedItem.position || 'before_char'} 
+                  onChange={(e) => handleInputChange('position', e.target.value)} 
+                  onBlur={() => handleBlur('position')}
+                >
                   <option value="before_char">角色之前</option>
                   <option value="after_char">角色之后</option>
                   <option value="user">@Duser</option>
@@ -171,16 +190,34 @@ function SortableEmbeddedWorldBookItem({
               </div>
               <div className="sortable-worldbook-form-field">
                 <label className="sortable-worldbook-form-label">顺序</label>
-                <input type="number" className="sortable-worldbook-form-input" value={editedItem.order ?? ''} onChange={(e) => handleInputChange('order', parseInt(e.target.value, 10))} onBlur={() => handleBlur('order')} />
+                <input 
+                  type="number" 
+                  className="sortable-worldbook-form-input" 
+                  value={editedItem.order ?? ''} 
+                  onChange={(e) => handleInputChange('order', parseInt(e.target.value, 10) || 0)} 
+                  onBlur={() => handleBlur('order')} 
+                />
               </div>
               <div className="sortable-worldbook-form-field">
                 <label className="sortable-worldbook-form-label">深度</label>
-                <input type="number" className="sortable-worldbook-form-input" value={editedItem.depth ?? ''} onChange={(e) => handleInputChange('depth', parseInt(e.target.value, 10))} onBlur={() => handleBlur('depth')} />
+                <input 
+                  type="number" 
+                  className="sortable-worldbook-form-input" 
+                  value={editedItem.depth ?? ''} 
+                  onChange={(e) => handleInputChange('depth', parseInt(e.target.value, 10) || 0)} 
+                  onBlur={() => handleBlur('depth')} 
+                />
               </div>
             </div>
             <div className="sortable-worldbook-form-field">
               <label className="sortable-worldbook-content-label">关键词 (逗号分隔)</label>
-              <input type="text" className="sortable-worldbook-form-input" value={(editedItem.keys || []).join(',')} onChange={(e) => handleInputChange('keys', e.target.value.split(','))} onBlur={() => handleBlur('keys')} />
+              <input 
+                type="text" 
+                className="sortable-worldbook-form-input" 
+                value={(editedItem.keys || []).join(',')} 
+                onChange={(e) => handleInputChange('keys', e.target.value.split(',').map(k => k.trim()).filter(k => k))} 
+                onBlur={() => handleBlur('keys')} 
+              />
             </div>
             <div className="sortable-worldbook-form-field">
               <label className="sortable-worldbook-content-label">内容</label>
@@ -218,31 +255,41 @@ export function EmbeddedWorldBook({ worldBookData, onSave, title = "内嵌世界
   const [expandedItem, setExpandedItem] = useState<number | null>(null)
   const [worldBookEntries, setWorldBookEntries] = useState<any[]>(worldBookData?.entries || [])
 
-  React.useEffect(() => {
+  useEffect(() => {
     setWorldBookEntries(worldBookData?.entries || [])
   }, [worldBookData])
 
-  const handleItemToggle = (id: number, newEnabled: boolean) => {
-    const updatedEntries = worldBookEntries.map(item => 
+  // 参考独立面板的实现，添加异步保存逻辑
+  const saveContent = useCallback(async (updatedEntries: any[]) => {
+    const updatedWorldBook = { ...worldBookData, entries: updatedEntries };
+    setWorldBookEntries(updatedEntries);
+    onSave(updatedWorldBook);
+  }, [worldBookData, onSave]);
+
+  const handleItemToggle = useCallback(async (id: number, newEnabled: boolean) => {
+    const updatedEntries = worldBookEntries.map(item =>
       item.id === id ? { ...item, enabled: newEnabled } : item
-    )
-    setWorldBookEntries(updatedEntries)
-    onSave({ ...worldBookData, entries: updatedEntries })
-  }
+    );
+    await saveContent(updatedEntries);
+  }, [worldBookEntries, saveContent]);
 
-  const handleItemUpdate = (id: number, updatedItem: any) => {
-    const updatedEntries = worldBookEntries.map(item => 
-      item.id === id ? updatedItem : item
-    )
-    setWorldBookEntries(updatedEntries)
-    onSave({ ...worldBookData, entries: updatedEntries })
-  }
+  const handleItemUpdate = useCallback(async (originalId: number, updatedItem: any) => {
+    const updatedEntries = worldBookEntries.map(item =>
+      item.id === originalId ? updatedItem : item
+    );
+    await saveContent(updatedEntries);
+    
+    // 如果ID发生了变化，更新展开状态以保持条目展开
+    if (originalId !== updatedItem.id && expandedItem === originalId) {
+      setExpandedItem(updatedItem.id);
+    }
+  }, [worldBookEntries, saveContent, expandedItem]);
 
-  const handleItemExpand = (id: number) => {
+  const handleItemExpand = useCallback((id: number) => {
     setExpandedItem(expandedItem === id ? null : id)
-  }
+  }, [expandedItem]);
 
-  const handleAddItem = () => {
+  const handleAddItem = useCallback(async () => {
     const newItemName = prompt('请输入新条目名称:')
     if (!newItemName) return
 
@@ -259,25 +306,23 @@ export function EmbeddedWorldBook({ worldBookData, onSave, title = "内嵌世界
       keys: []
     }
     const updatedEntries = [newItem, ...worldBookEntries]
-    setWorldBookEntries(updatedEntries)
-    onSave({ ...worldBookData, entries: updatedEntries })
-  }
+    await saveContent(updatedEntries);
+  }, [worldBookEntries, saveContent]);
 
-  const handleDeleteItem = (id: number) => {
+  const handleDeleteItem = useCallback(async (id: number) => {
     const updatedEntries = worldBookEntries.filter(item => item.id !== id)
-    setWorldBookEntries(updatedEntries)
-    onSave({ ...worldBookData, entries: updatedEntries })
-  }
+    await saveContent(updatedEntries);
+  }, [worldBookEntries, saveContent]);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedForDeletion, setSelectedForDeletion] = useState<Set<number>>(new Set())
 
-  const handleOpenDeleteModal = () => {
+  const handleOpenDeleteModal = useCallback(() => {
     setSelectedForDeletion(new Set())
     setShowDeleteModal(true)
-  }
+  }, []);
 
-  const toggleDeleteSelection = (id: number) => {
+  const toggleDeleteSelection = useCallback((id: number) => {
     const newSelection = new Set(selectedForDeletion)
     if (newSelection.has(id)) {
       newSelection.delete(id)
@@ -285,9 +330,9 @@ export function EmbeddedWorldBook({ worldBookData, onSave, title = "内嵌世界
       newSelection.add(id)
     }
     setSelectedForDeletion(newSelection)
-  }
+  }, [selectedForDeletion]);
 
-  const handleDeleteSelectedItems = () => {
+  const handleDeleteSelectedItems = useCallback(async () => {
     if (selectedForDeletion.size === 0) return
 
     const confirmDelete = confirm(`确定要删除选中的 ${selectedForDeletion.size} 个条目吗？此操作无法撤销。`)
@@ -296,18 +341,17 @@ export function EmbeddedWorldBook({ worldBookData, onSave, title = "内嵌世界
     const updatedEntries = worldBookEntries.filter(item =>
       !selectedForDeletion.has(item.id)
     )
-    setWorldBookEntries(updatedEntries)
-    onSave({ ...worldBookData, entries: updatedEntries })
+    await saveContent(updatedEntries);
     setShowDeleteModal(false)
     setSelectedForDeletion(new Set())
-  }
+  }, [selectedForDeletion, worldBookEntries, saveContent]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     const { active, over } = event
     if (!over) return
 
@@ -315,10 +359,9 @@ export function EmbeddedWorldBook({ worldBookData, onSave, title = "内嵌世界
       const oldIndex = worldBookEntries.findIndex(item => item.id === active.id)
       const newIndex = worldBookEntries.findIndex(item => item.id === over.id)
       const newEntries = arrayMove(worldBookEntries, oldIndex, newIndex)
-      setWorldBookEntries(newEntries)
-      onSave({ ...worldBookData, entries: newEntries })
+      await saveContent(newEntries);
     }
-  }
+  }, [worldBookEntries, saveContent]);
 
   if (!worldBookData?.entries || worldBookData.entries.length === 0) {
     return null
@@ -504,9 +547,9 @@ interface SortableEmbeddedRegexRuleProps {
   index: number;
   isEnabled: boolean;
   expandedRule: string | null;
-  onToggle: (id: string, enabled: boolean) => void;
+  onToggle: (id: string, enabled: boolean) => Promise<void>;
   onExpand: (id: string) => void;
-  onUpdate: (id: string, updatedRule: any) => void;
+  onUpdate: (id: string, updatedRule: any) => Promise<void>;
   onDelete: (id: string) => void;
 }
 
@@ -537,23 +580,33 @@ function SortableEmbeddedRegexRule({
 
   const [editedRule, setEditedRule] = useState(rule);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setEditedRule(rule);
   }, [rule]);
 
-  const handleInputChange = (field: string, value: string | string[]) => {
+  const handleInputChange = useCallback((field: string, value: string | string[]) => {
     setEditedRule((prev: any) => ({ ...prev, [field]: value }));
-  };
+  }, []);
 
-  const handleBlur = (field: string) => {
-    if (rule[field] === undefined && editedRule[field] === '') {
-      const { [field]: _, ...rest } = editedRule;
-      onUpdate(rule.id, rest);
-      return;
+  const handleBlur = useCallback(async (field: string) => {
+    await onUpdate(rule.id, editedRule);
+  }, [editedRule, rule.id, onUpdate]);
+
+  // 实时保存复选框更改
+  const handleCheckboxChange = useCallback(async (field: string, target: string, checked: boolean) => {
+    let newValues: string[];
+    const currentValues = editedRule[field] || [];
+    
+    if (checked) {
+      newValues = [...currentValues, target];
+    } else {
+      newValues = currentValues.filter((v: string) => v !== target);
     }
-    onUpdate(rule.id, editedRule);
-  };
-
+    
+    const updatedRule = { ...editedRule, [field]: newValues };
+    setEditedRule(updatedRule);
+    await onUpdate(rule.id, updatedRule);
+  }, [editedRule, rule.id, onUpdate]);
 
   return (
     <div ref={setNodeRef} style={style}>
@@ -678,22 +731,7 @@ function SortableEmbeddedRegexRule({
                     <input
                       type="checkbox"
                       checked={(editedRule.targets || []).includes(target)}
-                      onChange={(e) => {
-                        const allTargets = ['user', 'assistant', 'world_book', 'preset', 'assistant_thinking'];
-                        const currentTargets = editedRule.targets || [];
-                        let newTargets;
-                        
-                        if (e.target.checked) {
-                          newTargets = allTargets.filter(t =>
-                            currentTargets.includes(t) || t === target
-                          );
-                        } else {
-                          newTargets = currentTargets.filter((t: string) => t !== target);
-                        }
-                        
-                        handleInputChange('targets', newTargets);
-                        onUpdate(rule.id, { ...editedRule, targets: newTargets });
-                      }}
+                      onChange={(e) => handleCheckboxChange('targets', target, e.target.checked)}
                       className="sortable-regex-checkbox"
                     />
                     <span>{target}</span>
@@ -710,22 +748,7 @@ function SortableEmbeddedRegexRule({
                     <input
                       type="checkbox"
                       checked={(editedRule.views || []).includes(view)}
-                      onChange={(e) => {
-                        const allViews = ['user_view', 'assistant_view'];
-                        const currentViews = editedRule.views || [];
-                        let newViews;
-                        
-                        if (e.target.checked) {
-                          newViews = allViews.filter(v =>
-                            currentViews.includes(v) || v === view
-                          );
-                        } else {
-                          newViews = currentViews.filter((v: string) => v !== view);
-                        }
-                        
-                        handleInputChange('views', newViews);
-                        onUpdate(rule.id, { ...editedRule, views: newViews });
-                      }}
+                      onChange={(e) => handleCheckboxChange('views', view, e.target.checked)}
                       className="sortable-regex-checkbox"
                     />
                     <span>{view}</span>
@@ -771,35 +794,38 @@ export function EmbeddedRegexRules({ regexRules, onSave, title = "内嵌正则�
   const [expandedRule, setExpandedRule] = useState<string | null>(null)
   const [rules, setRules] = useState<any[]>(regexRules || [])
 
-  React.useEffect(() => {
+  useEffect(() => {
     setRules(regexRules || [])
   }, [regexRules])
 
-  const handleRuleToggle = (ruleId: string, newEnabled: boolean) => {
+  const saveContent = useCallback(async (updatedRules: any[]) => {
+    setRules(updatedRules);
+    onSave(updatedRules);
+  }, [onSave]);
+
+  const handleRuleToggle = useCallback(async (ruleId: string, newEnabled: boolean) => {
     const updatedRules = rules.map(rule =>
       rule.id === ruleId ? { ...rule, enabled: newEnabled } : rule
     )
-    setRules(updatedRules)
-    onSave(updatedRules)
-  }
+    await saveContent(updatedRules);
+  }, [rules, saveContent]);
 
-  const handleRuleUpdate = (originalId: string, updatedRule: any) => {
+  const handleRuleUpdate = useCallback(async (originalId: string, updatedRule: any) => {
     const updatedRules = rules.map(rule =>
       rule.id === originalId ? updatedRule : rule
     )
-    setRules(updatedRules)
-    onSave(updatedRules)
+    await saveContent(updatedRules);
     
     if (originalId !== updatedRule.id) {
       setExpandedRule(updatedRule.id)
     }
-  }
+  }, [rules, saveContent]);
 
-  const handleRuleExpand = (ruleId: string) => {
+  const handleRuleExpand = useCallback((ruleId: string) => {
     setExpandedRule(expandedRule === ruleId ? null : ruleId)
-  }
+  }, [expandedRule]);
 
-  const handleAddRule = () => {
+  const handleAddRule = useCallback(async () => {
     const ruleName = prompt('请输入新正则规则的名称：')
     if (!ruleName) return
 
@@ -816,25 +842,23 @@ export function EmbeddedRegexRules({ regexRules, onSave, title = "内嵌正则�
     }
 
     const updatedRules = [newRule, ...rules]
-    setRules(updatedRules)
-    onSave(updatedRules)
-  }
+    await saveContent(updatedRules);
+  }, [rules, saveContent]);
 
-  const handleDeleteRule = (id: string) => {
+  const handleDeleteRule = useCallback(async (id: string) => {
     const updatedRules = rules.filter(rule => rule.id !== id)
-    setRules(updatedRules)
-    onSave(updatedRules)
-  }
+    await saveContent(updatedRules);
+  }, [rules, saveContent]);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedForDeletion, setSelectedForDeletion] = useState<Set<string>>(new Set())
 
-  const handleOpenDeleteModal = () => {
+  const handleOpenDeleteModal = useCallback(() => {
     setSelectedForDeletion(new Set())
     setShowDeleteModal(true)
-  }
+  }, []);
 
-  const toggleDeleteSelection = (id: string) => {
+  const toggleDeleteSelection = useCallback((id: string) => {
     const newSelection = new Set(selectedForDeletion)
     if (newSelection.has(id)) {
       newSelection.delete(id)
@@ -842,9 +866,9 @@ export function EmbeddedRegexRules({ regexRules, onSave, title = "内嵌正则�
       newSelection.add(id)
     }
     setSelectedForDeletion(newSelection)
-  }
+  }, [selectedForDeletion]);
 
-  const handleDeleteSelectedRules = () => {
+  const handleDeleteSelectedRules = useCallback(async () => {
     if (selectedForDeletion.size === 0) return
 
     const confirmDelete = confirm(`确定要删除选中的 ${selectedForDeletion.size} 个规则吗？此操作无法撤销。`)
@@ -853,11 +877,10 @@ export function EmbeddedRegexRules({ regexRules, onSave, title = "内嵌正则�
     const updatedRules = rules.filter(rule =>
       !selectedForDeletion.has(rule.id)
     )
-    setRules(updatedRules)
-    onSave(updatedRules)
+    await saveContent(updatedRules);
     setShowDeleteModal(false)
     setSelectedForDeletion(new Set())
-  }
+  }, [selectedForDeletion, rules, saveContent]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -866,7 +889,7 @@ export function EmbeddedRegexRules({ regexRules, onSave, title = "内嵌正则�
     })
   )
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     const { active, over } = event
     if (!over) return
 
@@ -875,10 +898,9 @@ export function EmbeddedRegexRules({ regexRules, onSave, title = "内嵌正则�
       const newIndex = rules.findIndex(rule => rule.id === over.id)
       const newRules = arrayMove(rules, oldIndex, newIndex)
       
-      setRules(newRules)
-      onSave(newRules)
+      await saveContent(newRules);
     }
-  }
+  }, [rules, saveContent]);
 
   if (!regexRules || regexRules.length === 0) {
     return null

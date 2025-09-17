@@ -344,26 +344,54 @@ export default function CharacterPanel({
                         {/* 使用内嵌世界书组件 */}
                         <EmbeddedWorldBook
                           worldBookData={editedCharacter.world_book}
-                          onSave={(updatedWorldBook) => {
+                          onSave={async (updatedWorldBook) => {
+                            
                             const updatedCharacter = { ...editedCharacter, world_book: updatedWorldBook }
-                            setEditedCharacters(prev => ({
-                              ...prev,
-                              [file.path]: updatedCharacter
-                            }))
-                            handleBlur(file.path, 'world_book')
+                            
+                            // 直接保存，不依赖状态更新时序
+                            try {
+                              await Api.saveFileContent(file.path, JSON.stringify(updatedCharacter, null, 2));
+                              
+                              // 更新本地状态
+                              setEditedCharacters(prev => ({
+                                ...prev,
+                                [file.path]: updatedCharacter
+                              }));
+                              setCharacterContents(prev => ({
+                                ...prev,
+                                [file.path]: updatedCharacter
+                              }));
+                            } catch (error) {
+                              console.error('保存角色卡失败:', error);
+                              alert('保存角色卡失败，请重试');
+                            }
                           }}
                         />
 
                         {/* 使用内嵌正则规则组件 */}
                         <EmbeddedRegexRules
                           regexRules={editedCharacter.regex_rules}
-                          onSave={(updatedRules) => {
+                          onSave={async (updatedRules) => {
+                            
                             const updatedCharacter = { ...editedCharacter, regex_rules: updatedRules }
-                            setEditedCharacters(prev => ({
-                              ...prev,
-                              [file.path]: updatedCharacter
-                            }))
-                            handleBlur(file.path, 'regex_rules')
+                            
+                            // 直接保存，不依赖状态更新时序
+                            try {
+                              await Api.saveFileContent(file.path, JSON.stringify(updatedCharacter, null, 2));
+                              
+                              // 更新本地状态
+                              setEditedCharacters(prev => ({
+                                ...prev,
+                                [file.path]: updatedCharacter
+                              }));
+                              setCharacterContents(prev => ({
+                                ...prev,
+                                [file.path]: updatedCharacter
+                              }));
+                            } catch (error) {
+                              console.error('保存角色卡失败:', error);
+                              alert('保存角色卡失败，请重试');
+                            }
                           }}
                         />
                       </motion.div>
