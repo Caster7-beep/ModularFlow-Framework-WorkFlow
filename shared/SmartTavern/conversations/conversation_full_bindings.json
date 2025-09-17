@@ -10,5 +10,9 @@
   "2.json": {
     "user_path": "personas/default_user.json",
     "character_path": "characters/心与露.json"
+  },
+  "222.json": {
+    "user_path": "personas/default_user.json",
+    "character_path": "characters/心与露.json"
   }
 }

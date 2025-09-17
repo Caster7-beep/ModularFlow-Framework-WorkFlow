@@ -17,7 +17,8 @@
             "find_regex": "示例",
             "replace_regex": "【预设替换】",
             "targets": [
-                "user"
+                "user",
+                "assistant"
             ],
             "placement": "after_macro",
             "views": [
