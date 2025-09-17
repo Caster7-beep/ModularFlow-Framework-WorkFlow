@@ -1,0 +1,719 @@
+/* WorldBookPanel 组件样式 */
+.worldbook-panel-container {
+  overflow: hidden;
+  background: var(--panel-item-bg);
+  margin: 8px 0;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+}
+
+.worldbook-panel-content {
+  padding: 12px;
+}
+
+.worldbook-panel-header {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.worldbook-panel-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.worldbook-panel-button {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 10px;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+
+.worldbook-panel-button:disabled {
+  opacity: 0.5;
+}
+
+.worldbook-panel-select {
+  width: 100%;
+  padding: 6px 8px;
+  background: var(--panel-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 11px;
+  margin-bottom: 8px;
+}
+
+.worldbook-status-indicator {
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.worldbook-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.worldbook-status-dot.active {
+  background: var(--success);
+}
+
+.worldbook-status-dot.inactive {
+  background: var(--muted);
+}
+
+.worldbook-content-section {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.worldbook-items-header {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.worldbook-items-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.worldbook-empty-state {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* 可拖拽世界书条目样式 */
+.worldbook-item {
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  position: relative;
+}
+
+.worldbook-item.enabled {
+  background: var(--panel-item-enabled-bg);
+  border: 1px solid var(--success);
+}
+
+.worldbook-item.disabled {
+  background: var(--panel-item-disabled-bg);
+  border: 1px solid var(--border);
+}
+
+.worldbook-item:hover {
+  background: var(--panel-item-hover-bg);
+}
+
+.worldbook-item-drag-handle {
+  cursor: grab;
+  padding: 2px 4px;
+  margin-right: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  user-select: none;
+}
+
+.worldbook-item-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.worldbook-item-expand-icon {
+  font-size: 10px;
+  color: var(--muted);
+  transition: transform 0.2s;
+}
+
+.worldbook-item-expand-icon.expanded {
+  transform: rotate(90deg);
+}
+
+.worldbook-item-title {
+  font-weight: 500;
+}
+
+.worldbook-item-title.enabled {
+  color: var(--text);
+}
+
+.worldbook-item-title.disabled {
+  color: var(--muted);
+}
+
+.worldbook-item-toggle {
+  position: relative;
+  display: inline-block;
+  width: 32px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.worldbook-item-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.worldbook-toggle-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 9px;
+  transition: background-color 0.2s;
+}
+
+.worldbook-toggle-slider.enabled {
+  background-color: var(--success);
+}
+
+.worldbook-toggle-slider.disabled {
+  background-color: var(--disabled);
+  border: 1px solid var(--border);
+}
+
+.worldbook-toggle-dot {
+  position: absolute;
+  top: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--preset-toggle-dot-bg);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  transition: left 0.2s;
+}
+
+.worldbook-toggle-dot.enabled {
+  left: 16px;
+}
+
+.worldbook-toggle-dot.disabled {
+  left: 2px;
+}
+
+/* 展开的世界书条目编辑区域 */
+.worldbook-item-expanded {
+  overflow: hidden;
+  margin-top: 4px;
+  margin-left: 28px;
+  padding: 12px;
+  background: var(--panel-expanded-bg);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.worldbook-item-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 8px;
+  font-size: 10px;
+}
+
+.worldbook-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.worldbook-field-label {
+  color: var(--muted);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.worldbook-field-input {
+  width: 100%;
+  padding: 4px 6px;
+  background: var(--panel-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 10px;
+}
+
+.worldbook-field-select {
+  width: 100%;
+  padding: 4px 6px;
+  background: var(--panel-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 10px;
+}
+
+.worldbook-field-readonly {
+  width: 100%;
+  padding: 4px 6px;
+  background: var(--panel-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 10px;
+}
+
+.worldbook-keys-field {
+  flex: 1;
+}
+
+.worldbook-keys-label {
+  font-size: 10px;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.worldbook-keys-input {
+  width: 100%;
+  padding: 4px 6px;
+  background: var(--panel-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 10px;
+}
+
+.worldbook-content-field {
+  flex: 1;
+}
+
+.worldbook-content-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.worldbook-content-textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 4px 6px;
+  background: var(--panel-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 10px;
+  font-family: monospace;
+  white-space: pre-wrap;
+  resize: vertical;
+}
+
+/* 删除模态框样式 */
+.worldbook-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--modal-backdrop-bg);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.worldbook-modal {
+  background: var(--panel-solid);
+  border-radius: 12px;
+  padding: 20px;
+  width: auto;
+  min-width: 300px;
+  max-width: calc(100vw - 40px);
+  max-height: 60vh;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.worldbook-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.worldbook-modal-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.worldbook-modal-close {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 2px;
+}
+
+.worldbook-modal-description {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.worldbook-modal-content {
+  max-height: 250px;
+  overflow-y: auto;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.worldbook-modal-item {
+  padding: 6px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.2s;
+}
+
+.worldbook-modal-item:not(:last-child) {
+  border-bottom: 1px solid var(--border);
+}
+
+.worldbook-modal-item.selected {
+  background: var(--modal-delete-selected-bg);
+}
+
+.worldbook-modal-item-checkbox {
+  margin-right: 2px;
+  cursor: pointer;
+}
+
+.worldbook-modal-item-info {
+  flex: 1;
+}
+
+.worldbook-modal-item-name {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.worldbook-modal-item-details {
+  font-size: 9px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.worldbook-modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.worldbook-modal-count {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.worldbook-modal-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.worldbook-modal-button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.worldbook-modal-button.cancel {
+  background: var(--muted);
+  color: var(--white);
+}
+
+.worldbook-modal-button.danger {
+  background: var(--danger);
+  color: var(--white);
+}
+
+.worldbook-modal-button.danger:disabled {
+  background: var(--muted);
+  color: var(--white);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.worldbook-modal-button.danger:not(:disabled):hover {
+  background: var(--danger-light, #e74c3c);
+  transform: translateY(-1px);
+}
+
+.worldbook-modal-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* SortableWorldBookItem 内联样式提取 */
+.sortable-item-container {
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  position: relative;
+}
+
+.sortable-item-container.enabled {
+  background: var(--panel-item-enabled-bg);
+  border: 1px solid var(--success);
+}
+
+.sortable-item-container.disabled {
+  background: var(--panel-item-disabled-bg);
+  border: 1px solid var(--border);
+}
+
+.sortable-item-drag-handle {
+  cursor: grab;
+  padding: 2px 4px;
+  margin-right: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  user-select: none;
+}
+
+.sortable-item-main-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sortable-item-expand-icon {
+  font-size: 10px;
+  color: var(--muted);
+  transition: transform 0.2s;
+}
+
+.sortable-item-name {
+  font-weight: 500;
+}
+
+.sortable-item-name.enabled {
+  color: var(--text);
+}
+
+.sortable-item-name.disabled {
+  color: var(--muted);
+}
+
+.sortable-item-toggle-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 32px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.sortable-item-toggle-input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.sortable-item-toggle-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 9px;
+  transition: background-color 0.2s;
+}
+
+.sortable-item-toggle-slider.enabled {
+  background-color: var(--success);
+}
+
+.sortable-item-toggle-slider.disabled {
+  background-color: var(--disabled);
+  border: 1px solid var(--border);
+}
+
+.sortable-item-toggle-dot {
+  position: absolute;
+  top: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--preset-toggle-dot-bg);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  transition: left 0.2s;
+}
+
+.sortable-item-toggle-dot.enabled {
+  left: 16px;
+}
+
+.sortable-item-toggle-dot.disabled {
+  left: 2px;
+}
+
+/* 展开编辑区域样式 */
+.sortable-item-edit-area {
+  overflow: hidden;
+  margin-top: 4px;
+  margin-left: 0px;
+  padding: 12px;
+  background: var(--panel-expanded-bg);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sortable-item-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 8px;
+  font-size: 10px;
+}
+
+.sortable-item-form-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.sortable-item-form-label {
+  color: var(--muted);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.sortable-item-form-input {
+  width: 100%;
+  padding: 4px 6px;
+  background: var(--panel-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 10px;
+}
+
+.sortable-item-keys-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.sortable-item-keys-label {
+  font-size: 10px;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.sortable-item-keys-input {
+  width: 100%;
+  padding: 4px 6px;
+  background: var(--panel-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 10px;
+}
+
+.sortable-item-content-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.sortable-item-content-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.sortable-item-content-textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 4px 6px;
+  background: var(--panel-input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 10px;
+  font-family: monospace;
+  white-space: pre-wrap;
+  resize: vertical;
+}
+
+/* 世界书条目控制按钮 */
+.worldbook-items-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.worldbook-items-control-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 10px;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+
+/* 按钮状态样式 */
+.worldbook-panel-button-active {
+  opacity: 1;
+}
+
+.worldbook-panel-button-inactive {
+  opacity: 0.5;
+}
+
+/* OverlayScrollbar 容器样式 */
+.worldbook-scrollbar-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}

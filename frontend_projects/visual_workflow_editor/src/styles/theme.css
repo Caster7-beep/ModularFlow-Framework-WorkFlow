@@ -1,0 +1,350 @@
+/* 主题样式文件 */
+/* 基于CSS变量实现主题切换 */
+
+.theme-root {
+  color: var(--color-text);
+  background-color: var(--color-background);
+  transition: color 0.3s ease, background-color 0.3s ease;
+}
+
+/* 应用程序主容器 */
+.app {
+  color: var(--color-text);
+  background-color: var(--color-background);
+  min-height: 100vh;
+  transition: all var(--duration-normal) ease;
+}
+
+/* Ant Design Layout 主题化 */
+.ant-layout {
+  background-color: var(--color-background) !important;
+  color: var(--color-text) !important;
+}
+
+.ant-layout-header {
+  background-color: var(--color-surface) !important;
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: 0 2px 8px var(--color-shadow);
+}
+
+.ant-layout-sider {
+  background-color: var(--color-surface) !important;
+  border-right: 1px solid var(--color-border);
+}
+
+.ant-layout-content {
+  background-color: var(--color-background) !important;
+}
+
+/* 工具栏标题主题化 */
+.toolbar-title {
+  color: var(--color-primary) !important;
+  transition: color var(--duration-normal) ease;
+}
+
+/* 节点面板主题化 */
+.node-panel {
+  background-color: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  transition: all var(--duration-normal) ease;
+}
+
+.node-panel .node-item {
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  transition: all var(--duration-fast) ease;
+}
+
+.node-panel .node-item:hover {
+  background-color: var(--color-hover);
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--color-shadow);
+}
+
+/* 属性面板主题化 */
+.property-panel {
+  background-color: var(--color-surface);
+  border-left: 1px solid var(--color-border);
+  transition: all var(--duration-normal) ease;
+}
+
+/* 工作流画布主题化 */
+.workflow-canvas {
+  background-color: var(--color-background);
+  transition: background-color var(--duration-normal) ease;
+}
+
+/* 工作流节点基础样式 */
+.workflow-node {
+  background-color: var(--color-surface);
+  border: 2px solid var(--color-border);
+  color: var(--color-text);
+  border-radius: var(--border-radius-md);
+  box-shadow: 0 2px 8px var(--color-shadow);
+  transition: all var(--duration-fast) ease;
+}
+
+.workflow-node:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 4px 16px var(--color-shadow);
+  transform: translateY(-2px);
+}
+
+.workflow-node.selected {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(24, 144, 255, 0.2);
+}
+
+/* 不同节点类型的颜色区分 */
+.workflow-node.node-input {
+  border-left: 4px solid var(--color-success);
+}
+
+.workflow-node.node-llm {
+  border-left: 4px solid var(--color-primary);
+}
+
+.workflow-node.node-code {
+  border-left: 4px solid var(--color-warning);
+}
+
+.workflow-node.node-condition {
+  border-left: 4px solid var(--color-info);
+}
+
+.workflow-node.node-output {
+  border-left: 4px solid var(--color-error);
+}
+
+/* 连接线主题化 */
+.workflow-edge {
+  stroke: var(--color-border);
+  transition: stroke var(--duration-fast) ease;
+}
+
+.workflow-edge:hover,
+.workflow-edge.selected {
+  stroke: var(--color-primary);
+  stroke-width: 3px;
+}
+
+/* 执行状态指示器 */
+.execution-indicator {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--color-surface);
+  animation: pulse 2s infinite;
+}
+
+.execution-indicator.running {
+  background-color: var(--color-warning);
+}
+
+.execution-indicator.completed {
+  background-color: var(--color-success);
+}
+
+.execution-indicator.error {
+  background-color: var(--color-error);
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.7; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* 调试状态样式 */
+.debug-mode .workflow-node {
+  border-style: dashed;
+}
+
+.debug-mode .workflow-node.breakpoint {
+  border-color: var(--color-error);
+  background-color: rgba(255, 77, 79, 0.1);
+}
+
+.debug-mode .workflow-node.current {
+  border-color: var(--color-warning);
+  background-color: rgba(250, 219, 20, 0.1);
+  animation: glow 1s infinite alternate;
+}
+
+@keyframes glow {
+  from { box-shadow: 0 0 5px var(--color-warning); }
+  to { box-shadow: 0 0 20px var(--color-warning); }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .app .ant-layout-sider {
+    position: fixed !important;
+    left: -250px;
+    z-index: 999;
+    transition: left var(--duration-normal) ease;
+  }
+  
+  .app .ant-layout-sider.mobile-open {
+    left: 0;
+  }
+  
+  .app .ant-layout-content {
+    margin-left: 0 !important;
+  }
+}
+
+/* 暗色模式特殊处理 */
+[data-theme="dark"] {
+  /* 暗色模式下的特殊样式调整 */
+}
+
+[data-theme="dark"] .ant-modal-content {
+  background-color: var(--color-surface) !important;
+}
+
+[data-theme="dark"] .ant-modal-header {
+  background-color: var(--color-surface) !important;
+  border-bottom-color: var(--color-border) !important;
+}
+
+[data-theme="dark"] .ant-popover-content {
+  background-color: var(--color-surface) !important;
+}
+
+[data-theme="dark"] .ant-popover-arrow::before {
+  background-color: var(--color-surface) !important;
+}
+
+/* 滚动条主题化 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: var(--color-background);
+  border-radius: var(--border-radius-sm);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: var(--border-radius-sm);
+  transition: background-color var(--duration-fast) ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-text-secondary);
+}
+
+/* 加载动画 */
+.loading-spinner {
+  border: 2px solid var(--color-border);
+  border-top: 2px solid var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 工具提示主题化 */
+.ant-tooltip-content {
+  background-color: var(--color-overlay) !important;
+  color: var(--color-text) !important;
+}
+
+.ant-tooltip-arrow::before {
+  background-color: var(--color-overlay) !important;
+}
+
+/* 下拉菜单主题化 */
+.ant-dropdown {
+  background-color: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  box-shadow: 0 4px 12px var(--color-shadow) !important;
+}
+
+/* 表单元素主题化 */
+.ant-form-item-label > label {
+  color: var(--color-text) !important;
+}
+
+.ant-input,
+.ant-input-number,
+.ant-select-selector,
+.ant-cascader-selector {
+  background-color: var(--color-surface) !important;
+  border-color: var(--color-border) !important;
+  color: var(--color-text) !important;
+}
+
+.ant-input:focus,
+.ant-input-number:focus,
+.ant-select-focused .ant-select-selector,
+.ant-cascader-focused .ant-cascader-selector {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2) !important;
+}
+
+/* 选项卡主题化 */
+.ant-tabs-tab {
+  color: var(--color-text-secondary) !important;
+}
+
+.ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: var(--color-primary) !important;
+}
+
+.ant-tabs-ink-bar {
+  background-color: var(--color-primary) !important;
+}
+
+/* 徽章主题化 */
+.ant-badge-count {
+  background-color: var(--color-error) !important;
+  color: #fff !important;
+}
+
+/* 进度条主题化 */
+.ant-progress-bg {
+  background-color: var(--color-primary) !important;
+}
+
+/* 动画优化 */
+.theme-transition {
+  transition: all var(--duration-normal) ease;
+}
+
+.theme-transition * {
+  transition: inherit;
+}
+
+/* 无障碍性支持 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 高对比度模式 */
+@media (prefers-contrast: high) {
+  .workflow-node {
+    border-width: 3px;
+  }
+  
+  .workflow-edge {
+    stroke-width: 3px;
+  }
+}

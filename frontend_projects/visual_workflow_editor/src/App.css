@@ -1,0 +1,145 @@
+.app {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-header {
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.app-sider {
+  background: #fafafa;
+  border-right: 1px solid #f0f0f0;
+  height: calc(100vh - 64px);
+  overflow-y: auto;
+}
+
+.app-sider:last-child {
+  border-right: none;
+  border-left: 1px solid #f0f0f0;
+}
+
+.app-content {
+  background: #fff;
+  height: calc(100vh - 64px);
+  overflow: hidden;
+  position: relative;
+}
+
+/* React Flow 样式覆盖 */
+.react-flow__node {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 2px solid #e8e8e8;
+  background: #fff;
+  transition: all 0.2s ease;
+}
+
+.react-flow__node:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  border-color: #1890ff;
+}
+
+.react-flow__node.selected {
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.react-flow__handle {
+  width: 8px;
+  height: 8px;
+  border: 2px solid #fff;
+  background: #1890ff;
+  border-radius: 50%;
+}
+
+.react-flow__handle-top {
+  top: -4px;
+}
+
+.react-flow__handle-bottom {
+  bottom: -4px;
+}
+
+.react-flow__handle-left {
+  left: -4px;
+}
+
+.react-flow__handle-right {
+  right: -4px;
+}
+
+.react-flow__edge-path {
+  stroke: #b1b1b7;
+  stroke-width: 2;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: #1890ff;
+  stroke-width: 3;
+}
+
+.react-flow__controls {
+  bottom: 20px;
+  left: 20px;
+}
+
+.react-flow__minimap {
+  bottom: 20px;
+  right: 20px;
+}
+
+/* 节点类型特定样式 */
+.node-llm {
+  border-color: #52c41a;
+}
+
+.node-llm .react-flow__handle {
+  background: #52c41a;
+}
+
+.node-input {
+  border-color: #1890ff;
+}
+
+.node-input .react-flow__handle {
+  background: #1890ff;
+}
+
+.node-output {
+  border-color: #fa541c;
+}
+
+.node-output .react-flow__handle {
+  background: #fa541c;
+}
+
+.node-code {
+  border-color: #722ed1;
+}
+
+.node-code .react-flow__handle {
+  background: #722ed1;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .app-sider {
+    width: 200px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-sider {
+    width: 150px !important;
+  }
+  
+  .app-header {
+    padding: 0 8px;
+  }
+}

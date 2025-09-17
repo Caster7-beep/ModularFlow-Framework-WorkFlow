@@ -1,0 +1,123 @@
+/* Header 组件样式 */
+
+/* Header */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  backdrop-filter: blur(10px) saturate(120%);
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.brand {
+  width: 12px; 
+  height: 12px; 
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, var(--brand-gradient-start), var(--brand-gradient-end), var(--brand-gradient-start));
+  box-shadow: 0 0 0 0 var(--shadow-glow);
+  animation: brandPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes brandPulse {
+  0% { 
+    box-shadow: 0 0 0 0 var(--shadow-glow); 
+    transform: scale(1); 
+  }
+  70% { 
+    box-shadow: 0 0 0 12px var(--transparent); 
+    transform: scale(1.05); 
+  }
+  100% { 
+    box-shadow: 0 0 0 0 var(--transparent); 
+    transform: scale(1); 
+  }
+}
+
+.header-title { 
+  font-size: 16px; 
+  font-weight: 700; 
+  letter-spacing: .2px; 
+}
+
+.header-subtitle { 
+  color: var(--muted); 
+  font-size: 12px; 
+}
+
+/* Enhanced header effects */
+.header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--transparent), var(--white-t-10), var(--transparent));
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  50%, 100% { left: 100%; }
+}
+
+/* 响应式设计 */
+@media (max-width: 1024px) {
+  .header {
+    padding: 12px 16px;
+  }
+  
+  .header-title {
+    font-size: 14px;
+  }
+  
+  .header-subtitle {
+    font-size: 11px;
+  }
+}
+
+/* 移动端优化 */
+@media (max-width: 480px) {
+  .header {
+    padding: 8px 12px;
+  }
+}
+
+/* 横屏模式优化 */
+@media (orientation: landscape) and (max-height: 500px) {
+  .header {
+    padding: 6px 16px;
+  }
+}
+
+/* 高对比度模式支持 */
+@media (prefers-contrast: high) {
+  .header {
+    border-bottom: 2px solid var(--border) !important;
+  }
+}
+
+/* 减少动画偏好支持 */
+@media (prefers-reduced-motion: reduce) {
+  .brand {
+    animation: none !important;
+  }
+  
+  .header::before {
+    animation: none !important;
+  }
+}
+
+/* 打印样式 */
+@media print {
+  .header {
+    display: none !important;
+  }
+}

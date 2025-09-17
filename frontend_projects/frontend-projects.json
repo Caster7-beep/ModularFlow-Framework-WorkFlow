@@ -1,0 +1,31 @@
+{
+  "projects": [
+    {
+      "name": "SmartTavern",
+      "display_name": "SmartTavern 对话系统",
+      "type": "html",
+      "path": "frontend_projects/SmartTavern",
+      "port": 6601,
+      "enabled": true,
+      "description": "基于SmartTavern工作流的AI对话系统"
+    },
+    {
+      "name": "visual_workflow_editor",
+      "display_name": "可视化工作流编辑器",
+      "type": "react",
+      "path": "frontend_projects/visual_workflow_editor",
+      "port": 3002,
+      "enabled": true,
+      "description": "基于React Flow的可视化工作流编辑器"
+    }
+  ],
+  "global_config": {
+    "cors_origins": [
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://localhost:3002"
+    ],
+    "api_base_url": "http://localhost:6500",
+    "websocket_url": "ws://localhost:6500/ws"
+  }
+}

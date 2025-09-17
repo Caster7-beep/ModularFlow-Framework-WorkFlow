@@ -1,0 +1,539 @@
+/* FloorChatWindow 组件样式 - 重新设计的布局 */
+
+/* 楼层对话主容器 */
+.floor-chat-container {
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--glass-bg);
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: var(--shadow-glass);
+  overflow: hidden;
+}
+
+/* 右侧消息列表面板 */
+.chat-messages-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* 防止flex item过度扩展 */
+  overflow: hidden;
+  width: var(--message-panel-width, 100%); /* 使用CSS变量控制宽度 */
+  margin: 0 auto; /* 居中显示 */
+}
+
+/* 楼层消息容器 */
+.floor-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  /* 自定义滚动条 */
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) transparent;
+}
+
+.floor-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.floor-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.floor-messages::-webkit-scrollbar-thumb {
+  background-color: var(--accent);
+  border-radius: 3px;
+}
+
+.floor-messages::-webkit-scrollbar-thumb:hover {
+  background-color: var(--accent-hover);
+}
+
+/* 底部固定输入面板 */
+.chat-input-panel {
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.02);
+  border-top: 1px solid var(--border);
+  backdrop-filter: blur(10px);
+  z-index: 10;
+}
+
+/* 楼层消息项 */
+.floor-message {
+  background: var(--glass-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.floor-message:hover {
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.floor-message.user {
+  border-left: 4px solid #4CAF50;
+}
+
+.floor-message.assistant {
+  border-left: 4px solid #2196F3;
+}
+
+.floor-message.typing-floor {
+  border-left: 4px solid var(--accent);
+}
+
+/* 楼层头部 */
+.floor-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--glass-bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.floor-avatar {
+  flex-shrink: 0;
+}
+
+.avatar-square {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+}
+
+.avatar-square.user {
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  color: white;
+}
+
+.avatar-square.user::before {
+  content: '用';
+}
+
+.avatar-square.assistant {
+  background: linear-gradient(135deg, #2196F3, #1976d2);
+  color: white;
+}
+
+.avatar-square.assistant::before {
+  content: 'AI';
+}
+
+.floor-number {
+  background: var(--accent);
+  color: var(--text-on-accent);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  min-width: 32px;
+  text-align: center;
+}
+
+.floor-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.floor-role {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.floor-time {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* 楼层内容 */
+.floor-content {
+  padding: 16px;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.floor-paragraph {
+  margin: 0 0 12px 0;
+}
+
+.floor-paragraph:last-child {
+  margin-bottom: 0;
+}
+
+.floor-code-block {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin: 12px 0;
+  overflow: auto;
+}
+
+.floor-quote {
+  border-left: 3px solid var(--accent);
+  padding-left: 16px;
+  margin: 12px 0;
+  font-style: italic;
+  color: var(--muted);
+}
+
+/* 楼层操作按钮 */
+.floor-actions {
+  display: flex;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--hover-bg);
+  border-top: 1px solid var(--border);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.floor-message:hover .floor-actions {
+  opacity: 1;
+}
+
+.floor-action-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--muted);
+  transition: all 0.2s ease;
+}
+
+.floor-action-btn:hover {
+  background: var(--hover-bg);
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.floor-action-btn.delete-btn {
+  color: #dc2626;
+  border-color: #fca5a5;
+  transition: all 0.2s ease;
+}
+
+.floor-action-btn.delete-btn:hover {
+  background: #fee2e2;
+  border-color: #dc2626;
+  color: #991b1b;
+  transform: translateY(-1px);
+}
+
+/* 楼层输入区域 */
+.floor-input-area {
+  padding: 16px;
+}
+
+.floor-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.floor-send-area {
+  display: flex;
+  flex-direction: column;
+}
+
+.floor-input-container {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  width: var(--input-panel-width, 100%); /* 使用CSS变量控制宽度 */
+  margin: 0 auto; /* 居中显示 */
+}
+
+.floor-input {
+  flex: 1;
+  padding: 12px 16px;
+  background: var(--glass-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.4;
+  resize: none;
+  min-height: 48px;
+  max-height: 160px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.floor-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.floor-input-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* 打字指示器 */
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.typing-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.typing-dot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--accent);
+  border-radius: 50%;
+  animation: typingPulse 1.4s infinite ease-in-out both;
+}
+
+.typing-dot:nth-child(1) { animation-delay: -0.32s; }
+.typing-dot:nth-child(2) { animation-delay: -0.16s; }
+.typing-dot:nth-child(3) { animation-delay: 0s; }
+
+@keyframes typingPulse {
+  0%, 80%, 100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.typing-text {
+  font-size: 13px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* 楼层错误框样式 */
+.floor-error-box {
+  margin: 12px 16px 0;
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  padding: 12px;
+  animation: errorSlideIn 0.3s ease-out;
+}
+
+.floor-error-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.floor-error-icon {
+  font-size: 16px;
+  animation: errorPulse 2s infinite;
+}
+
+.floor-error-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #dc2626;
+  margin: 0;
+}
+
+.floor-error-content {
+  font-size: 12px;
+  color: #991b1b;
+  line-height: 1.4;
+  margin: 0;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 4px;
+  border-left: 3px solid #dc2626;
+  font-family: 'Fira Code', 'JetBrains Mono', Consolas, 'Courier New', monospace;
+}
+
+/* 空状态样式 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 20px;
+  height: 100%;
+  min-height: 300px;
+}
+
+.empty-state .empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+.empty-state h3 {
+  margin: 8px 0;
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.empty-state p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  max-width: 300px;
+}
+
+/* 动画定义 */
+@keyframes errorSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes errorPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .floor-chat-container {
+    border-radius: 0;
+    height: 100vh;
+  }
+  
+  .floor-messages {
+    padding: 12px;
+    gap: 12px;
+  }
+  
+  .floor-header {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  
+  .floor-number {
+    min-width: 28px;
+    padding: 3px 6px;
+    font-size: 10px;
+  }
+  
+  .avatar-square {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+  
+  .floor-role {
+    font-size: 12px;
+  }
+  
+  .floor-time {
+    font-size: 10px;
+  }
+  
+  .floor-content {
+    padding: 12px;
+  }
+  
+  .floor-input-area {
+    padding: 12px;
+  }
+  
+  .floor-input-container {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .floor-messages {
+    padding: 8px;
+    gap: 10px;
+  }
+  
+  .floor-header {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+  
+  .floor-number {
+    min-width: 24px;
+    padding: 2px 5px;
+    font-size: 9px;
+  }
+  
+  .avatar-square {
+    width: 24px;
+    height: 24px;
+    font-size: 11px;
+  }
+  
+  .floor-content {
+    padding: 10px;
+  }
+  
+  .floor-input-area {
+    padding: 10px;
+  }
+  
+  .floor-input {
+    font-size: 13px;
+    padding: 10px 12px;
+  }
+}
+
+/* 确保在小屏幕上输入栏仍然固定在底部 */
+@media (max-height: 600px) {
+  .floor-input-area {
+    padding: 8px 12px;
+  }
+  
+  .floor-input {
+    min-height: 40px;
+    max-height: 120px;
+  }
+}
+
+/* 深色主题优化 */
+@media (prefers-color-scheme: dark) {
+  .floor-error-box {
+    background: linear-gradient(135deg, rgba(254, 226, 226, 0.1), rgba(254, 202, 202, 0.1));
+    border: 1px solid rgba(252, 165, 165, 0.3);
+  }
+  
+  .floor-error-content {
+    background: rgba(0, 0, 0, 0.2);
+    color: #fca5a5;
+  }
+}

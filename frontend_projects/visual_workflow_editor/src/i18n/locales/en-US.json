@@ -1,0 +1,297 @@
+{
+  "app": {
+    "title": "Visual Workflow Editor",
+    "subtitle": "Drag & Drop Workflow Design Platform"
+  },
+  "common": {
+    "save": "Save",
+    "load": "Load",
+    "execute": "Execute",
+    "reset": "Reset",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "create": "Create",
+    "update": "Update",
+    "close": "Close",
+    "open": "Open",
+    "settings": "Settings",
+    "help": "Help",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "finish": "Finish",
+    "skip": "Skip",
+    "retry": "Retry",
+    "refresh": "Refresh",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "export": "Export",
+    "import": "Import",
+    "copy": "Copy",
+    "paste": "Paste",
+    "cut": "Cut",
+    "undo": "Undo",
+    "redo": "Redo",
+    "clear": "Clear",
+    "select": "Select",
+    "selectAll": "Select All",
+    "deselect": "Deselect",
+    "enable": "Enable",
+    "disable": "Disable",
+    "upload": "Upload",
+    "download": "Download",
+    "preview": "Preview",
+    "fullscreen": "Fullscreen",
+    "minimize": "Minimize",
+    "maximize": "Maximize"
+  },
+  "toolbar": {
+    "new": "New Workflow",
+    "save": "Save Workflow",
+    "load": "Load Workflow",
+    "execute": "Execute Workflow",
+    "reset": "Reset Workflow",
+    "debug": "Debug Mode",
+    "monitor": "Execution Monitor",
+    "import": "Import Workflow",
+    "export": "Export Workflow",
+    "theme": "Theme Settings",
+    "language": "Language Settings",
+    "fullscreen": "Fullscreen Mode",
+    "settings": "App Settings",
+    "help": "User Guide"
+  },
+  "nodePanel": {
+    "title": "Node Panel",
+    "subtitle": "Drag nodes to canvas",
+    "categories": {
+      "input": "Input Nodes",
+      "output": "Output Nodes", 
+      "processing": "Processing Nodes",
+      "control": "Control Nodes",
+      "ai": "AI Nodes"
+    },
+    "nodes": {
+      "input": {
+        "name": "Input Node",
+        "description": "Receive external input data"
+      },
+      "output": {
+        "name": "Output Node",
+        "description": "Output processing results"
+      },
+      "llm": {
+        "name": "LLM Node",
+        "description": "Large Language Model processing"
+      },
+      "code": {
+        "name": "Code Block Node",
+        "description": "Execute custom code"
+      },
+      "condition": {
+        "name": "Condition Node",
+        "description": "Conditional branching"
+      },
+      "switch": {
+        "name": "Switch Router Node",
+        "description": "Multi-path routing"
+      },
+      "merger": {
+        "name": "Merger Node",
+        "description": "Aggregate multiple inputs"
+      }
+    }
+  },
+  "propertyPanel": {
+    "title": "Property Panel",
+    "tabs": {
+      "properties": "Properties",
+      "monitor": "Execution Monitor",
+      "debug": "Debug"
+    },
+    "noSelection": "Select a node to view its properties",
+    "basicSettings": "Basic Settings",
+    "advancedSettings": "Advanced Settings",
+    "nodeConfig": "Node Configuration",
+    "connectionSettings": "Connection Settings"
+  },
+  "workflowCanvas": {
+    "title": "Workflow Canvas",
+    "subtitle": "Design your workflow here",
+    "emptyState": {
+      "title": "Start building your workflow",
+      "description": "Drag nodes from the left panel here",
+      "action": "Add first node"
+    },
+    "contextMenu": {
+      "copy": "Copy Node",
+      "paste": "Paste Node",
+      "delete": "Delete Node",
+      "duplicate": "Duplicate Node",
+      "properties": "Node Properties"
+    }
+  },
+  "executionMonitor": {
+    "title": "Execution Monitor",
+    "status": {
+      "idle": "Idle",
+      "running": "Running",
+      "completed": "Completed",
+      "failed": "Failed",
+      "paused": "Paused"
+    },
+    "controls": {
+      "start": "Start Execution",
+      "pause": "Pause Execution",
+      "resume": "Resume Execution",
+      "stop": "Stop Execution",
+      "step": "Step Execution"
+    },
+    "metrics": {
+      "duration": "Duration",
+      "nodesProcessed": "Nodes Processed",
+      "totalNodes": "Total Nodes",
+      "progress": "Progress"
+    }
+  },
+  "debugPanel": {
+    "title": "Debug Panel",
+    "breakpoints": "Breakpoints",
+    "variables": "Variables",
+    "console": "Console",
+    "stackTrace": "Stack Trace",
+    "controls": {
+      "continue": "Continue",
+      "stepOver": "Step Over",
+      "stepInto": "Step Into",
+      "stepOut": "Step Out"
+    }
+  },
+  "userGuide": {
+    "welcome": {
+      "title": "Welcome to Visual Workflow Editor!",
+      "description": "Let's take a quick tour of the main features"
+    },
+    "nodePanel": {
+      "title": "Node Panel",
+      "description": "This is the node panel where you can select and add different types of nodes"
+    },
+    "workflowCanvas": {
+      "title": "Workflow Canvas",
+      "description": "This is the workflow canvas where you can design and connect nodes"
+    },
+    "propertyPanel": {
+      "title": "Property Panel",
+      "description": "This is the property panel where you can configure the selected node's properties"
+    },
+    "toolbar": {
+      "title": "Toolbar",
+      "description": "This is the toolbar containing common functions like save, execute, etc."
+    },
+    "finish": {
+      "title": "Get started!",
+      "description": "Great! Now you can start creating your first workflow"
+    }
+  },
+  "theme": {
+    "title": "Theme Settings",
+    "mode": {
+      "light": "Light Mode",
+      "dark": "Dark Mode",
+      "auto": "Follow System"
+    },
+    "colorScheme": {
+      "blue": "Blue",
+      "green": "Green",
+      "purple": "Purple",
+      "orange": "Orange"
+    }
+  },
+  "language": {
+    "title": "Language Settings",
+    "current": "Current Language",
+    "available": "Available Languages",
+    "switchSuccess": "Language switched to {{language}}"
+  },
+  "workflow": {
+    "untitled": "Untitled Workflow",
+    "save": {
+      "title": "Save Workflow",
+      "nameLabel": "Workflow Name",
+      "namePlaceholder": "Enter workflow name",
+      "descriptionLabel": "Description (Optional)",
+      "descriptionPlaceholder": "Enter workflow description",
+      "success": "Workflow saved successfully",
+      "error": "Failed to save workflow"
+    },
+    "load": {
+      "title": "Load Workflow",
+      "noWorkflows": "No saved workflows available",
+      "success": "Workflow loaded successfully",
+      "error": "Failed to load workflow"
+    },
+    "execute": {
+      "success": "Workflow execution started",
+      "error": "Failed to execute workflow",
+      "noNodes": "Please add nodes first",
+      "completed": "Workflow execution completed"
+    },
+    "reset": {
+      "confirm": "Are you sure you want to reset the workflow? All unsaved changes will be lost.",
+      "success": "Workflow has been reset"
+    }
+  },
+  "node": {
+    "defaultLabel": "{{type}} Node",
+    "config": {
+      "label": "Node Label",
+      "description": "Node Description"
+    }
+  },
+  "messages": {
+    "success": {
+      "saved": "Saved successfully",
+      "loaded": "Loaded successfully",
+      "deleted": "Deleted successfully",
+      "created": "Created successfully",
+      "updated": "Updated successfully",
+      "executed": "Executed successfully"
+    },
+    "error": {
+      "saveError": "Save failed",
+      "loadError": "Load failed",
+      "deleteError": "Delete failed",
+      "createError": "Create failed",
+      "updateError": "Update failed",
+      "executeError": "Execute failed",
+      "networkError": "Network connection failed",
+      "unknownError": "Unknown error"
+    },
+    "warning": {
+      "unsavedChanges": "You have unsaved changes",
+      "confirmDelete": "Are you sure you want to delete?",
+      "noSelection": "Please select an item first",
+      "invalidInput": "Invalid input"
+    },
+    "info": {
+      "loading": "Loading...",
+      "saving": "Saving...",
+      "executing": "Executing...",
+      "connecting": "Connecting...",
+      "processing": "Processing..."
+    }
+  },
+  "responsive": {
+    "mobile": {
+      "menuButton": "Menu",
+      "settingsButton": "Settings"
+    },
+    "tablet": {
+      "propertyPanelButton": "Property Panel"
+    }
+  }
+}

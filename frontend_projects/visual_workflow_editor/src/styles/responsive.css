@@ -1,0 +1,465 @@
+/* 响应式设计样式 */
+
+/* 基础响应式断点 */
+:root {
+  --breakpoint-xs: 480px;
+  --breakpoint-sm: 768px;
+  --breakpoint-md: 1024px;
+  --breakpoint-lg: 1440px;
+  --breakpoint-xl: 1920px;
+}
+
+/* 通用响应式类 */
+.responsive-hidden-xs {
+  display: block;
+}
+
+.responsive-hidden-sm {
+  display: block;
+}
+
+.responsive-hidden-md {
+  display: block;
+}
+
+.responsive-hidden-lg {
+  display: block;
+}
+
+.responsive-hidden-xl {
+  display: block;
+}
+
+/* 移动端样式 (< 768px) */
+@media (max-width: 767px) {
+  .responsive-hidden-xs {
+    display: none !important;
+  }
+
+  /* 移动端头部 */
+  .mobile-header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  /* 移动端工具栏 */
+  .mobile-header-tools {
+    position: fixed;
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 999;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    border-radius: 24px;
+    padding: 8px 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    max-width: calc(100vw - 32px);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .mobile-header-tools::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* 移动端工具栏按钮 */
+  .mobile-header-tools .ant-btn {
+    min-width: 36px;
+    height: 36px;
+    margin: 0 2px;
+  }
+
+  /* 移动端画布 */
+  .responsive-content {
+    padding: 80px 8px 16px 8px;
+    overflow: auto;
+  }
+
+  /* 移动端节点面板 */
+  .ant-drawer .ant-drawer-body {
+    padding: 12px;
+  }
+
+  /* 移动端节点项 */
+  .node-panel-item {
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    touch-action: manipulation;
+  }
+
+  /* 移动端画布节点 */
+  .workflow-node {
+    min-width: 120px;
+    font-size: 12px;
+  }
+
+  /* 移动端属性面板 */
+  .property-panel {
+    padding: 12px;
+  }
+
+  .property-panel .ant-form-item {
+    margin-bottom: 12px;
+  }
+
+  /* 移动端触摸优化 */
+  .touchable {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* 移动端模态框 */
+  .ant-modal {
+    margin: 16px;
+    max-width: calc(100vw - 32px);
+  }
+
+  .ant-modal-content {
+    border-radius: 12px;
+  }
+}
+
+/* 平板端样式 (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .responsive-hidden-sm {
+    display: none !important;
+  }
+
+  /* 平板端头部 */
+  .tablet-header {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+
+  /* 平板端侧边栏 */
+  .tablet-sider {
+    transition: all 0.2s ease;
+  }
+
+  .tablet-sider.ant-layout-sider-collapsed {
+    width: 60px !important;
+  }
+
+  /* 平板端内容区域 */
+  .tablet-content {
+    padding: 16px;
+    overflow: auto;
+  }
+
+  /* 平板端工具栏 */
+  .tablet-toolbar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .tablet-toolbar .ant-btn {
+    min-width: 40px;
+    height: 40px;
+  }
+
+  /* 平板端节点 */
+  .workflow-node {
+    min-width: 140px;
+    font-size: 13px;
+  }
+
+  /* 平板端属性面板 */
+  .tablet-property-panel {
+    width: 320px;
+  }
+
+  /* 平板端浮动按钮 */
+  .ant-float-btn {
+    width: 48px;
+    height: 48px;
+  }
+
+  /* 平板端横屏优化 */
+  @media (orientation: landscape) {
+    .tablet-content {
+      padding: 12px;
+    }
+
+    .mobile-header-tools {
+      top: 76px;
+    }
+  }
+}
+
+/* 桌面端样式 (1024px+) */
+@media (min-width: 1024px) {
+  .responsive-hidden-md {
+    display: none !important;
+  }
+
+  /* 桌面端布局 */
+  .desktop-header {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+
+  .desktop-sider {
+    transition: all 0.2s ease;
+    min-height: calc(100vh - 64px);
+  }
+
+  .desktop-content {
+    padding: 20px;
+    overflow: auto;
+    background: #fafafa;
+  }
+
+  .desktop-property-panel {
+    min-height: calc(100vh - 64px);
+  }
+
+  /* 桌面端工具栏 */
+  .desktop-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .desktop-toolbar .ant-btn {
+    min-width: 32px;
+    height: 32px;
+  }
+
+  /* 桌面端节点 */
+  .workflow-node {
+    min-width: 160px;
+    font-size: 14px;
+  }
+}
+
+/* 大屏幕样式 (1440px+) */
+@media (min-width: 1440px) {
+  .responsive-hidden-lg {
+    display: none !important;
+  }
+
+  .desktop-content {
+    padding: 24px;
+  }
+
+  .desktop-property-panel {
+    width: 400px;
+  }
+
+  .workflow-node {
+    min-width: 180px;
+  }
+}
+
+/* 超大屏幕样式 (1920px+) */
+@media (min-width: 1920px) {
+  .responsive-hidden-xl {
+    display: none !important;
+  }
+
+  .desktop-content {
+    padding: 32px;
+  }
+
+  .desktop-property-panel {
+    width: 450px;
+  }
+}
+
+/* 触摸设备优化 */
+@media (hover: none) and (pointer: coarse) {
+  .touchable,
+  .ant-btn,
+  .workflow-node,
+  .node-panel-item {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  /* 增大可点击区域 */
+  .ant-btn-icon {
+    font-size: 16px;
+  }
+
+  /* 优化滚动条 */
+  .ant-layout-content {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* 高对比度模式支持 */
+@media (prefers-contrast: high) {
+  .responsive-header,
+  .responsive-sider,
+  .responsive-content {
+    border-color: #000;
+  }
+
+  .mobile-header-tools {
+    background: #fff;
+    border: 2px solid #000;
+  }
+}
+
+/* 减少动画模式支持 */
+@media (prefers-reduced-motion: reduce) {
+  .responsive-sider,
+  .mobile-header-tools,
+  .ant-drawer,
+  .ant-modal {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* 暗色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .mobile-header-tools {
+    background: rgba(20, 20, 20, 0.95);
+    color: #fff;
+  }
+
+  .responsive-header {
+    background-color: #141414;
+    border-bottom-color: #303030;
+  }
+
+  .responsive-sider {
+    background-color: #1f1f1f;
+    border-right-color: #303030;
+  }
+
+  .responsive-content {
+    background-color: #000;
+  }
+
+  .desktop-property-panel {
+    background-color: #141414;
+    border-left-color: #303030;
+  }
+}
+
+/* 印刷模式适配 */
+@media print {
+  .mobile-header-tools,
+  .ant-float-btn,
+  .responsive-header,
+  .responsive-sider,
+  .desktop-property-panel {
+    display: none !important;
+  }
+
+  .responsive-content {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
+
+/* 自定义滚动条样式（非移动端） */
+@media (hover: hover) and (pointer: fine) {
+  .responsive-content::-webkit-scrollbar,
+  .ant-drawer-body::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .responsive-content::-webkit-scrollbar-track,
+  .ant-drawer-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+
+  .responsive-content::-webkit-scrollbar-thumb,
+  .ant-drawer-body::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+  }
+
+  .responsive-content::-webkit-scrollbar-thumb:hover,
+  .ant-drawer-body::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+  }
+}
+
+/* 工具栏响应式布局 */
+.responsive-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.responsive-toolbar-left,
+.responsive-toolbar-center,
+.responsive-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.responsive-toolbar-center {
+  flex: 1;
+  justify-content: center;
+}
+
+@media (max-width: 767px) {
+  .responsive-toolbar {
+    flex-direction: row;
+    justify-content: center;
+    padding: 0 8px;
+  }
+
+  .responsive-toolbar-left,
+  .responsive-toolbar-center,
+  .responsive-toolbar-right {
+    gap: 4px;
+  }
+
+  .responsive-toolbar .ant-btn {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+
+  /* 隐藏次要按钮 */
+  .toolbar-secondary {
+    display: none;
+  }
+}
+
+/* 节点拖拽优化 */
+.workflow-canvas {
+  touch-action: none;
+  user-select: none;
+}
+
+@media (max-width: 767px) {
+  .workflow-canvas {
+    touch-action: pan-x pan-y;
+  }
+}
+
+/* 响应式网格布局 */
+.responsive-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+@media (max-width: 767px) {
+  .responsive-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .responsive-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
+  }
+}

@@ -1,0 +1,297 @@
+{
+  "app": {
+    "title": "可视化工作流编辑器",
+    "subtitle": "拖拽式工作流设计平台"
+  },
+  "common": {
+    "save": "保存",
+    "load": "加载",
+    "execute": "执行",
+    "reset": "重置",
+    "cancel": "取消",
+    "confirm": "确认",
+    "delete": "删除",
+    "edit": "编辑",
+    "add": "添加",
+    "create": "创建",
+    "update": "更新",
+    "close": "关闭",
+    "open": "打开",
+    "settings": "设置",
+    "help": "帮助",
+    "back": "返回",
+    "next": "下一步",
+    "previous": "上一步",
+    "finish": "完成",
+    "skip": "跳过",
+    "retry": "重试",
+    "refresh": "刷新",
+    "search": "搜索",
+    "filter": "过滤",
+    "sort": "排序",
+    "export": "导出",
+    "import": "导入",
+    "copy": "复制",
+    "paste": "粘贴",
+    "cut": "剪切",
+    "undo": "撤销",
+    "redo": "重做",
+    "clear": "清空",
+    "select": "选择",
+    "selectAll": "全选",
+    "deselect": "取消选择",
+    "enable": "启用",
+    "disable": "禁用",
+    "upload": "上传",
+    "download": "下载",
+    "preview": "预览",
+    "fullscreen": "全屏",
+    "minimize": "最小化",
+    "maximize": "最大化"
+  },
+  "toolbar": {
+    "new": "新建工作流",
+    "save": "保存工作流",
+    "load": "加载工作流",
+    "execute": "执行工作流",
+    "reset": "重置工作流",
+    "debug": "调试模式",
+    "monitor": "执行监控",
+    "import": "导入工作流",
+    "export": "导出工作流",
+    "theme": "主题设置",
+    "language": "语言设置",
+    "fullscreen": "全屏模式",
+    "settings": "应用设置",
+    "help": "用户指南"
+  },
+  "nodePanel": {
+    "title": "节点面板",
+    "subtitle": "拖拽节点到画布中",
+    "categories": {
+      "input": "输入节点",
+      "output": "输出节点", 
+      "processing": "处理节点",
+      "control": "控制节点",
+      "ai": "AI节点"
+    },
+    "nodes": {
+      "input": {
+        "name": "输入节点",
+        "description": "接收外部输入数据"
+      },
+      "output": {
+        "name": "输出节点",
+        "description": "输出处理结果"
+      },
+      "llm": {
+        "name": "LLM节点",
+        "description": "大语言模型处理"
+      },
+      "code": {
+        "name": "代码块节点",
+        "description": "执行自定义代码"
+      },
+      "condition": {
+        "name": "条件判断节点",
+        "description": "基于条件分支"
+      },
+      "switch": {
+        "name": "开关路由节点",
+        "description": "多路径路由"
+      },
+      "merger": {
+        "name": "结果聚合节点",
+        "description": "聚合多个输入"
+      }
+    }
+  },
+  "propertyPanel": {
+    "title": "属性面板",
+    "tabs": {
+      "properties": "属性",
+      "monitor": "执行监控",
+      "debug": "调试"
+    },
+    "noSelection": "请选择一个节点以查看其属性",
+    "basicSettings": "基础设置",
+    "advancedSettings": "高级设置",
+    "nodeConfig": "节点配置",
+    "connectionSettings": "连接设置"
+  },
+  "workflowCanvas": {
+    "title": "工作流画布",
+    "subtitle": "在这里设计您的工作流",
+    "emptyState": {
+      "title": "开始构建您的工作流",
+      "description": "从左侧节点面板拖拽节点到这里",
+      "action": "添加第一个节点"
+    },
+    "contextMenu": {
+      "copy": "复制节点",
+      "paste": "粘贴节点",
+      "delete": "删除节点",
+      "duplicate": "复制节点",
+      "properties": "节点属性"
+    }
+  },
+  "executionMonitor": {
+    "title": "执行监控",
+    "status": {
+      "idle": "空闲",
+      "running": "运行中",
+      "completed": "已完成",
+      "failed": "执行失败",
+      "paused": "已暂停"
+    },
+    "controls": {
+      "start": "开始执行",
+      "pause": "暂停执行",
+      "resume": "恢复执行",
+      "stop": "停止执行",
+      "step": "单步执行"
+    },
+    "metrics": {
+      "duration": "执行时长",
+      "nodesProcessed": "已处理节点",
+      "totalNodes": "总节点数",
+      "progress": "执行进度"
+    }
+  },
+  "debugPanel": {
+    "title": "调试面板",
+    "breakpoints": "断点",
+    "variables": "变量",
+    "console": "控制台",
+    "stackTrace": "调用堆栈",
+    "controls": {
+      "continue": "继续",
+      "stepOver": "单步跳过",
+      "stepInto": "单步进入",
+      "stepOut": "单步退出"
+    }
+  },
+  "userGuide": {
+    "welcome": {
+      "title": "欢迎使用可视化工作流编辑器！",
+      "description": "让我们带您快速了解主要功能"
+    },
+    "nodePanel": {
+      "title": "节点面板",
+      "description": "这是节点面板，您可以从这里选择并添加不同类型的节点"
+    },
+    "workflowCanvas": {
+      "title": "工作流画布",
+      "description": "这是工作流画布，您可以在这里设计和连接节点"
+    },
+    "propertyPanel": {
+      "title": "属性面板",
+      "description": "这是属性面板，您可以在这里配置选中节点的属性"
+    },
+    "toolbar": {
+      "title": "工具栏",
+      "description": "这是工具栏，包含保存、执行等常用功能"
+    },
+    "finish": {
+      "title": "开始使用！",
+      "description": "太好了！现在您可以开始创建您的第一个工作流了"
+    }
+  },
+  "theme": {
+    "title": "主题设置",
+    "mode": {
+      "light": "浅色模式",
+      "dark": "深色模式",
+      "auto": "跟随系统"
+    },
+    "colorScheme": {
+      "blue": "蓝色",
+      "green": "绿色",
+      "purple": "紫色",
+      "orange": "橙色"
+    }
+  },
+  "language": {
+    "title": "语言设置",
+    "current": "当前语言",
+    "available": "可用语言",
+    "switchSuccess": "语言已切换至 {{language}}"
+  },
+  "workflow": {
+    "untitled": "未命名工作流",
+    "save": {
+      "title": "保存工作流",
+      "nameLabel": "工作流名称",
+      "namePlaceholder": "请输入工作流名称",
+      "descriptionLabel": "描述（可选）",
+      "descriptionPlaceholder": "请输入工作流描述",
+      "success": "工作流保存成功",
+      "error": "工作流保存失败"
+    },
+    "load": {
+      "title": "加载工作流",
+      "noWorkflows": "暂无已保存的工作流",
+      "success": "工作流加载成功",
+      "error": "工作流加载失败"
+    },
+    "execute": {
+      "success": "工作流开始执行",
+      "error": "工作流执行失败",
+      "noNodes": "请先添加节点",
+      "completed": "工作流执行完成"
+    },
+    "reset": {
+      "confirm": "确定要重置工作流吗？所有未保存的更改将丢失。",
+      "success": "工作流已重置"
+    }
+  },
+  "node": {
+    "defaultLabel": "{{type}}节点",
+    "config": {
+      "label": "节点标签",
+      "description": "节点描述"
+    }
+  },
+  "messages": {
+    "success": {
+      "saved": "保存成功",
+      "loaded": "加载成功",
+      "deleted": "删除成功",
+      "created": "创建成功",
+      "updated": "更新成功",
+      "executed": "执行成功"
+    },
+    "error": {
+      "saveError": "保存失败",
+      "loadError": "加载失败",
+      "deleteError": "删除失败",
+      "createError": "创建失败",
+      "updateError": "更新失败",
+      "executeError": "执行失败",
+      "networkError": "网络连接失败",
+      "unknownError": "未知错误"
+    },
+    "warning": {
+      "unsavedChanges": "您有未保存的更改",
+      "confirmDelete": "确定要删除吗？",
+      "noSelection": "请先选择一个项目",
+      "invalidInput": "输入无效"
+    },
+    "info": {
+      "loading": "加载中...",
+      "saving": "保存中...",
+      "executing": "执行中...",
+      "connecting": "连接中...",
+      "processing": "处理中..."
+    }
+  },
+  "responsive": {
+    "mobile": {
+      "menuButton": "菜单",
+      "settingsButton": "设置"
+    },
+    "tablet": {
+      "propertyPanelButton": "属性面板"
+    }
+  }
+}

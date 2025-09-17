@@ -1,0 +1,169 @@
+/* DeleteConfirmModal 组件样式 */
+
+/* 删除确认面板样式 */
+.delete-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(8px);
+}
+
+.delete-modal-content {
+  background: var(--glass-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow: hidden;
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+.delete-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+}
+
+.delete-modal-icon {
+  font-size: 24px;
+  animation: deleteIconPulse 2s infinite;
+}
+
+@keyframes deleteIconPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.delete-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #dc2626;
+  margin: 0;
+}
+
+.delete-modal-body {
+  padding: 24px;
+}
+
+.delete-modal-warning {
+  font-size: 16px;
+  color: var(--text);
+  margin: 0 0 16px 0;
+  line-height: 1.5;
+}
+
+.delete-modal-preview {
+  background: var(--glass-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin: 16px 0;
+}
+
+.delete-modal-preview-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.delete-modal-preview-content {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.6;
+  max-height: 120px;
+  overflow-y: auto;
+  font-family: 'Fira Code', 'JetBrains Mono', Consolas, 'Courier New', monospace;
+  background: var(--code-bg);
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--pre-border);
+}
+
+.delete-modal-notice {
+  font-size: 13px;
+  color: #dc2626;
+  margin: 16px 0 0 0;
+  font-style: italic;
+  text-align: center;
+  background: linear-gradient(135deg, #fef2f2, #fee2e2);
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid #fca5a5;
+}
+
+.delete-modal-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 24px;
+  background: var(--hover-bg);
+  border-top: 1px solid var(--border);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .delete-modal-content {
+    width: 95%;
+    max-width: none;
+  }
+
+  .delete-modal-header {
+    padding: 16px 20px;
+  }
+
+  .delete-modal-body {
+    padding: 20px;
+  }
+
+  .delete-modal-actions {
+    padding: 16px 20px;
+    flex-direction: column-reverse;
+  }
+
+  .delete-modal-actions .animated-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .delete-modal-header {
+    padding: 14px 16px;
+  }
+
+  .delete-modal-body {
+    padding: 16px;
+  }
+
+  .delete-modal-actions {
+    padding: 14px 16px;
+  }
+
+  .delete-modal-title {
+    font-size: 16px;
+  }
+
+  .delete-modal-warning {
+    font-size: 14px;
+  }
+}

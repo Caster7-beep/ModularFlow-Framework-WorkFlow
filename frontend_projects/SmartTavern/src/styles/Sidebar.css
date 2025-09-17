@@ -1,0 +1,575 @@
+/* Sidebar组件样式 */
+
+/* 主要侧边栏容器 */
+.sidebar {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 60px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px) saturate(180%);
+  border-right: 1px solid var(--glass-border);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 8px;
+  box-shadow: var(--sidebar-shadow);
+  transition: left 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.sidebar.drawer-open {
+  left: 320px;
+}
+
+.sidebar.drawer-closed {
+  left: 0px;
+}
+
+/* 导航按钮区域 */
+.sidebar-navigation {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+/* 功能按钮区域 */
+.sidebar-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+/* 导航按钮样式 */
+.sidebar-nav-button {
+  width: 100%;
+  height: 36px;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  border: 1px solid var(--border);
+}
+
+.sidebar-nav-button.active {
+  background: var(--sidebar-nav-active-bg);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.sidebar-nav-button:not(.active) {
+  background: var(--sidebar-nav-bg);
+  color: var(--text);
+  font-weight: 400;
+}
+
+.sidebar-nav-button:hover {
+  background: var(--sidebar-nav-hover-bg);
+  transform: scale(1.03);
+}
+
+.sidebar-nav-button:active {
+  transform: scale(0.97);
+}
+
+/* 功能按钮样式 */
+.sidebar-function-button {
+  width: 100%;
+  height: 44px;
+  padding: 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  position: relative;
+  border: 1px solid var(--border);
+  color: var(--text);
+  transition: all 0.2s ease;
+}
+
+.sidebar-function-button.active {
+  background: var(--sidebar-button-active-bg);
+  border-color: var(--accent);
+}
+
+.sidebar-function-button:not(.active) {
+  background: var(--sidebar-button-bg);
+}
+
+.sidebar-function-button:hover {
+  background: var(--sidebar-button-hover-bg);
+  border-color: var(--accent);
+  transform: scale(1.05);
+}
+
+.sidebar-function-button:active {
+  transform: scale(0.95);
+}
+
+/* 抽屉样式 */
+.sidebar-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 320px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px) saturate(180%);
+  border-right: 1px solid var(--glass-border);
+  z-index: 49;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--sidebar-shadow);
+  overflow: hidden;
+}
+
+/* 抽屉头部 */
+.sidebar-drawer-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebar-drawer-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebar-drawer-title h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.sidebar-drawer-title-icon {
+  font-size: 16px;
+}
+
+/* 抽屉关闭按钮 */
+.sidebar-drawer-close {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.sidebar-drawer-close:hover {
+  background: var(--drawer-close-hover-bg);
+  color: var(--text);
+}
+
+.sidebar-drawer-close:active {
+  transform: scale(0.9);
+}
+
+/* 抽屉内容区域 */
+.sidebar-drawer-content {
+  flex: 1;
+  overflow: hidden;
+  padding: 8px;
+}
+
+.sidebar-drawer-content-scroll {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 抽屉背景遮罩 */
+.sidebar-drawer-backdrop {
+  position: fixed;
+  top: 0;
+  left: 60px;
+  right: 0;
+  bottom: 0;
+  background: var(--backdrop-bg);
+  z-index: 45;
+  backdrop-filter: blur(2px);
+}
+
+/* 抽屉占位符内容 */
+.sidebar-drawer-placeholder {
+  background: var(--drawer-placeholder-bg);
+  margin: 8px 0;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+  padding: 12px;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  overflow: hidden;
+}
+
+/* 侧边栏版权信息 */
+.sidebar-footer {
+  margin-top: auto;
+  text-align: center;
+  font-size: 8px;
+  color: var(--muted);
+}
+
+/* Framer Motion 动画类 - 这些类由 Framer Motion 库动态使用 */
+.sidebar-entrance {
+  /* 由 Framer Motion 动态控制 */
+  opacity: 0;
+}
+
+.sidebar-nav-button-entrance {
+  /* 由 Framer Motion 动态控制 */
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+.sidebar-function-button-entrance {
+  /* 由 Framer Motion 动态控制 */
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+.sidebar-drawer-entrance {
+  /* 由 Framer Motion 动态控制 */
+  transform: translateX(-100%);
+}
+
+.sidebar-drawer-backdrop-entrance {
+  /* 由 Framer Motion 动态控制 */
+  opacity: 0;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 50px;
+  }
+  
+  .sidebar-drawer {
+    width: 280px;
+  }
+  
+  .sidebar-nav-button,
+  .sidebar-function-button {
+    font-size: 12px;
+  }
+  
+  .sidebar-nav-button {
+    height: 32px;
+  }
+  
+  .sidebar-function-button {
+    height: 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar-drawer {
+    width: 100vw;
+    left: 0;
+  }
+  
+  .sidebar-drawer-backdrop {
+    left: 0;
+  }
+}
+
+/* 动态样式类 - 用于替换 Sidebar.tsx 中的内联样式 */
+
+/* 主要侧边栏动态位置 */
+.sidebar-dynamic-position {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 60px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px) saturate(180%);
+  border-right: 1px solid var(--glass-border);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 8px;
+  box-shadow: var(--sidebar-shadow);
+  transition: left 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  left: 0px;
+}
+
+.sidebar-dynamic-position.drawer-open {
+  left: 320px;
+}
+
+.sidebar-dynamic-position.drawer-closed {
+  left: 0px;
+}
+
+/* 导航按钮容器 */
+.sidebar-nav-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+/* 功能按钮容器 */
+.sidebar-functions-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+/* 导航按钮基础样式 */
+.sidebar-nav-button-base {
+  width: 100%;
+  height: 36px;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  border: 1px solid var(--border);
+  transition: all 0.2s ease;
+  background: var(--sidebar-nav-bg);
+  color: var(--text);
+  font-weight: 400;
+}
+
+.sidebar-nav-button-base.active {
+  background: var(--sidebar-nav-active-bg);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* 功能按钮基础样式 */
+.sidebar-function-button-base {
+  width: 100%;
+  height: 44px;
+  padding: 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  position: relative;
+  border: 1px solid var(--border);
+  color: var(--text);
+  transition: all 0.2s ease;
+  background: var(--sidebar-button-bg);
+}
+
+.sidebar-function-button-base.active {
+  background: var(--sidebar-button-active-bg);
+  border-color: var(--accent);
+}
+
+/* 抽屉背景遮罩 */
+.sidebar-drawer-backdrop-style {
+  position: fixed;
+  top: 0;
+  left: 60px;
+  right: 0;
+  bottom: 0;
+  background: var(--backdrop-bg);
+  z-index: 45;
+  backdrop-filter: blur(2px);
+}
+
+/* 抽屉主容器 */
+.sidebar-drawer-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 320px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px) saturate(180%);
+  border-right: 1px solid var(--glass-border);
+  z-index: 49;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--sidebar-shadow);
+  overflow: hidden;
+}
+
+/* 抽屉头部容器 */
+.sidebar-drawer-header-container {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* 抽屉标题区域 */
+.sidebar-drawer-title-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 抽屉标题样式 */
+.sidebar-drawer-title-text {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* 抽屉标题图标 */
+.sidebar-drawer-title-icon-style {
+  font-size: 16px;
+}
+
+/* 抽屉关闭按钮样式 */
+.sidebar-drawer-close-button {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+/* 抽屉内容区域 */
+.sidebar-drawer-content-area {
+  flex: 1;
+  overflow: hidden;
+  padding: 8px;
+}
+
+/* 抽屉内容滚动容器 */
+.sidebar-drawer-scroll-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 侧边栏底部信息 */
+.sidebar-footer-info {
+  margin-top: auto;
+  text-align: center;
+  font-size: 8px;
+  color: var(--muted);
+}
+
+/* 辅助类 - 用于替换内联样式 */
+.d-flex {
+  display: flex;
+}
+
+.flex-column {
+  flex-direction: column;
+}
+
+.align-items-center {
+  align-items: center;
+}
+
+.justify-content-center {
+  justify-content: center;
+}
+
+.justify-content-between {
+  justify-content: space-between;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.position-relative {
+  position: relative;
+}
+
+.position-fixed {
+  position: fixed;
+}
+
+.w-100 {
+  width: 100%;
+}
+
+.h-100 {
+  height: 100%;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.margin-0 {
+  margin: 0;
+}
+
+.margin-top-auto {
+  margin-top: auto;
+}
+
+/* 特殊状态类 */
+.no-select {
+  user-select: none;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.border-none {
+  border: none;
+}
+
+.bg-none {
+  background: none;
+}
+
+/* 过渡和变换 */
+.transition-all {
+  transition: all 0.2s ease;
+}
+
+.transition-left {
+  transition: left 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.scale-103:hover {
+  transform: scale(1.03);
+}
+
+.scale-105:hover {
+  transform: scale(1.05);
+}
+
+.scale-97:active {
+  transform: scale(0.97);
+}
+
+.scale-95:active {
+  transform: scale(0.95);
+}
+
+.scale-90:active {
+  transform: scale(0.9);
+}

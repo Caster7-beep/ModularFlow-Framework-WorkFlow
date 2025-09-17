@@ -1,0 +1,83 @@
+{
+  "project": {
+    "name": "SmartTavern",
+    "display_name": "SmartTavern 对话系统",
+    "version": "1.0.0",
+    "description": "集成完整SmartTavern工作流的AI对话系统",
+    "type": "SmartTavern"
+  },
+  "frontend": {
+    "path": "frontend_projects/SmartTavern",
+    "port": 3000,
+    "auto_open_browser": true,
+    "dev_server": "vite",
+    "dev_command": "npm run dev"
+  },
+  "backend": {
+    "api_gateway": {
+      "enabled": true,
+      "port": 6500,
+      "cors_origins": [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:6601",
+        "http://127.0.0.1:6601"
+      ]
+    },
+    "websocket": {
+      "enabled": true,
+      "path": "/ws"
+    },
+    "llm_api": {
+      "provider": "gemini",
+      "model": "gemini-2.5-flash",
+      "enabled": true,
+      "streaming": true
+    },
+    "smarttavern": {
+      "enabled": true,
+      "conversation_storage": "shared/SmartTavern/conversations",
+      "default_conversation_file": "current_chat.json",
+      "character_file": "许莲笙.json",
+      "persona_file": "default_user.json",
+      "workflow": "prompt_api_call_workflow"
+    },
+    "custom_functions": [
+      "SmartTavern.send_message",
+      "SmartTavern.get_chat_history",
+      "SmartTavern.clear_history",
+      "SmartTavern.get_system_status",
+      "SmartTavern.load_conversation",
+      "SmartTavern.save_conversation",
+      "SmartTavern.get_config_options",
+      "SmartTavern.set_active_config",
+      "SmartTavern.get_active_config"
+    ]
+  },
+  "dependencies": {
+    "required_modules": [
+      "api_gateway_module",
+      "web_server_module", 
+      "llm_api_module",
+      "SmartTavern"
+    ],
+    "optional_modules": [],
+    "python_packages": [
+      "fastapi",
+      "uvicorn",
+      "requests",
+      "aiohttp"
+    ]
+  },
+  "features": {
+    "smarttavern_workflow": true,
+    "macro_processing": true,
+    "world_book_support": true,
+    "character_system": true,
+    "conversation_persistence": true,
+    "real_time_chat": true,
+    "streaming_responses": true,
+    "websocket_communication": true,
+    "gemini_integration": true
+  }
+}
