@@ -1,8 +1,8 @@
 {
   "version": "1.0.0",
-  "last_updated": "2025-09-18T22:12:34.721292",
+  "last_updated": "2025-09-18T23:11:36.012160",
   "active_configs": {
-    "presets": "presets/Default_3.json",
+    "presets": "presets/Default.json",
     "world_books": "world_books/参考用main_world.json",
     "regex_rules": "regex_rules/remove_xml_tags.json",
     "conversations": null

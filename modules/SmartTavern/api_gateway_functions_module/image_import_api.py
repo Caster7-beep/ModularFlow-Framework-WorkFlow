@@ -14,7 +14,7 @@ from core.function_registry import register_function
 from shared.SmartTavern import globals as g
 
 def register_image_import_api():
-    """注册图片文件导入相关API函数"""
+    """注册图片文件导入导出相关API函数"""
     
     @register_function(name="SmartTavern.import_files_from_image", outputs=["import_result"])
     def import_files_from_image(image_data: str, file_types: Optional[List[str]] = None, avoid_overwrite: bool = True):
@@ -514,4 +514,310 @@ def register_image_import_api():
                 "message": "导入过程中发生未知错误"
             }
     
-    print("✓ SmartTavern图片文件导入API函数注册完成")
+    @register_function(name="SmartTavern.embed_files_to_image", outputs=["embed_result"])
+    def embed_files_to_image(files: List[Dict[str, Any]], base_image_data: Optional[str] = None, output_format: str = "image"):
+        """
+        将文件嵌入到PNG图片中
+        
+        Args:
+            files: 要嵌入的文件列表，每个文件包含content、type和name
+            base_image_data: 可选的Base64编码的基础图片数据，如不提供则使用默认空白图片
+            output_format: 输出格式，"image"(Base64编码的PNG) 或 "json"(JSON格式的文件内容)
+            
+        Returns:
+            嵌入结果，包括图片数据或JSON数据
+        """
+        try:
+            # 验证输入参数
+            if not files or not isinstance(files, list):
+                return {
+                    "success": False,
+                    "error": "无效的文件列表",
+                    "message": "请提供有效的文件列表"
+                }
+            
+            # 创建临时目录
+            temp_dir = Path("shared/SmartTavern/temp")
+            temp_dir.mkdir(exist_ok=True)
+            
+            # 如果提供了基础图片，解码并保存
+            base_image_path = None
+            if base_image_data:
+                try:
+                    # 如果图片数据包含前缀，移除前缀
+                    if "base64," in base_image_data:
+                        base_image_data = base_image_data.split("base64,")[1]
+                    
+                    # 解码Base64图片数据
+                    image_binary = base64.b64decode(base_image_data)
+                    
+                    # 保存为临时文件
+                    base_image_path = str(temp_dir / f"temp_base_{os.urandom(4).hex()}.png")
+                    with open(base_image_path, "wb") as f:
+                        f.write(image_binary)
+                except Exception as e:
+                    return {
+                        "success": False,
+                        "error": f"处理基础图片失败: {str(e)}",
+                        "message": "无法解码或保存提供的图片数据"
+                    }
+            else:
+                # 如果没有提供基础图片，创建一个默认的空白图片
+                try:
+                    from PIL import Image
+                    base_image_path = str(temp_dir / f"temp_blank_{os.urandom(4).hex()}.png")
+                    blank_image = Image.new('RGBA', (800, 600), (255, 255, 255, 0))
+                    blank_image.save(base_image_path, 'PNG')
+                except ImportError:
+                    return {
+                        "success": False,
+                        "error": "缺少PIL库",
+                        "message": "创建默认图片失败，请安装Pillow库"
+                    }
+                except Exception as e:
+                    return {
+                        "success": False,
+                        "error": f"创建默认图片失败: {str(e)}",
+                        "message": "无法创建默认图片"
+                    }
+            
+            # 处理要嵌入的文件
+            temp_file_paths = []
+            processed_files = []
+            
+            try:
+                # 保存每个文件到临时目录
+                for i, file_info in enumerate(files):
+                    if not isinstance(file_info, dict):
+                        continue
+                    
+                    file_content = file_info.get("content")
+                    file_type = file_info.get("type")
+                    file_name = file_info.get("name", f"file_{i}.json")
+                    
+                    if not file_content or not file_type:
+                        continue
+                    
+                    # 确保文件名有正确的扩展名
+                    if not file_name.lower().endswith('.json'):
+                        file_name += '.json'
+                    
+                    # 避免非法文件名字符
+                    file_name = file_name.replace('/', '_').replace('\\', '_').replace(':', '_')
+                    
+                    # 保存文件到临时目录
+                    temp_file_path = str(temp_dir / file_name)
+                    with open(temp_file_path, 'w', encoding='utf-8') as f:
+                        if isinstance(file_content, str):
+                            try:
+                                # 尝试解析为JSON
+                                json_content = json.loads(file_content)
+                                json.dump(json_content, f, ensure_ascii=False, indent=2)
+                            except json.JSONDecodeError:
+                                # 不是有效的JSON，直接写入
+                                f.write(file_content)
+                        elif isinstance(file_content, (dict, list)):
+                            # 已经是字典或列表，直接写入
+                            json.dump(file_content, f, ensure_ascii=False, indent=2)
+                        else:
+                            # 其他类型，转为字符串
+                            f.write(str(file_content))
+                    
+                    temp_file_paths.append(temp_file_path)
+                    processed_files.append({
+                        "name": file_name,
+                        "type": file_type,
+                        "path": temp_file_path
+                    })
+                
+                if not temp_file_paths:
+                    return {
+                        "success": False,
+                        "error": "没有有效的文件可嵌入",
+                        "message": "请提供至少一个有效的文件"
+                    }
+                
+                # 导入图像绑定模块
+                from modules.SmartTavern.image_binding_module import ImageBindingModule
+                image_binding = ImageBindingModule()
+                
+                # 嵌入文件到图片
+                output_image_path = str(temp_dir / f"output_embedded_{os.urandom(4).hex()}.png")
+                image_binding.embed_files_to_image(
+                    image_path=base_image_path,
+                    file_paths=temp_file_paths,
+                    output_path=output_image_path
+                )
+                
+                # 根据输出格式返回结果
+                if output_format.lower() == "image":
+                    # 读取输出图片并转为Base64
+                    with open(output_image_path, 'rb') as f:
+                        output_image_binary = f.read()
+                    
+                    output_image_base64 = base64.b64encode(output_image_binary).decode('utf-8')
+                    
+                    # 构建返回结果
+                    result = {
+                        "success": True,
+                        "message": f"成功嵌入 {len(processed_files)} 个文件",
+                        "embedded_files": processed_files,
+                        "image_data": output_image_base64,
+                        "format": "image/png;base64"
+                    }
+                else:
+                    # 输出JSON格式，收集所有文件的内容
+                    combined_data = {}
+                    for file_info in processed_files:
+                        try:
+                            with open(file_info["path"], 'r', encoding='utf-8') as f:
+                                file_content = f.read()
+                                try:
+                                    # 尝试解析为JSON
+                                    combined_data[file_info["name"]] = json.loads(file_content)
+                                except json.JSONDecodeError:
+                                    # 不是有效的JSON，保存为字符串
+                                    combined_data[file_info["name"]] = file_content
+                        except Exception as e:
+                            print(f"读取文件 {file_info['name']} 失败: {e}")
+                    
+                    # 构建返回结果
+                    result = {
+                        "success": True,
+                        "message": f"成功处理 {len(processed_files)} 个文件",
+                        "files": processed_files,
+                        "data": combined_data,
+                        "format": "json"
+                    }
+                
+                # 清理临时文件
+                for file_path in temp_file_paths:
+                    try:
+                        os.remove(file_path)
+                    except Exception:
+                        pass
+                
+                try:
+                    os.remove(base_image_path)
+                    os.remove(output_image_path)
+                except Exception:
+                    pass
+                
+                return result
+                
+            except Exception as e:
+                # 清理临时文件
+                for file_path in temp_file_paths:
+                    try:
+                        os.remove(file_path)
+                    except Exception:
+                        pass
+                
+                try:
+                    if base_image_path and os.path.exists(base_image_path):
+                        os.remove(base_image_path)
+                except Exception:
+                    pass
+                
+                return {
+                    "success": False,
+                    "error": f"嵌入文件到图片失败: {str(e)}",
+                    "message": "处理过程中出现错误"
+                }
+                
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"嵌入文件失败: {str(e)}",
+                "message": "处理过程中发生未知错误"
+            }
+    
+    @register_function(name="SmartTavern.get_embedded_files_info", outputs=["files_info"])
+    def get_embedded_files_info(image_data: str):
+        """
+        获取PNG图片中嵌入的文件信息
+        
+        Args:
+            image_data: Base64编码的图片数据
+            
+        Returns:
+            嵌入的文件信息列表
+        """
+        try:
+            # 解码Base64图片数据
+            if not image_data or not isinstance(image_data, str):
+                return {
+                    "success": False,
+                    "error": "无效的图片数据",
+                    "message": "请提供有效的Base64编码图片数据"
+                }
+            
+            # 如果图片数据包含前缀，移除前缀
+            if "base64," in image_data:
+                image_data = image_data.split("base64,")[1]
+            
+            # 解码Base64图片数据
+            try:
+                image_binary = base64.b64decode(image_data)
+            except Exception as e:
+                return {
+                    "success": False,
+                    "error": f"Base64解码失败: {str(e)}",
+                    "message": "无法解码提供的图片数据"
+                }
+            
+            # 创建临时图片文件
+            temp_dir = Path("shared/SmartTavern/temp")
+            temp_dir.mkdir(exist_ok=True)
+            temp_image_path = str(temp_dir / f"temp_info_{os.urandom(4).hex()}.png")
+            
+            # 保存临时图片
+            with open(temp_image_path, "wb") as f:
+                f.write(image_binary)
+            
+            try:
+                # 导入图像绑定模块
+                from modules.SmartTavern.image_binding_module import ImageBindingModule
+                image_binding = ImageBindingModule()
+                
+                # 检查图片是否包含嵌入文件
+                if not image_binding.is_image_with_embedded_files(temp_image_path):
+                    # 删除临时文件
+                    os.remove(temp_image_path)
+                    return {
+                        "success": False,
+                        "error": "图片不包含嵌入文件",
+                        "message": "提供的图片不包含任何嵌入文件"
+                    }
+                
+                # 获取文件信息
+                files_info = image_binding.get_embedded_files_info(temp_image_path)
+                
+                # 删除临时文件
+                os.remove(temp_image_path)
+                
+                return {
+                    "success": True,
+                    "message": f"成功获取 {len(files_info)} 个嵌入文件的信息",
+                    "files_info": files_info
+                }
+                
+            except Exception as e:
+                # 清理临时文件
+                if os.path.exists(temp_image_path):
+                    os.remove(temp_image_path)
+                
+                return {
+                    "success": False,
+                    "error": f"获取嵌入文件信息失败: {str(e)}",
+                    "message": "处理图片文件过程中出现错误"
+                }
+                
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"获取嵌入文件信息失败: {str(e)}",
+                "message": "处理过程中发生未知错误"
+            }
+    
+    print("✓ SmartTavern图片文件导入导出API函数注册完成")
