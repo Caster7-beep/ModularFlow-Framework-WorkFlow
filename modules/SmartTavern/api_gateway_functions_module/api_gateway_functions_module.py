@@ -15,6 +15,8 @@ from shared.SmartTavern import globals as g
 
 # 导入UI设置API函数
 from .api_gateway_functions_module_ui_settings import get_ui_settings, update_ui_settings
+# 导入图片导入API函数
+from .image_import_api import register_image_import_api
 
 
 def setup_smarttavern_api_functions(project_config: Dict[str, Any], llm_manager=None):
@@ -28,6 +30,9 @@ def setup_smarttavern_api_functions(project_config: Dict[str, Any], llm_manager=
     project_info = project_config.get("project", {})
     backend_config = project_config.get("backend", {})
     smarttavern_config = backend_config.get("smarttavern", {})
+    
+    # 注册图片导入API函数
+    register_image_import_api()
     
     # 获取配置参数
     conversation_storage = smarttavern_config.get("conversation_storage", "shared/SmartTavern/conversations")
