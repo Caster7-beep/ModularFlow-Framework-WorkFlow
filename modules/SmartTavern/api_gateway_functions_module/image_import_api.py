@@ -313,24 +313,31 @@ def register_image_import_api():
             
         # 每种文件类型的特征验证
         if file_type == "WORLD_BOOK":
-            # 世界书必须包含entries或worldInfo字段
-            return "entries" in content or "worldInfo" in content
+            # 独立的世界书文件应包含mode字段，且不应包含world_book字段（以区别于角色卡内嵌世界书）
+            has_mode = "mode" in content and content.get("mode") in ["always", "conditional"]
+            has_entries = "entries" in content or "worldInfo" in content
+            is_standalone = "world_book" not in content
+            return has_mode and has_entries and is_standalone
             
         elif file_type == "REGEX":
-            # 正则规则文件必须包含正则表达式和替换内容
-            return "pattern" in content and "replacement" in content
+            # 独立的正则规则文件应包含find_regex和replace_regex，且不包含regex_rules
+            has_fields = "find_regex" in content and "replace_regex" in content
+            is_standalone = "regex_rules" not in content
+            return has_fields and is_standalone
             
         elif file_type == "CHARACTER":
             # 角色卡必须包含name和message字段
             return "name" in content and "message" in content
             
         elif file_type == "PRESET":
-            # 预设文件包含temperature、max_tokens等LLM配置
-            return any(key in content for key in ["temperature", "max_tokens", "top_p", "frequency_penalty", "presence_penalty"])
+            # 预设文件应包含一个prompts列表，且其中每个元素都有identifier
+            if "prompts" in content and isinstance(content["prompts"], list):
+                return all("identifier" in p for p in content["prompts"] if isinstance(p, dict))
+            return False
             
         elif file_type == "USER_CONFIG":
-            # 用户配置包含preferences或settings字段
-            return "preferences" in content or "settings" in content
+            # 用户角色（Persona）文件应包含name和description字段
+            return "name" in content and "description" in content
             
         return False
     
