@@ -36,7 +36,7 @@ output_path = image_binding.embed_files_to_image(
         "path/to/character.json",
         "path/to/preset.json",
         "path/to/regex.json",
-        "path/to/user_config.json"
+        "path/to/personas.json"
     ],
     output_path="path/to/output.png"  # 可选，默认为原图片路径加上_embedded后缀
 )
@@ -96,7 +96,7 @@ print(f"图片是否包含嵌入文件: {has_embedded_files}")
 - `RG`: 正则规则 (Regex)
 - `CH`: 角色卡 (Character)
 - `PS`: 预设 (Preset)
-- `UC`: 用户配置 (User Config)
+- `UC`: 用户信息 (personas)
 - `OT`: 其他类型 (Other)
 
 ## 技术实现

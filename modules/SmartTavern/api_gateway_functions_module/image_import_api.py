@@ -114,12 +114,13 @@ def register_image_import_api():
                 invalid_files = []
                 
                 # 文件类型标签到类型名称的映射
+                # 文件类型标签到类型名称的映射
                 type_tag_to_name = {
                     "WB": "WORLD_BOOK",
-                    "RG": "REGEX",
+                    "RX": "REGEX",
                     "CH": "CHARACTER",
                     "PS": "PRESET",
-                    "UC": "USER_CONFIG",
+                    "PE": "PERSONA",
                     "OT": "OTHER"
                 }
                 
@@ -235,6 +236,14 @@ def register_image_import_api():
                 # 清理临时文件
                 os.remove(temp_image_path)
                 
+                # 如果指定了文件类型但没有提取到任何文件，返回特定提示
+                if file_types and len(processed_files) == 0 and len(invalid_files) == 0:
+                    return {
+                        "success": False,
+                        "error": "未找到指定类型的文件",
+                        "message": f"在图片中未找到类型为 {', '.join(file_types)} 的文件"
+                    }
+
                 # 构建返回结果
                 result = {
                     "success": True,
@@ -297,33 +306,72 @@ def register_image_import_api():
                 "file_types": {}
             }
     
-    def _validate_json_content(content: dict, file_type: str) -> bool:
+    def _validate_json_content(content, file_type: str) -> bool:
         """
         验证JSON内容是否符合指定的文件类型特征
         
         Args:
-            content: JSON内容
+            content: JSON内容 (可以是dict或list)
             file_type: 文件类型
             
         Returns:
             是否符合文件类型特征
         """
+        # 处理嵌套数组结构的世界书文件
+        if file_type == "WORLD_BOOK" and isinstance(content, list):
+            # 如果是双层嵌套的数组 [[{...}, {...}]]
+            if len(content) > 0 and isinstance(content[0], list):
+                # 使用第一层内容验证
+                if len(content[0]) > 0 and isinstance(content[0][0], dict):
+                    # 验证第一个元素是否有世界书特征
+                    first_item = content[0][0]
+                    # 世界书条目通常有id, name, content, mode等字段
+                    has_worldbook_fields = all(field in first_item for field in ["id", "name", "content"])
+                    return has_worldbook_fields
+            # 如果是单层数组 [{...}, {...}]
+            elif len(content) > 0 and isinstance(content[0], dict):
+                # 验证第一个元素是否有世界书特征
+                first_item = content[0]
+                # 世界书条目通常有id, name, content, mode等字段
+                has_worldbook_fields = all(field in first_item for field in ["id", "name", "content"])
+                return has_worldbook_fields
+            return False
+            
+        # 处理数组结构的正则规则文件
+        if file_type == "REGEX" and isinstance(content, list):
+            if len(content) > 0 and isinstance(content[0], dict):
+                # 验证第一个元素是否有正则规则特征
+                first_item = content[0]
+                # 正则规则通常有id, find_regex, replace_regex等字段
+                has_regex_fields = all(field in first_item for field in ["find_regex", "replace_regex"])
+                return has_regex_fields
+            return False
+            
+        # 处理其他类型或对象类型的内容
         if not isinstance(content, dict):
             return False
             
         # 每种文件类型的特征验证
         if file_type == "WORLD_BOOK":
-            # 独立的世界书文件应包含mode字段，且不应包含world_book字段（以区别于角色卡内嵌世界书）
-            has_mode = "mode" in content and content.get("mode") in ["always", "conditional"]
+            # 独立的世界书文件应包含entries字段，且不应包含world_book字段（以区别于角色卡内嵌世界书）
+            # 注意：部分世界书可能没有mode字段，不再强制要求
             has_entries = "entries" in content or "worldInfo" in content
             is_standalone = "world_book" not in content
-            return has_mode and has_entries and is_standalone
+            return has_entries and is_standalone
             
         elif file_type == "REGEX":
-            # 独立的正则规则文件应包含find_regex和replace_regex，且不包含regex_rules
-            has_fields = "find_regex" in content and "replace_regex" in content
-            is_standalone = "regex_rules" not in content
-            return has_fields and is_standalone
+            # 处理两种可能的格式：单个对象或对象数组
+            if isinstance(content, list) and len(content) > 0:
+                # 如果是数组，检查第一个元素
+                first_item = content[0]
+                if isinstance(first_item, dict):
+                    has_fields = "find_regex" in first_item and "replace_regex" in first_item
+                    return has_fields
+            else:
+                # 单个对象格式
+                has_fields = "find_regex" in content and "replace_regex" in content
+                is_standalone = "regex_rules" not in content
+                return has_fields and is_standalone
             
         elif file_type == "CHARACTER":
             # 角色卡必须包含name和message字段
@@ -335,8 +383,8 @@ def register_image_import_api():
                 return all("identifier" in p for p in content["prompts"] if isinstance(p, dict))
             return False
             
-        elif file_type == "USER_CONFIG":
-            # 用户角色（Persona）文件应包含name和description字段
+        elif file_type == "PERSONA":
+            # 用户信息（Persona）文件应包含name和description字段
             return "name" in content and "description" in content
             
         return False
@@ -383,8 +431,8 @@ def register_image_import_api():
                 "REGEX": "regex_rules",
                 "CHARACTER": "characters",
                 "PRESET": "presets",
-                "USER_CONFIG": ".",  # 用户配置保存在共享目录根目录
-                "OTHER": "other"  # 其他类型保存在other目录
+                "PERSONA": "personas",
+                "OTHER": "other"
             }
             
             # 获取文件类型对应的目录

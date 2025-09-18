@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Api } from '@/services/api'
+import { API_BASE_URL } from '@/config'
 import OverlayScrollbar from './OverlayScrollbar'
 import { EmbeddedRegexRules } from './EmbeddedPanels'
 import '@/styles/PresetPanel.css'
@@ -348,10 +349,109 @@ export default function PresetPanel({
       alert('删除预设失败，请重试')
     }
   }
+  
+  // 处理预设导入
+  const handleImportPreset = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click()
+    }
+  }
+
+  // 导入图片或JSON文件的处理函数，统一使用Api对象
+  
+  // 处理文件选择
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    const file = files[0]
+    setIsImporting(true)
+
+    try {
+      if (file.type === 'application/json') {
+        // 处理JSON文件
+        const reader = new FileReader()
+        reader.onload = async (event) => {
+          const content = event.target?.result as string
+          try {
+            // 使用API导入JSON文件
+            const response = await Api.importJsonFile(
+              content,
+              "PRESET",
+              file.name,
+              true
+            )
+
+            if (response.success) {
+              alert(`成功导入预设文件: ${response.file.name}`)
+              // 重新加载配置和预设列表
+              await loadConfigData()
+              // 如果当前没有选择预设，自动选择导入的预设
+              if (!activeConfig.presets) {
+                await onConfigChange('presets', response.file.path)
+              }
+            } else {
+              alert(`导入失败: ${response.message || '未知错误'}`)
+            }
+          } catch (err) {
+            console.error('处理JSON文件失败:', err)
+            alert('导入预设失败，请确保文件格式正确')
+          }
+          setIsImporting(false)
+        }
+        reader.readAsText(file)
+      } else if (file.type === 'image/png') {
+        // 处理PNG图片，可能包含嵌入的预设文件
+        const reader = new FileReader()
+        reader.onload = async (event) => {
+          const content = event.target?.result as string
+          try {
+            // 使用API从图片导入文件，仅提取预设类型
+            const response = await Api.importFilesFromImage(
+              content,
+              ["PS"], // PS是预设的文件类型标签
+              true
+            )
+
+            if (response.success && response.files && response.files.length > 0) {
+              alert(`成功从图片导入了 ${response.files.length} 个预设文件`)
+              // 重新加载配置和预设列表
+              await loadConfigData()
+              // 如果当前没有选择预设，自动选择第一个导入的预设
+              if (!activeConfig.presets && response.files[0].path) {
+                await onConfigChange('presets', response.files[0].path)
+              }
+            } else {
+              // 处理未找到文件或导入失败的情况
+              const errorMsg = response.message || '导入失败'
+              alert(`导入失败: ${errorMsg}`)
+            }
+          } catch (err) {
+            console.error('处理PNG图片失败:', err)
+            alert('从图片导入预设失败，请确保图片包含有效的预设文件')
+          }
+          setIsImporting(false)
+        }
+        reader.readAsDataURL(file)
+      } else {
+        alert('不支持的文件类型，请选择JSON文件或PNG图片')
+        setIsImporting(false)
+      }
+    } catch (err) {
+      console.error('导入文件失败:', err)
+      alert('导入过程中发生错误，请重试')
+      setIsImporting(false)
+    }
+
+    // 清空文件输入，以便可以重复选择同一个文件
+    e.target.value = ''
+  }
 
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedForDeletion, setSelectedForDeletion] = useState<Set<string>>(new Set())
   const [showVisibilityModal, setShowVisibilityModal] = useState(false)
+  const [isImporting, setIsImporting] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleAddPresetItem = async () => {
     if (!presetContent || !activeConfig.presets) return
@@ -500,6 +600,13 @@ export default function PresetPanel({
               title="添加预设"
             >
               ➕
+            </button>
+            <button
+              className="preset-panel-button"
+              onClick={handleImportPreset}
+              title="导入预设"
+            >
+              📥
             </button>
             <button
               className="preset-panel-button"
@@ -792,6 +899,23 @@ export default function PresetPanel({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* 隐藏的文件输入元素 */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        style={{ display: 'none' }}
+        accept=".json,image/png"
+        onChange={handleFileSelect}
+      />
+      
+      {/* 导入中的加载指示器 */}
+      {isImporting && (
+        <div className="preset-import-loading">
+          <div className="preset-import-spinner"></div>
+          <div className="preset-import-text">正在导入文件...</div>
+        </div>
+      )}
     </motion.div>
   )
 }

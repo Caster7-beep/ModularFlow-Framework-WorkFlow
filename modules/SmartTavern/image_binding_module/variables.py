@@ -4,10 +4,10 @@
 # 文件类型标签，用于标识嵌入图片中的文件类型
 FILE_TYPE_TAGS = {
     "WORLD_BOOK": "WB",     # 世界书
-    "REGEX": "RG",          # 正则规则
+    "REGEX": "RX",          # 正则规则
     "CHARACTER": "CH",      # 角色卡
     "PRESET": "PS",         # 预设
-    "USER_CONFIG": "UC",    # 用户配置
+    "PERSONA": "PE",        # 用户信息
     "OTHER": "OT"           # 其他类型
 }
 

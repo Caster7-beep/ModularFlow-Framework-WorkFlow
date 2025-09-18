@@ -303,4 +303,45 @@ export const Api = {
       body: JSON.stringify({ settings }),
     })
   },
+
+  // 图片文件导入相关API
+  async importFilesFromImage(imageData: string, fileTypes?: string[], avoidOverwrite: boolean = true): Promise<Wrapped<{
+    files: any[];
+    invalid_files?: any[];
+    message?: string;
+  }>> {
+    const url = `${API_BASE_URL}/SmartTavern/import_files_from_image`
+    return await request(url, {
+      method: 'POST',
+      body: JSON.stringify({
+        image_data: imageData,
+        file_types: fileTypes,
+        avoid_overwrite: avoidOverwrite
+      }),
+    })
+  },
+
+  async importJsonFile(fileData: string, fileType: string, fileName?: string, avoidOverwrite: boolean = true): Promise<Wrapped<{
+    file?: any;
+    message?: string;
+  }>> {
+    const url = `${API_BASE_URL}/SmartTavern/import_json_file`
+    return await request(url, {
+      method: 'POST',
+      body: JSON.stringify({
+        file_data: fileData,
+        file_type: fileType,
+        file_name: fileName,
+        avoid_overwrite: avoidOverwrite
+      }),
+    })
+  },
+
+  async getAvailableFileTypes(): Promise<Wrapped<{
+    file_types: {[key: string]: string};
+    message?: string;
+  }>> {
+    const url = `${API_BASE_URL}/SmartTavern/get_available_file_types`
+    return await request(url)
+  },
 }

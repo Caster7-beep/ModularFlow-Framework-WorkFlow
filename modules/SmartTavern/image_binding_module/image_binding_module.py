@@ -55,8 +55,8 @@ class ImageBindingModule:
             return FILE_TYPE_TAGS["CHARACTER"]
         elif "preset" in str(path):
             return FILE_TYPE_TAGS["PRESET"]
-        elif "user" in str(path) and "config" in str(path):
-            return FILE_TYPE_TAGS["USER_CONFIG"]
+        elif "personas" in str(path):
+            return FILE_TYPE_TAGS["PERSONA"]
         else:
             return FILE_TYPE_TAGS["OTHER"]
     

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Api } from '@/services/api'
 import OverlayScrollbar from './OverlayScrollbar'
@@ -22,6 +22,8 @@ export default function CharacterPanel({
   const [expandedCharacter, setExpandedCharacter] = useState<string | null>(null)
   const [editedCharacters, setEditedCharacters] = useState<{[path: string]: any}>({})
   const [hoveredCard, setHoveredCard] = useState<string | null>(null)
+  const [isImporting, setIsImporting] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     loadAllCharacterContents();
@@ -79,6 +81,95 @@ export default function CharacterPanel({
       console.error('创建新角色卡失败:', err)
       alert('创建新角色卡失败，请重试')
     }
+  }
+
+  // 处理角色卡导入
+  const handleImportCharacter = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click()
+    }
+  }
+
+  // 处理文件选择
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    const file = files[0]
+    setIsImporting(true)
+
+    try {
+      if (file.type === 'application/json') {
+        // 处理JSON文件
+        const reader = new FileReader()
+        reader.onload = async (event) => {
+          const content = event.target?.result as string
+          try {
+            // 使用API导入JSON文件
+            const response = await Api.importJsonFile(
+              content,
+              "CHARACTER",
+              file.name,
+              true
+            )
+
+            if (response.success) {
+              alert(`成功导入角色卡文件: ${response.file.name}`)
+              // 重新加载配置和角色卡列表
+              await loadConfigData()
+              await loadAllCharacterContents()
+            } else {
+              alert(`导入失败: ${response.message || '未知错误'}`)
+            }
+          } catch (err) {
+            console.error('处理JSON文件失败:', err)
+            alert('导入角色卡失败，请确保文件格式正确')
+          }
+          setIsImporting(false)
+        }
+        reader.readAsText(file)
+      } else if (file.type === 'image/png') {
+        // 处理PNG图片，可能包含嵌入的角色卡文件
+        const reader = new FileReader()
+        reader.onload = async (event) => {
+          const content = event.target?.result as string
+          try {
+            // 使用API从图片导入文件，仅提取角色卡类型
+            const response = await Api.importFilesFromImage(
+              content,
+              ["CH"], // CH是角色卡的文件类型标签
+              true
+            )
+
+            if (response.success && response.files && response.files.length > 0) {
+              alert(`成功从图片导入了 ${response.files.length} 个角色卡文件`)
+              // 重新加载配置和角色卡列表
+              await loadConfigData()
+              await loadAllCharacterContents()
+            } else {
+              // 处理未找到文件或导入失败的情况
+              const errorMsg = response.message || '导入失败'
+              alert(`导入失败: ${errorMsg}`)
+            }
+          } catch (err) {
+            console.error('处理PNG图片失败:', err)
+            alert('从图片导入角色卡失败，请确保图片包含有效的角色卡文件')
+          }
+          setIsImporting(false)
+        }
+        reader.readAsDataURL(file)
+      } else {
+        alert('不支持的文件类型，请选择JSON文件或PNG图片')
+        setIsImporting(false)
+      }
+    } catch (err) {
+      console.error('导入文件失败:', err)
+      alert('导入过程中发生错误，请重试')
+      setIsImporting(false)
+    }
+
+    // 清空文件输入，以便可以重复选择同一个文件
+    e.target.value = ''
   }
 
   const handleDeleteCharacter = async (filePath: string) => {
@@ -162,6 +253,13 @@ export default function CharacterPanel({
               title="添加角色卡"
             >
               ➕
+            </button>
+            <button
+              className="character-panel-add-btn"
+              onClick={handleImportCharacter}
+              title="导入角色卡"
+            >
+              📥
             </button>
           </div>
         </div>
@@ -407,6 +505,23 @@ export default function CharacterPanel({
           </div>
         )}
       </div>
+
+      {/* 隐藏的文件输入元素 */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        style={{ display: 'none' }}
+        accept=".json,image/png"
+        onChange={handleFileSelect}
+      />
+      
+      {/* 导入中的加载指示器 */}
+      {isImporting && (
+        <div className="character-import-loading">
+          <div className="character-import-spinner"></div>
+          <div className="character-import-text">正在导入文件...</div>
+        </div>
+      )}
     </motion.div>
   )
 }
