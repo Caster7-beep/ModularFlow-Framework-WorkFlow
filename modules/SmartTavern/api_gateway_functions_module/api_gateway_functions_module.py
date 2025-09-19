@@ -15,6 +15,8 @@ from shared.SmartTavern import globals as g
 
 # 导入UI设置API函数
 from .api_gateway_functions_module_ui_settings import get_ui_settings, update_ui_settings
+# 导入图片导入API函数
+from .image_import_api import register_image_import_api
 
 
 def setup_smarttavern_api_functions(project_config: Dict[str, Any], llm_manager=None):
@@ -28,6 +30,9 @@ def setup_smarttavern_api_functions(project_config: Dict[str, Any], llm_manager=
     project_info = project_config.get("project", {})
     backend_config = project_config.get("backend", {})
     smarttavern_config = backend_config.get("smarttavern", {})
+    
+    # 注册图片导入API函数
+    register_image_import_api()
     
     # 获取配置参数
     conversation_storage = smarttavern_config.get("conversation_storage", "shared/SmartTavern/conversations")
@@ -930,11 +935,22 @@ def setup_smarttavern_api_functions(project_config: Dict[str, Any], llm_manager=
             
             # 获取绑定的角色卡信息
             bound_character_path = None
-            get_binding_function = registry.functions.get("conversation_binding.get_binding")
-            if get_binding_function:
-                binding_result = get_binding_function(conversation_path=conversation_path)
+            # 优先尝试使用完整绑定系统
+            get_full_binding_function = registry.functions.get("conversation_binding.get_full_binding")
+            if get_full_binding_function:
+                binding_result = get_full_binding_function(conversation_path=conversation_path)
                 if binding_result.get("success") and binding_result.get("character_path"):
                     bound_character_path = binding_result.get("character_path")
+                    print(f"🔗 从完整绑定中获取角色卡: {bound_character_path}")
+            
+            # 如果完整绑定没有找到，尝试旧版绑定系统
+            if not bound_character_path:
+                get_binding_function = registry.functions.get("conversation_binding.get_binding")
+                if get_binding_function:
+                    binding_result = get_binding_function(conversation_path=conversation_path)
+                    if binding_result.get("success") and binding_result.get("character_path"):
+                        bound_character_path = binding_result.get("character_path")
+                        print(f"🔗 从旧版绑定中获取角色卡: {bound_character_path}")
             
             # 如果对话文件为空且有绑定的角色卡，使用角色卡的初始消息
             if not conversation_data and bound_character_path:

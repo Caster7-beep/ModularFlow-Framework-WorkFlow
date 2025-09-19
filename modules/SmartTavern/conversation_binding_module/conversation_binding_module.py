@@ -7,7 +7,7 @@ from core.function_registry import register_function
 from core.services import get_service_manager, get_current_globals
 
 # 绑定数据文件路径
-BINDINGS_FILE = "conversations/conversation_character_bindings.json"
+BINDINGS_FILE = "conversations/conversation_full_bindings.json"
 USER_BINDINGS_FILE = "conversations/conversation_user_bindings.json"
 FULL_BINDINGS_FILE = "conversations/conversation_full_bindings.json"
 

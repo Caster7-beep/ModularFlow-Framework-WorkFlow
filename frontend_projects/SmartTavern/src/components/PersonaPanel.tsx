@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Api } from '@/services/api'
 import OverlayScrollbar from './OverlayScrollbar'
@@ -21,6 +21,8 @@ export default function PersonaPanel({
   const [expandedPersona, setExpandedPersona] = useState<string | null>(null)
   const [editedPersonas, setEditedPersonas] = useState<{[path: string]: any}>({})
   const [hoveredCard, setHoveredCard] = useState<string | null>(null)
+  const [isImporting, setIsImporting] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     loadAllPersonaContents();
@@ -68,6 +70,95 @@ export default function PersonaPanel({
       console.error('创建新用户信息失败:', err)
       alert('创建新用户信息失败，请重试')
     }
+  }
+
+  // 处理用户信息导入
+  const handleImportPersona = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click()
+    }
+  }
+
+  // 处理文件选择
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    const file = files[0]
+    setIsImporting(true)
+
+    try {
+      if (file.type === 'application/json') {
+        // 处理JSON文件
+        const reader = new FileReader()
+        reader.onload = async (event) => {
+          const content = event.target?.result as string
+          try {
+            // 使用API导入JSON文件
+            const response = await Api.importJsonFile(
+              content,
+              "PERSONA",
+              file.name,
+              true
+            )
+
+            if (response.success) {
+              alert(`成功导入用户信息文件: ${response.file.name}`)
+              // 重新加载配置和用户信息列表
+              await loadConfigData()
+              await loadAllPersonaContents()
+            } else {
+              alert(`导入失败: ${response.message || '未知错误'}`)
+            }
+          } catch (err) {
+            console.error('处理JSON文件失败:', err)
+            alert('导入用户信息失败，请确保文件格式正确')
+          }
+          setIsImporting(false)
+        }
+        reader.readAsText(file)
+      } else if (file.type === 'image/png') {
+        // 处理PNG图片，可能包含嵌入的用户信息文件
+        const reader = new FileReader()
+        reader.onload = async (event) => {
+          const content = event.target?.result as string
+          try {
+            // 使用API从图片导入文件，仅提取用户信息类型
+            const response = await Api.importFilesFromImage(
+              content,
+              ["PE"], // PE是用户信息的文件类型标签
+              true
+            )
+
+            if (response.success && response.files && response.files.length > 0) {
+              alert(`成功从图片导入了 ${response.files.length} 个用户信息文件`)
+              // 重新加载配置和用户信息列表
+              await loadConfigData()
+              await loadAllPersonaContents()
+            } else {
+              // 处理未找到文件或导入失败的情况
+              const errorMsg = response.message || '导入失败'
+              alert(`导入失败: ${errorMsg}`)
+            }
+          } catch (err) {
+            console.error('处理PNG图片失败:', err)
+            alert('从图片导入用户信息失败，请确保图片包含有效的用户信息文件')
+          }
+          setIsImporting(false)
+        }
+        reader.readAsDataURL(file)
+      } else {
+        alert('不支持的文件类型，请选择JSON文件或PNG图片')
+        setIsImporting(false)
+      }
+    } catch (err) {
+      console.error('导入文件失败:', err)
+      alert('导入过程中发生错误，请重试')
+      setIsImporting(false)
+    }
+
+    // 清空文件输入，以便可以重复选择同一个文件
+    e.target.value = ''
   }
 
   const handleDeletePersona = async (filePath: string) => {
@@ -145,6 +236,13 @@ export default function PersonaPanel({
               title="添加用户信息"
             >
               ➕
+            </button>
+            <button
+              className="persona-panel-button"
+              onClick={handleImportPersona}
+              title="导入用户信息"
+            >
+              📥
             </button>
           </div>
         </div>
@@ -260,6 +358,23 @@ export default function PersonaPanel({
           </div>
         )}
       </div>
+
+      {/* 隐藏的文件输入元素 */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        style={{ display: 'none' }}
+        accept=".json,image/png"
+        onChange={handleFileSelect}
+      />
+      
+      {/* 导入中的加载指示器 */}
+      {isImporting && (
+        <div className="persona-import-loading">
+          <div className="persona-import-spinner"></div>
+          <div className="persona-import-text">正在导入文件...</div>
+        </div>
+      )}
     </motion.div>
   )
 }
