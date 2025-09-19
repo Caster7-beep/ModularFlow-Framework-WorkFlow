@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Api } from '@/services/api'
 import OverlayScrollbar from './OverlayScrollbar'
+import ExportModal from './ExportModal'
 import '@/styles/PersonaPanel.css'
 
 interface PersonaPanelProps {
@@ -22,6 +23,9 @@ export default function PersonaPanel({
   const [editedPersonas, setEditedPersonas] = useState<{[path: string]: any}>({})
   const [hoveredCard, setHoveredCard] = useState<string | null>(null)
   const [isImporting, setIsImporting] = useState(false)
+  const [showExportModal, setShowExportModal] = useState(false)
+  const [selectedPersonas, setSelectedPersonas] = useState<Set<string>>(new Set())
+  const [exportPersonas, setExportPersonas] = useState<any[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -193,6 +197,26 @@ export default function PersonaPanel({
     }
   }
 
+  // 处理用户信息导出
+  const handleExportPersonas = () => {
+    // 准备导出数据
+    const exportData = Object.entries(personaContents).map(([path, content]) => {
+      return {
+        content: content,
+        type: "PE", // 用户信息类型标识
+        name: path.split('/').pop() || "",
+        displayName: content.name || path.split('/').pop() || "",
+        category: "用户信息",
+        icon: "👥",
+        selected: true,
+        path: path
+      };
+    });
+    
+    setExportPersonas(exportData);
+    setShowExportModal(true);
+  };
+  
   const handleInputChange = (filePath: string, field: string, value: string) => {
     setEditedPersonas(prev => ({
       ...prev,
@@ -243,6 +267,14 @@ export default function PersonaPanel({
               title="导入用户信息"
             >
               📥
+            </button>
+            <button
+              className="persona-panel-button"
+              onClick={handleExportPersonas}
+              title="导出用户信息"
+              disabled={Object.keys(personaContents).length === 0}
+            >
+              📤
             </button>
           </div>
         </div>
@@ -375,6 +407,14 @@ export default function PersonaPanel({
           <div className="persona-import-text">正在导入文件...</div>
         </div>
       )}
+
+      {/* 导出模态框 */}
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        files={exportPersonas}
+        panelTitle="用户信息"
+      />
     </motion.div>
   )
 }

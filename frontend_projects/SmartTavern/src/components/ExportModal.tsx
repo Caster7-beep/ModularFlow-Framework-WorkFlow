@@ -1,15 +1,29 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import AnimatedButton from './AnimatedButton'
+import OverlayScrollbar from './OverlayScrollbar'
 import { Api } from '@/services/api'
 import '@/styles/ExportModal.css'
+
+// 导出文件的接口定义
+interface ExportFile {
+  content: any
+  type: string  // 文件类型标识 (例如 "PS" 预设, "CH" 角色卡, "PE" 用户信息)
+  name: string  // 文件名
+  displayName?: string  // 显示名称
+  category?: string  // 分类（例如 "预设", "角色卡", "用户信息"）
+  icon?: string  // 文件图标 (例如 "📄", "👤", "⚙️")
+  selected?: boolean  // 是否被选中
+  path?: string  // 文件路径（可选）
+}
 
 interface ExportModalProps {
   isOpen: boolean
   onClose: () => void
-  fileContent: any
-  fileType: string
-  fileName: string
+  fileContent?: any  // 单文件内容 (兼容旧接口)
+  fileType?: string  // 单文件类型 (兼容旧接口)
+  fileName?: string  // 单文件名称 (兼容旧接口)
+  files?: ExportFile[]  // 多文件数组
   panelTitle: string
 }
 
@@ -19,12 +33,47 @@ export default function ExportModal({
   fileContent,
   fileType,
   fileName,
+  files = [],
   panelTitle
 }: ExportModalProps) {
   const [baseImage, setBaseImage] = useState<string | null>(null)
   const [baseImagePreview, setBaseImagePreview] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [exportFiles, setExportFiles] = useState<ExportFile[]>([])
+  const [fileCategories, setFileCategories] = useState<Set<string>>(new Set())
   const fileInputRef = useRef<HTMLInputElement>(null)
+  
+  // 初始化导出文件列表和文件分类
+  useEffect(() => {
+    // 优先使用files参数，如果没有则使用单文件参数构造
+    let processedFiles: ExportFile[] = [];
+    
+    if (files && files.length > 0) {
+      processedFiles = files.map(file => ({
+        ...file,
+        selected: file.selected !== undefined ? file.selected : true
+      }));
+    } else if (fileContent && fileType && fileName) {
+      processedFiles = [{
+        content: fileContent,
+        type: fileType,
+        name: fileName,
+        category: panelTitle,
+        selected: true
+      }];
+    }
+    
+    // 计算文件分类
+    const categories = new Set<string>();
+    processedFiles.forEach(file => {
+      if (file.category) {
+        categories.add(file.category);
+      }
+    });
+    
+    setExportFiles(processedFiles);
+    setFileCategories(categories);
+  }, [files, fileContent, fileType, fileName, panelTitle]);
 
   if (!isOpen) return null
 
@@ -61,80 +110,125 @@ export default function ExportModal({
     }
   }
 
+  // 切换文件选择状态
+  const toggleFileSelection = (index: number) => {
+    setExportFiles(prev => {
+      const newFiles = [...prev];
+      newFiles[index] = {
+        ...newFiles[index],
+        selected: !newFiles[index].selected
+      };
+      return newFiles;
+    });
+  };
+
+  // 切换全选/取消全选
+  const toggleSelectAll = (selected: boolean) => {
+    setExportFiles(prev => prev.map(file => ({
+      ...file,
+      selected
+    })));
+  };
+
+  // 处理导出为JSON
   const handleExportAsJson = async () => {
-    setIsProcessing(true)
+    setIsProcessing(true);
     try {
-      // 准备文件数据
-      const files = [{
-        content: typeof fileContent === 'string' ? fileContent : JSON.stringify(fileContent, null, 2),
-        type: fileType,
-        name: fileName
-      }]
+      // 获取选中的文件
+      const selectedFiles = exportFiles.filter(file => file.selected).map(file => ({
+        content: typeof file.content === 'string' ? file.content : JSON.stringify(file.content, null, 2),
+        type: file.type,
+        name: file.name
+      }));
+
+      if (selectedFiles.length === 0) {
+        alert('请至少选择一个文件进行导出');
+        setIsProcessing(false);
+        return;
+      }
 
       // 调用API导出为JSON格式
-      const response = await Api.embedFilesToImage(files, undefined, "json")
+      const response = await Api.embedFilesToImage(selectedFiles, undefined, "json");
       
       if (response.success && response.data) {
         // 创建下载链接
-        const jsonData = JSON.stringify(response.data, null, 2)
-        const blob = new Blob([jsonData], { type: 'application/json' })
-        const url = URL.createObjectURL(blob)
+        const jsonData = JSON.stringify(response.data, null, 2);
+        const blob = new Blob([jsonData], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        // 生成下载文件名
+        const downloadName = selectedFiles.length === 1
+          ? `${selectedFiles[0].name.replace('.json', '')}_export.json`
+          : `${panelTitle}_bundle_export.json`;
         
         // 创建下载链接并触发下载
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `${fileName.replace('.json', '')}_export.json`
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = downloadName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
         
-        alert('JSON文件导出成功！')
-        onClose()
+        alert('JSON文件导出成功！');
+        onClose();
       } else {
-        alert(`导出失败: ${response.message || '未知错误'}`)
+        alert(`导出失败: ${response.message || '未知错误'}`);
       }
     } catch (err) {
-      console.error('导出JSON失败:', err)
-      alert('导出过程中发生错误，请重试')
+      console.error('导出JSON失败:', err);
+      alert('导出过程中发生错误，请重试');
     }
-    setIsProcessing(false)
-  }
+    setIsProcessing(false);
+  };
 
+  // 处理导出为图片
   const handleExportAsImage = async () => {
-    setIsProcessing(true)
+    setIsProcessing(true);
     try {
-      // 准备文件数据
-      const files = [{
-        content: typeof fileContent === 'string' ? fileContent : JSON.stringify(fileContent, null, 2),
-        type: fileType,
-        name: fileName
-      }]
+      // 获取选中的文件
+      const selectedFiles = exportFiles.filter(file => file.selected).map(file => ({
+        content: typeof file.content === 'string' ? file.content : JSON.stringify(file.content, null, 2),
+        type: file.type,
+        name: file.name
+      }));
+
+      if (selectedFiles.length === 0) {
+        alert('请至少选择一个文件进行导出');
+        setIsProcessing(false);
+        return;
+      }
 
       // 调用API嵌入到图片
-      const response = await Api.embedFilesToImage(files, baseImage || undefined, "image")
+      const response = await Api.embedFilesToImage(selectedFiles, baseImage || undefined, "image");
       
       if (response.success && response.image_data) {
         // 创建下载链接
-        const imageData = `data:image/png;base64,${response.image_data}`
-        const a = document.createElement('a')
-        a.href = imageData
-        a.download = `${fileName.replace('.json', '')}_embedded.png`
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
+        const imageData = `data:image/png;base64,${response.image_data}`;
+        const a = document.createElement('a');
+        a.href = imageData;
         
-        alert('图片文件导出成功！')
-        onClose()
+        // 生成下载文件名
+        const downloadName = selectedFiles.length === 1
+          ? `${selectedFiles[0].name.replace('.json', '')}_embedded.png`
+          : `${panelTitle}_bundle_embedded.png`;
+        
+        a.download = downloadName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        alert('图片文件导出成功！');
+        onClose();
       } else {
-        alert(`导出失败: ${response.message || '未知错误'}`)
+        alert(`导出失败: ${response.message || '未知错误'}`);
       }
     } catch (err) {
-      console.error('导出图片失败:', err)
-      alert('导出过程中发生错误，请重试')
+      console.error('导出图片失败:', err);
+      alert('导出过程中发生错误，请重试');
     }
-    setIsProcessing(false)
-  }
+    setIsProcessing(false);
+  };
 
   return (
     <AnimatePresence>
@@ -210,21 +304,174 @@ export default function ExportModal({
               </div>
 
               <div className="export-section-right">
-                <h4 className="export-section-title">要导出的文件</h4>
-                <div className="export-file-info">
-                  <div className="export-file-item">
-                    <div className="export-file-icon">📄</div>
-                    <div className="export-file-details">
-                      <div className="export-file-name">{fileName}</div>
-                      <div className="export-file-type">{panelTitle}</div>
-                      <div className="export-file-size">
-                        {typeof fileContent === 'string' 
-                          ? `${fileContent.length} 字符`
-                          : `${JSON.stringify(fileContent).length} 字符`
-                        }
-                      </div>
-                    </div>
+                <div className="export-files-header">
+                  <h4 className="export-section-title">要导出的文件</h4>
+                  <div className="export-files-actions">
+                    <button
+                      className="export-select-all-btn"
+                      onClick={() => toggleSelectAll(true)}
+                      title="全选"
+                    >
+                      全选
+                    </button>
+                    <button
+                      className="export-select-none-btn"
+                      onClick={() => toggleSelectAll(false)}
+                      title="取消全选"
+                    >
+                      取消全选
+                    </button>
                   </div>
+                </div>
+                
+                <div className="export-files-list">
+                  {exportFiles.length > 0 ? (
+                    <OverlayScrollbar
+                      className="export-files-scrollbar"
+                      showOnHover={true}
+                      autoHide={true}
+                    >
+                      {/* 按类别分组显示文件 */}
+                      {Array.from(fileCategories).map(category => {
+                        // 获取当前类别的文件
+                        const categoryFiles = exportFiles.filter(file => file.category === category);
+                        
+                        // 检查该类别的所有文件是否都被选中
+                        const allSelected = categoryFiles.every(file => file.selected);
+                        const anySelected = categoryFiles.some(file => file.selected);
+                        
+                        // 如果该类别没有文件，则跳过
+                        if (categoryFiles.length === 0) return null;
+                        
+                        return (
+                          <div key={category} className="export-files-category">
+                            <div className="export-category-header">
+                              <div className="export-category-info">
+                                <span className="export-category-icon">
+                                  {category === "角色卡" ? "👤" :
+                                   category === "用户信息" ? "👥" :
+                                   category === "预设" ? "📝" : "📁"}
+                                </span>
+                                <span className="export-category-title">{category}</span>
+                                <span className="export-category-count">({categoryFiles.length})</span>
+                              </div>
+                              <div className="export-category-actions">
+                                <button
+                                  className={`export-category-select-btn ${allSelected ? 'selected' : anySelected ? 'partial' : ''}`}
+                                  onClick={() => {
+                                    // 如果全部选中，则取消全选；否则全选
+                                    const newSelected = !allSelected;
+                                    setExportFiles(prev =>
+                                      prev.map(file =>
+                                        file.category === category
+                                          ? {...file, selected: newSelected}
+                                          : file
+                                      )
+                                    );
+                                  }}
+                                >
+                                  {allSelected ? '取消全选' : '全选'}
+                                </button>
+                              </div>
+                            </div>
+                            
+                            <div className="export-category-files">
+                              {categoryFiles.map((file, index) => {
+                                // 根据文件类型设置图标
+                                let fileIcon = "📄";
+                                if (file.icon) {
+                                  fileIcon = file.icon;
+                                } else if (file.type === "CH") {
+                                  fileIcon = "👤";
+                                } else if (file.type === "PE") {
+                                  fileIcon = "👥";
+                                } else if (file.type === "PS") {
+                                  fileIcon = "📝";
+                                }
+                                
+                                // 获取文件在整个列表中的索引
+                                const globalIndex = exportFiles.findIndex(f =>
+                                  f.path === file.path && f.name === file.name);
+                                
+                                return (
+                                  <div
+                                    key={globalIndex}
+                                    className={`export-file-item ${file.selected ? 'selected' : ''}`}
+                                    onClick={() => toggleFileSelection(globalIndex)}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      className="export-file-checkbox"
+                                      checked={file.selected || false}
+                                      onChange={() => toggleFileSelection(globalIndex)}
+                                      onClick={(e) => e.stopPropagation()}
+                                    />
+                                    <div className="export-file-icon">{fileIcon}</div>
+                                    <div className="export-file-details">
+                                      <div className="export-file-name">{file.displayName || file.name}</div>
+                                      <div className="export-file-size">
+                                        {typeof file.content === 'string'
+                                          ? `${file.content.length} 字符`
+                                          : `${JSON.stringify(file.content).length} 字符`
+                                        }
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      
+                      {/* 显示未分类文件 */}
+                      {exportFiles.filter(file => !file.category).length > 0 && (
+                        <div className="export-files-category">
+                          <div className="export-category-header">
+                            <span className="export-category-title">其他文件</span>
+                            <span className="export-category-count">
+                              ({exportFiles.filter(file => !file.category).length})
+                            </span>
+                          </div>
+                          
+                          <div className="export-category-files">
+                            {exportFiles.filter(file => !file.category).map((file, index) => {
+                              const globalIndex = exportFiles.findIndex(f => f === file);
+                              return (
+                                <div
+                                  key={globalIndex}
+                                  className={`export-file-item ${file.selected ? 'selected' : ''}`}
+                                  onClick={() => toggleFileSelection(globalIndex)}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    className="export-file-checkbox"
+                                    checked={file.selected || false}
+                                    onChange={() => toggleFileSelection(globalIndex)}
+                                    onClick={(e) => e.stopPropagation()}
+                                  />
+                                  <div className="export-file-icon">📄</div>
+                                  <div className="export-file-details">
+                                    <div className="export-file-name">{file.displayName || file.name}</div>
+                                    <div className="export-file-size">
+                                      {typeof file.content === 'string'
+                                        ? `${file.content.length} 字符`
+                                        : `${JSON.stringify(file.content).length} 字符`
+                                      }
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </OverlayScrollbar>
+                  ) : (
+                    <div className="export-no-files">
+                      没有可导出的文件
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
