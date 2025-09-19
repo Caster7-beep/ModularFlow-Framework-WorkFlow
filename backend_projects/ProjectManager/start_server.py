@@ -271,22 +271,76 @@ class ProjectManagerBackend:
             project_info = self.project_config.get("project", {})
             project_name = project_info.get("name", "ProjectManager")
             
+            # 首先清理项目管理器（这会停止所有被管理的项目）
+            if self.project_manager:
+                print("🧹 清理项目管理器...")
+                self.project_manager.cleanup()
+            
             # 停止前端服务器
             if self.web_server:
+                print("🛑 停止前端服务器...")
                 self.web_server.stop_project(project_name)
             
             # 停止API网关
             if self.api_gateway:
+                print("🛑 停止API网关...")
                 self.api_gateway.stop_server()
             
-            # 清理项目管理器
-            if self.project_manager:
-                self.project_manager.cleanup()
+            # 额外的端口清理检查
+            self._force_cleanup_ports()
             
             print("✅ 所有服务已停止")
         
         except Exception as e:
             print(f"⚠️ 停止服务时出现问题: {e}")
+    
+    def _force_cleanup_ports(self):
+        """强制清理占用的端口"""
+        try:
+            backend_config = self.project_config.get("backend", {})
+            frontend_config = self.project_config.get("frontend", {})
+            api_gateway_config = backend_config.get("api_gateway", {})
+            
+            api_port = api_gateway_config.get("port", 8000)
+            frontend_port = frontend_config.get("port", 8080)
+            
+            # 检查并清理占用端口的进程
+            import subprocess
+            import os
+            
+            if os.name == 'nt':  # Windows
+                for port in [api_port, frontend_port]:
+                    try:
+                        # 查找占用端口的进程
+                        result = subprocess.run(
+                            ['netstat', '-ano', '|', 'findstr', f':{port}'],
+                            shell=True,
+                            capture_output=True,
+                            text=True
+                        )
+                        
+                        if result.stdout:
+                            lines = result.stdout.strip().split('\n')
+                            for line in lines:
+                                if 'LISTENING' in line:
+                                    parts = line.split()
+                                    if len(parts) >= 5:
+                                        pid = parts[-1]
+                                        try:
+                                            # 终止占用端口的进程
+                                            subprocess.run(
+                                                ['taskkill', '/F', '/PID', pid],
+                                                check=False,
+                                                capture_output=True
+                                            )
+                                            print(f"✓ 清理端口 {port} 占用进程 PID: {pid}")
+                                        except:
+                                            pass
+                    except Exception as e:
+                        print(f"⚠️ 清理端口 {port} 时出现问题: {e}")
+            
+        except Exception as e:
+            print(f"⚠️ 强制清理端口时出现问题: {e}")
 
 
 def main():

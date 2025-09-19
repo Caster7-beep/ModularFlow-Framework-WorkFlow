@@ -507,13 +507,17 @@ class ProjectManagerApp {
      */
     showLoading(text = '正在处理...') {
         this.elements.loadingText.textContent = text;
+        // 为避免与 Tailwind 'hidden' 冲突，显示时添加 flex
         this.elements.loadingModal.classList.remove('hidden');
+        this.elements.loadingModal.classList.add('flex');
     }
 
     /**
      * 隐藏加载框
      */
     hideLoading() {
+        // 隐藏时移除 flex，避免与 hidden 冲突
+        this.elements.loadingModal.classList.remove('flex');
         this.elements.loadingModal.classList.add('hidden');
     }
 

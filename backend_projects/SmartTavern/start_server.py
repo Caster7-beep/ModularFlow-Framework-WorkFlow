@@ -3,11 +3,10 @@
 SmartTavern对话项目后端启动脚本
 
 该脚本负责：
-1. 启动API网关服务器（端口6500）
+1. 启动API网关服务器（从ProjectManager配置获取端口）
 2. 集成完整的SmartTavern工作流系统
 3. 集成Gemini 2.5 Flash API
-4. 启动前端开发服务器
-5. 提供完整的SmartTavern对话后端支持
+4. 提供完整的SmartTavern对话后端支持
 """
 
 import sys
@@ -16,7 +15,6 @@ import json
 import asyncio
 import threading
 import time
-import webbrowser
 from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Any, Optional
@@ -44,11 +42,12 @@ class SmartTavernChatBackend:
     
     def __init__(self, config_path: str = None):
         self.api_gateway = None
-        self.web_server = None
         self.llm_manager = None
         self.framework_root = framework_root
         self.config_path = config_path or str(Path(__file__).parent / "config.json")
         self.project_config = {}
+        self.project_manager_config = {}
+        self.api_port = 6500  # 默认端口，后续会从ProjectManager配置获取
         
         print("🚀 初始化SmartTavern对话系统后端...")
         
@@ -57,6 +56,9 @@ class SmartTavernChatBackend:
         
         # 加载项目配置
         self.load_project_config()
+        
+        # 加载ProjectManager配置
+        self.load_project_manager_config()
         
         # 初始化服务管理器
         self.service_manager = get_service_manager()
@@ -82,6 +84,29 @@ class SmartTavernChatBackend:
         else:
             print(f"⚠️ 项目配置文件不存在: {config_file}")
             self.project_config = {}
+            
+    def load_project_manager_config(self):
+        """加载ProjectManager配置获取端口信息"""
+        pm_config_path = Path(self.framework_root) / "shared" / "ProjectManager" / "config.json"
+        if pm_config_path.exists():
+            try:
+                with open(pm_config_path, 'r', encoding='utf-8') as f:
+                    self.project_manager_config = json.load(f)
+                
+                # 从ProjectManager配置中查找SmartTavern项目信息
+                managed_projects = self.project_manager_config.get("managed_projects", [])
+                for project in managed_projects:
+                    if project.get("name") == "SmartTavern":
+                        ports = project.get("ports", {})
+                        self.api_port = ports.get("api_gateway", 6500)
+                        print(f"✓ 从ProjectManager配置获取API端口: {self.api_port}")
+                        break
+            except Exception as e:
+                print(f"⚠️ 加载ProjectManager配置失败: {e}")
+                print("使用默认端口: 6500")
+        else:
+            print(f"⚠️ ProjectManager配置文件不存在: {pm_config_path}")
+            print("使用默认端口: 6500")
     
     def init_llm_manager(self):
         """初始化LLM API管理器"""
@@ -132,55 +157,19 @@ class SmartTavernChatBackend:
             loaded_count = self.service_manager.load_project_modules()
             print(f"✓ 已加载 {loaded_count} 个模块")
             
-            # 使用项目配置初始化API网关和Web服务器
+            # 使用项目配置初始化API网关
             if self.project_config:
                 self.api_gateway = get_api_gateway(project_config=self.project_config)
-                
-                # 为Web服务器创建前端项目配置
-                frontend_config = self._create_frontend_config()
-                self.web_server = get_web_server(project_config=frontend_config)
             else:
                 # 使用默认配置
                 self.api_gateway = get_api_gateway()
-                self.web_server = get_web_server()
             
-            print("✓ API网关和Web服务器初始化完成")
+            print("✓ API网关初始化完成")
             
         except Exception as e:
             print(f"❌ 加载模块失败: {e}")
             raise
     
-    def _create_frontend_config(self):
-        """从项目配置创建前端配置"""
-        if not self.project_config:
-            return None
-        
-        project_info = self.project_config.get("project", {})
-        frontend_config = self.project_config.get("frontend", {})
-        backend_config = self.project_config.get("backend", {})
-        api_gateway_config = backend_config.get("api_gateway", {})
-        
-        # 构建前端项目配置
-        return {
-            "projects": [
-                {
-                    "name": project_info.get("name", "SmartTavern"),
-                    "display_name": project_info.get("display_name", "SmartTavern对话系统"),
-                    "type": "html",
-                    "path": frontend_config.get("path", "frontend_projects/ai_chat"),
-                    "port": frontend_config.get("port", 6601),
-                    "api_endpoint": f"http://localhost:{api_gateway_config.get('port', 6500)}/api/v1",
-                    "dev_command": frontend_config.get("dev_command", "python -m http.server 6601"),
-                    "description": project_info.get("description", "SmartTavern对话前端界面"),
-                    "enabled": True
-                }
-            ],
-            "global_config": {
-                "cors_origins": api_gateway_config.get("cors_origins", ["*"]),
-                "api_base_url": f"http://localhost:{api_gateway_config.get('port', 6500)}",
-                "websocket_url": f"ws://localhost:{api_gateway_config.get('port', 6500)}/ws"
-            }
-        }
     
     def start_api_gateway(self, background=True):
         """启动API网关"""
@@ -192,9 +181,10 @@ class SmartTavernChatBackend:
                 print("⚠️ API网关在配置中被禁用")
                 return False
             
-            port = api_gateway_config.get("port", 6500)
+            # 使用从ProjectManager配置获取的端口
+            port = self.api_port
             
-            print("🌐 启动API网关服务器...")
+            print(f"🌐 启动API网关服务器(端口 {port})...")
             self.api_gateway.start_server(background=background)
             print("✅ API网关启动成功")
             print(f"📚 API文档: http://localhost:{port}/docs")
@@ -203,38 +193,13 @@ class SmartTavernChatBackend:
             print(f"❌ API网关启动失败: {e}")
             return False
     
-    def start_frontend_server(self, open_browser=True):
-        """启动前端开发服务器"""
-        try:
-            project_info = self.project_config.get("project", {})
-            frontend_config = self.project_config.get("frontend", {})
-            project_name = project_info.get("name", "SmartTavern")
-            port = frontend_config.get("port", 6601)
-            auto_open = frontend_config.get("auto_open_browser", True) and open_browser
-            
-            print("⚛️ 启动前端服务器...")
-            success = self.web_server.start_project(project_name, open_browser=auto_open)
-            if success:
-                print("✅ 前端服务器启动成功")
-                print(f"🌐 前端界面: http://localhost:{port}")
-                return True
-            else:
-                print("❌ 前端服务器启动失败")
-                return False
-        except Exception as e:
-            print(f"❌ 启动前端服务器失败: {e}")
-            return False
     
     def check_services_status(self):
         """检查所有服务状态"""
         print("\n📊 服务状态检查:")
         
-        backend_config = self.project_config.get("backend", {})
-        api_gateway_config = backend_config.get("api_gateway", {})
-        frontend_config = self.project_config.get("frontend", {})
-        
-        api_port = api_gateway_config.get("port", 6500)
-        frontend_port = frontend_config.get("port", 6601)
+        # 使用从ProjectManager配置获取的端口
+        api_port = self.api_port
         
         # 检查API网关
         try:
@@ -246,17 +211,6 @@ class SmartTavernChatBackend:
                 print("⚠️ API网关: 响应异常")
         except:
             print("❌ API网关: 无法连接")
-        
-        # 检查前端服务器
-        try:
-            import requests
-            response = requests.get(f"http://localhost:{frontend_port}", timeout=2)
-            if response.status_code == 200:
-                print("✅ 前端: 运行正常")
-            else:
-                print("⚠️ 前端: 响应异常")
-        except:
-            print("❌ 前端: 无法连接")
         
         # 检查LLM API
         if self.llm_manager and self.llm_manager.is_available():
@@ -277,7 +231,7 @@ class SmartTavernChatBackend:
     
     def start_all_services(self):
         """启动所有服务"""
-        print("🎯 启动SmartTavern对话系统完整后端服务...\n")
+        print("🎯 启动SmartTavern对话系统后端服务...\n")
         
         # 显示配置信息
         if self.project_config:
@@ -289,6 +243,7 @@ class SmartTavernChatBackend:
             print(f"📋 版本: {project_info.get('version', '1.0.0')}")
             print(f"📋 描述: {project_info.get('description', '集成完整SmartTavern工作流的AI对话系统')}")
             print(f"📋 SmartTavern工作流: {smarttavern_config.get('workflow', 'prompt_api_call_workflow')}")
+            print(f"📋 API端口: {self.api_port}")
             print()
         
         # 设置自定义函数
@@ -302,13 +257,9 @@ class SmartTavernChatBackend:
         print("⏳ 等待API网关启动...")
         time.sleep(3)
         
-        # 启动前端服务器
-        if not self.start_frontend_server(open_browser=True):
-            return False
-        
         # 等待服务启动
-        print("⏳ 等待所有服务启动...")
-        time.sleep(3)
+        print("⏳ 等待服务启动完成...")
+        time.sleep(2)
         
         # 检查服务状态
         self.check_services_status()
@@ -320,13 +271,6 @@ class SmartTavernChatBackend:
         print("🛑 停止所有服务...")
         
         try:
-            project_info = self.project_config.get("project", {})
-            project_name = project_info.get("name", "SmartTavern")
-            
-            # 停止前端服务器
-            if self.web_server:
-                self.web_server.stop_project(project_name)
-            
             # 停止API网关
             if self.api_gateway:
                 self.api_gateway.stop_server()
@@ -353,25 +297,22 @@ def main():
         # 启动所有服务
         if backend.start_all_services():
             backend_config = backend.project_config.get("backend", {})
-            frontend_config = backend.project_config.get("frontend", {})
             api_gateway_config = backend_config.get("api_gateway", {})
             websocket_config = backend_config.get("websocket", {})
             smarttavern_config = backend_config.get("smarttavern", {})
             
-            api_port = api_gateway_config.get("port", 6500)
-            frontend_port = frontend_config.get("port", 6601)
+            # 使用从ProjectManager配置获取的端口
+            api_port = backend.api_port
             websocket_path = websocket_config.get("path", "/ws")
             
-            print("🎉 SmartTavern对话系统启动完成！")
+            print("🎉 SmartTavern对话系统后端启动完成！")
             print("\n📋 可用服务:")
             print(f"  • API网关: http://localhost:{api_port}")
             print(f"  • API文档: http://localhost:{api_port}/docs")
-            print(f"  • 前端界面: http://localhost:{frontend_port}")
             print(f"  • WebSocket: ws://localhost:{api_port}{websocket_path}")
             print(f"  • LLM模型: Gemini 2.5 Flash")
             print(f"  • SmartTavern工作流: {smarttavern_config.get('workflow', 'enabled')}")
             print(f"\n💡 配置文件: {backend.config_path}")
-            print("\n💡 前端将自动在浏览器中打开")
             print("\n按 Ctrl+C 停止所有服务")
             
             # 保持运行

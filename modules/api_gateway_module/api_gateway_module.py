@@ -607,14 +607,25 @@ class APIGateway:
         
         # 完成所有设置
         self.discover_and_register_functions()
-        self.setup_websocket() 
+        self.setup_websocket()
         self.setup_static_files()
         self._register_endpoints_to_fastapi()  # 重新注册以包含自动发现的端点
         
         if background:
             # 后台运行
             def run_server():
-                uvicorn.run(self.app, host=self.config.host, port=self.config.port, log_level="info")
+                try:
+                    import uvicorn
+                    config = uvicorn.Config(
+                        self.app,
+                        host=self.config.host,
+                        port=self.config.port,
+                        log_level="info"
+                    )
+                    self._server = uvicorn.Server(config)
+                    asyncio.run(self._server.serve())
+                except Exception as e:
+                    logger.error(f"❌ API服务器运行异常: {e}")
             
             self._server_thread = threading.Thread(target=run_server, daemon=True)
             self._server_thread.start()
@@ -626,9 +637,35 @@ class APIGateway:
     
     def stop_server(self):
         """停止API服务器"""
-        if self._server:
-            self._server.shutdown()
-        logger.info("🛑 API服务器已停止")
+        try:
+            # 停止uvicorn服务器
+            if self._server:
+                self._server.should_exit = True
+                if hasattr(self._server, 'force_exit'):
+                    self._server.force_exit = True
+                logger.info("✓ API服务器停止信号已发送")
+            
+            # 等待服务器线程结束
+            if self._server_thread and self._server_thread.is_alive():
+                self._server_thread.join(timeout=10)
+                if self._server_thread.is_alive():
+                    logger.warning("⚠️ API服务器线程未能在10秒内停止")
+                else:
+                    logger.info("✓ API服务器线程已停止")
+            
+            # 清理WebSocket连接
+            if self.websocket_connections:
+                logger.info(f"🧹 清理 {len(self.websocket_connections)} 个WebSocket连接")
+                self.websocket_connections.clear()
+            
+            # 重置状态
+            self._server = None
+            self._server_thread = None
+            
+            logger.info("🛑 API服务器已完全停止")
+            
+        except Exception as e:
+            logger.error(f"❌ 停止API服务器时出现异常: {e}")
 
 
 # 全局API网关实例

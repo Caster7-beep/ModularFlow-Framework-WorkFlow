@@ -10,6 +10,8 @@ import time
 import requests
 import psutil
 import logging
+import os
+import shutil
 from typing import Dict, List, Optional, Any
 from pathlib import Path
 from datetime import datetime
@@ -70,14 +72,14 @@ class ProjectManager:
     def _load_managed_projects_config(self):
         """从ProjectManager配置文件加载被管理的项目配置"""
         try:
-            config_path = Path("backend_projects/ProjectManager/config.json")
+            config_path = Path("shared/ProjectManager/config.json")
             if config_path.exists():
                 with open(config_path, 'r', encoding='utf-8') as f:
                     config = json.load(f)
                 self.managed_projects_config = config.get("managed_projects", [])
                 logger.info(f"✓ 加载了 {len(self.managed_projects_config)} 个被管理项目配置")
             else:
-                logger.warning("⚠️ ProjectManager配置文件不存在")
+                logger.warning("⚠️ ProjectManager配置文件不存在: shared/ProjectManager/config.json")
         except Exception as e:
             logger.error(f"❌ 加载被管理项目配置失败: {e}")
     
@@ -172,6 +174,66 @@ class ProjectManager:
         else:
             status.health_status = "unknown"
     
+    def _check_command_availability(self, command: str) -> bool:
+        """检查命令是否可用"""
+        try:
+            # 提取命令的第一部分
+            cmd_name = command.split()[0]
+            return shutil.which(cmd_name) is not None
+        except:
+            return False
+    
+    def _execute_command_safely(self, command: str, cwd: str = None, project_name: str = "") -> subprocess.Popen:
+        """安全执行命令，处理Windows特殊情况"""
+        try:
+            # 检查命令是否可用
+            if not self._check_command_availability(command):
+                raise FileNotFoundError(f"命令不可用: {command.split()[0]}")
+            
+            # 在Windows上，使用shell=True并设置正确的环境
+            env = os.environ.copy()
+            
+            # 确保PATH包含npm路径
+            if "npm" in command and os.name == 'nt':
+                # 添加常见的npm路径
+                npm_paths = [
+                    r"C:\Program Files\nodejs",
+                    r"C:\Program Files (x86)\nodejs",
+                    os.path.expanduser(r"~\AppData\Roaming\npm")
+                ]
+                current_path = env.get("PATH", "")
+                for npm_path in npm_paths:
+                    if os.path.exists(npm_path) and npm_path not in current_path:
+                        env["PATH"] = f"{npm_path};{current_path}"
+            
+            logger.info(f"执行命令: {command} (工作目录: {cwd or '当前目录'})")
+            
+            # 在Windows上，避免使用PIPE和CREATE_NEW_CONSOLE同时使用
+            # 这会导致连接重置错误
+            if os.name == 'nt':
+                process = subprocess.Popen(
+                    command,
+                    shell=True,
+                    cwd=cwd,
+                    env=env,
+                    creationflags=subprocess.CREATE_NEW_CONSOLE
+                )
+            else:
+                process = subprocess.Popen(
+                    command,
+                    shell=True,
+                    cwd=cwd,
+                    env=env,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE
+                )
+            
+            return process
+            
+        except Exception as e:
+            logger.error(f"❌ 执行命令失败 {command}: {e}")
+            raise
+    
     def start_project(self, project_name: str, component: str = "all") -> Dict[str, Any]:
         """
         启动项目
@@ -187,7 +249,7 @@ class ProjectManager:
             return {"success": False, "error": f"项目 {project_name} 不存在"}
         
         project_config = next(
-            (p for p in self.managed_projects_config if p["name"] == project_name), 
+            (p for p in self.managed_projects_config if p["name"] == project_name),
             None
         )
         
@@ -207,11 +269,9 @@ class ProjectManager:
                         logger.info(f"启动 {project_name} 后端: {start_command}")
                         
                         # 启动后端进程
-                        process = subprocess.Popen(
-                            start_command.split(),
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
-                            creationflags=subprocess.CREATE_NEW_CONSOLE if hasattr(subprocess, 'CREATE_NEW_CONSOLE') else 0
+                        process = self._execute_command_safely(
+                            start_command,
+                            project_name=project_name
                         )
                         
                         self.processes[f"{project_name}_backend"] = process
@@ -233,12 +293,11 @@ class ProjectManager:
                     if project_path.exists():
                         logger.info(f"启动 {project_name} 前端: {dev_command}")
                         
-                        process = subprocess.Popen(
-                            dev_command.split(),
+                        # 使用改进的命令执行方法
+                        process = self._execute_command_safely(
+                            dev_command,
                             cwd=str(project_path),
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
-                            creationflags=subprocess.CREATE_NEW_CONSOLE if hasattr(subprocess, 'CREATE_NEW_CONSOLE') else 0
+                            project_name=project_name
                         )
                         
                         self.processes[f"{project_name}_frontend"] = process
@@ -247,18 +306,30 @@ class ProjectManager:
                         results["started_components"].append("frontend")
                         
                         logger.info(f"✓ {project_name} 前端启动成功 (PID: {process.pid})")
+                    else:
+                        logger.error(f"❌ {project_name} 前端路径不存在: {project_path}")
+                        results["success"] = False
+                        results["error"] = f"前端路径不存在: {project_path}"
                 
-                # 启动控制台（如果存在）
+                # 启动控制台（如果存在且不同于主前端）
                 console_config = project_config.get("console", {})
                 if console_config.get("enabled", False):
-                    # 使用web_server_module启动静态文件服务器
-                    from modules.web_server_module import get_web_server
-                    web_server = get_web_server()
+                    console_port = console_config.get("port")
+                    console_path = console_config.get("path")
                     
-                    console_success = web_server.start_project(project_name, open_browser=False)
-                    if console_success:
-                        results["started_components"].append("console")
-                        logger.info(f"✓ {project_name} 控制台启动成功")
+                    # 只有当控制台端口与前端端口不同时才启动独立控制台
+                    if console_port and console_port != frontend_config.get("port"):
+                        try:
+                            from modules.web_server_module.web_server_module import StaticFileServer
+                            
+                            # 直接启动静态文件服务器
+                            static_server = StaticFileServer(console_path, console_port)
+                            static_server.start()
+                            
+                            results["started_components"].append("console")
+                            logger.info(f"✓ {project_name} 控制台启动成功 (端口: {console_port})")
+                        except Exception as e:
+                            logger.warning(f"⚠️ {project_name} 控制台启动失败: {e}")
             
             return results
             
@@ -290,10 +361,8 @@ class ProjectManager:
                 if backend_process_key in self.processes:
                     process = self.processes[backend_process_key]
                     try:
-                        # 终止进程组
-                        if hasattr(process, 'terminate'):
-                            process.terminate()
-                            process.wait(timeout=10)
+                        # 强制终止进程及其子进程
+                        self._terminate_process_tree(process)
                         
                         del self.processes[backend_process_key]
                         status.backend_running = False
@@ -310,8 +379,8 @@ class ProjectManager:
                 if frontend_process_key in self.processes:
                     process = self.processes[frontend_process_key]
                     try:
-                        process.terminate()
-                        process.wait(timeout=10)
+                        # 强制终止进程及其子进程
+                        self._terminate_process_tree(process)
                         
                         del self.processes[frontend_process_key]
                         status.frontend_running = False
@@ -412,21 +481,73 @@ class ProjectManager:
         
         return port_usage
     
+    def _terminate_process_tree(self, process: subprocess.Popen):
+        """终止进程及其所有子进程"""
+        try:
+            if process.poll() is None:  # 进程仍在运行
+                # 在Windows上，尝试终止整个进程树
+                if os.name == 'nt':
+                    try:
+                        # 使用taskkill命令终止进程树
+                        subprocess.run(
+                            ['taskkill', '/F', '/T', '/PID', str(process.pid)],
+                            check=False,
+                            capture_output=True
+                        )
+                        logger.info(f"✓ 使用taskkill终止进程树 PID: {process.pid}")
+                    except Exception as e:
+                        logger.warning(f"taskkill失败，使用标准方法: {e}")
+                        process.terminate()
+                        process.wait(timeout=10)
+                else:
+                    # Unix系统使用进程组终止
+                    try:
+                        import signal
+                        os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+                        process.wait(timeout=10)
+                    except Exception:
+                        process.terminate()
+                        process.wait(timeout=10)
+        except Exception as e:
+            logger.error(f"终止进程树失败: {e}")
+            # 最后尝试强制终止
+            try:
+                process.kill()
+            except:
+                pass
+    
     def cleanup(self):
         """清理资源"""
-        self.health_check_running = False
+        logger.info("🧹 开始清理项目管理器资源...")
         
+        # 停止健康检查线程
+        self.health_check_running = False
         if self.health_check_thread and self.health_check_thread.is_alive():
             self.health_check_thread.join(timeout=5)
+            logger.info("✓ 健康检查线程已停止")
         
         # 停止所有进程
-        for process_name, process in self.processes.items():
+        processes_to_clean = list(self.processes.items())
+        for process_name, process in processes_to_clean:
             try:
-                if process.poll() is None:  # 进程仍在运行
-                    process.terminate()
-                    process.wait(timeout=5)
+                logger.info(f"🛑 停止进程: {process_name} (PID: {process.pid})")
+                self._terminate_process_tree(process)
+                logger.info(f"✓ 进程 {process_name} 已停止")
             except Exception as e:
                 logger.warning(f"清理进程 {process_name} 时出现问题: {e}")
+        
+        # 清空进程字典
+        self.processes.clear()
+        
+        # 重置所有项目状态
+        for project_name, status in self.projects.items():
+            status.frontend_running = False
+            status.backend_running = False
+            status.frontend_pid = None
+            status.backend_pid = None
+            status.health_status = "unknown"
+        
+        logger.info("✅ 项目管理器资源清理完成")
 
 
 # 全局项目管理器实例
