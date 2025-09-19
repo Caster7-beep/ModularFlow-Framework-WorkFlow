@@ -190,6 +190,7 @@ def register_image_import_api():
                         "REGEX": "regex_rules",
                         "CHARACTER": "characters",
                         "PRESET": "presets",
+                        "PERSONA": "personas",  # 用户信息保存在personas目录
                         "USER_CONFIG": ".",  # 用户配置保存在共享目录根目录
                         "OTHER": "other"  # 其他类型保存在other目录
                     }
