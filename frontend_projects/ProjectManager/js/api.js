@@ -155,6 +155,13 @@ class APIClient {
         });
     }
 
+    async updateProjectPorts(projectName, ports) {
+        return this.post('/project_manager/update_ports', {
+            project_name: projectName,
+            ports: ports
+        });
+    }
+
     /**
      * WebSocket连接
      */

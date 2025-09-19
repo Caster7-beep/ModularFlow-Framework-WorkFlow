@@ -48,6 +48,7 @@ class ProjectManagerApp {
             
             // 项目管理
             managedProjectsList: document.getElementById('managedProjectsList'),
+            projectPortConfig: document.getElementById('projectPortConfig'),
             
             // 按钮
             refreshBtn: document.getElementById('refreshBtn'),
@@ -68,6 +69,16 @@ class ProjectManagerApp {
             deleteProjectName: document.getElementById('deleteProjectName'),
             confirmDeleteBtn: document.getElementById('confirmDeleteBtn'),
             cancelDeleteBtn: document.getElementById('cancelDeleteBtn'),
+            
+            // 编辑端口模态框
+            editPortModal: document.getElementById('editPortModal'),
+            closePortModal: document.getElementById('closePortModal'),
+            editPortForm: document.getElementById('editPortForm'),
+            cancelPortBtn: document.getElementById('cancelPortBtn'),
+            editProjectName: document.getElementById('editProjectName'),
+            frontendPort: document.getElementById('frontendPort'),
+            backendPort: document.getElementById('backendPort'),
+            websocketPort: document.getElementById('websocketPort'),
             
             // 模态框和通知
             loadingModal: document.getElementById('loadingModal'),
@@ -106,6 +117,11 @@ class ProjectManagerApp {
         this.elements.closeDeleteModal.addEventListener('click', () => this.hideDeleteProjectModal());
         this.elements.cancelDeleteBtn.addEventListener('click', () => this.hideDeleteProjectModal());
         this.elements.confirmDeleteBtn.addEventListener('click', () => this.deleteProject());
+        
+        // 编辑端口模态框
+        this.elements.closePortModal.addEventListener('click', () => this.hideEditPortModal());
+        this.elements.cancelPortBtn.addEventListener('click', () => this.hideEditPortModal());
+        this.elements.editPortForm.addEventListener('submit', (e) => this.savePortConfig(e));
         
         // WebSocket消息监听
         window.addEventListener('websocket-message', (event) => {
@@ -231,6 +247,7 @@ class ProjectManagerApp {
         this.updateProjectsGrid();
         this.updatePortUsage();
         this.updateManagedProjectsList();
+        this.updateProjectPortConfig();
     }
 
     /**
@@ -619,11 +636,67 @@ class ProjectManagerApp {
                         <h5 class="font-medium text-gray-900">${project.name}</h5>
                         <p class="text-sm text-gray-600">${project.description || '无描述'}</p>
                     </div>
-                    <button onclick="app.confirmDeleteProject('${project.name}')"
-                            class="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1 rounded text-sm flex items-center justify-center space-x-1">
-                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                        <span>删除</span>
-                    </button>
+                    <div class="flex space-x-2">
+                        <button onclick="app.showEditPortModal('${project.name}')"
+                                class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1 rounded text-sm flex items-center justify-center space-x-1">
+                            <i data-lucide="settings" class="w-4 h-4"></i>
+                            <span>端口</span>
+                        </button>
+                        <button onclick="app.confirmDeleteProject('${project.name}')"
+                                class="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1 rounded text-sm flex items-center justify-center space-x-1">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            <span>删除</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        lucide.createIcons();
+    }
+
+    /**
+     * 更新项目端口配置UI
+     */
+    updateProjectPortConfig() {
+        if (!this.managedProjects || this.managedProjects.length === 0) {
+            this.elements.projectPortConfig.innerHTML = `
+                <p class="text-gray-500 text-center py-4">暂无可管理项目</p>
+            `;
+            return;
+        }
+
+        this.elements.projectPortConfig.innerHTML = this.managedProjects.map(project => {
+            // 获取项目的端口配置
+            const ports = project.ports || {};
+            const frontendPort = ports.frontend_dev || '未设置';
+            const backendPort = ports.api_gateway || '未设置';
+            const websocketPort = ports.websocket || backendPort || '未设置';
+
+            return `
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <h5 class="font-medium text-gray-900">${project.name}</h5>
+                        <button onclick="app.showEditPortModal('${project.name}')"
+                                class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded text-xs flex items-center space-x-1">
+                            <i data-lucide="edit" class="w-3 h-3"></i>
+                            <span>编辑</span>
+                        </button>
+                    </div>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">前端端口:</span>
+                            <span class="font-mono">${frontendPort}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">后端端口:</span>
+                            <span class="font-mono">${backendPort}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">WebSocket端口:</span>
+                            <span class="font-mono">${websocketPort}</span>
+                        </div>
+                    </div>
                 </div>
             `;
         }).join('');
@@ -646,6 +719,41 @@ class ProjectManagerApp {
         this.elements.importProjectModal.classList.remove('flex');
         this.elements.importProjectModal.classList.add('hidden');
         this.elements.importProjectForm.reset();
+    }
+
+    /**
+     * 显示端口编辑模态框
+     */
+    showEditPortModal(projectName) {
+        const project = this.managedProjects.find(p => p.name === projectName);
+        if (!project) {
+            this.showToast('error', '错误', `找不到项目: ${projectName}`);
+            return;
+        }
+
+        // 设置当前编辑的项目名称
+        this.elements.editProjectName.value = projectName;
+        
+        // 获取项目的端口配置
+        const ports = project.ports || {};
+        
+        // 设置表单字段值
+        this.elements.frontendPort.value = ports.frontend_dev || '';
+        this.elements.backendPort.value = ports.api_gateway || '';
+        this.elements.websocketPort.value = ports.websocket || ports.api_gateway || '';
+        
+        // 显示模态框
+        this.elements.editPortModal.classList.remove('hidden');
+        this.elements.editPortModal.classList.add('flex');
+    }
+
+    /**
+     * 隐藏端口编辑模态框
+     */
+    hideEditPortModal() {
+        this.elements.editPortModal.classList.remove('flex');
+        this.elements.editPortModal.classList.add('hidden');
+        this.elements.editPortForm.reset();
     }
 
     /**
@@ -724,6 +832,63 @@ class ProjectManagerApp {
             }
         } catch (error) {
             this.showToast('error', '删除失败', error.message);
+        } finally {
+            this.hideLoading();
+        }
+    }
+
+    /**
+     * 保存端口配置
+     */
+    async savePortConfig(event) {
+        event.preventDefault();
+        
+        const projectName = this.elements.editProjectName.value;
+        if (!projectName) return;
+        
+        // 获取端口值
+        const frontendPort = parseInt(this.elements.frontendPort.value);
+        const backendPort = parseInt(this.elements.backendPort.value);
+        const websocketPort = parseInt(this.elements.websocketPort.value);
+        
+        // 验证端口值
+        if (isNaN(frontendPort) || frontendPort < 1024 || frontendPort > 65535) {
+            this.showToast('error', '输入错误', '前端端口必须是1024-65535之间的数字');
+            return;
+        }
+        
+        if (isNaN(backendPort) || backendPort < 1024 || backendPort > 65535) {
+            this.showToast('error', '输入错误', '后端端口必须是1024-65535之间的数字');
+            return;
+        }
+        
+        if (isNaN(websocketPort) || websocketPort < 1024 || websocketPort > 65535) {
+            this.showToast('error', '输入错误', 'WebSocket端口必须是1024-65535之间的数字');
+            return;
+        }
+        
+        this.hideEditPortModal();
+        this.showLoading(`正在保存端口配置...`);
+        
+        try {
+            const result = await window.apiClient.updateProjectPorts(
+                projectName,
+                {
+                    frontend_dev: frontendPort,
+                    api_gateway: backendPort,
+                    websocket: websocketPort
+                }
+            );
+            
+            if (result.success || (result.result && result.result.success)) {
+                this.showToast('success', '保存成功', `项目 ${projectName} 端口配置已更新`);
+                await this.loadData(false);
+            } else {
+                const error = result.error || (result.result && result.result.error) || '未知错误';
+                this.showToast('error', '保存失败', error);
+            }
+        } catch (error) {
+            this.showToast('error', '保存失败', error.message);
         } finally {
             this.hideLoading();
         }

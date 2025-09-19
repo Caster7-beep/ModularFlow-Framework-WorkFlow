@@ -810,3 +810,99 @@ def delete_project(project_name: str):
     except Exception as e:
         logger.error(f"删除项目失败: {str(e)}")
         return {"success": False, "error": str(e)}
+
+@register_function(name="project_manager.update_ports", outputs=["result"])
+def update_project_ports(project_name: str, ports: dict):
+    """更新项目端口配置"""
+    manager = get_project_manager()
+    
+    try:
+        # 检查项目是否存在
+        project_config = next((p for p in manager.managed_projects_config
+                              if p["name"] == project_name), None)
+        
+        if not project_config:
+            return {"success": False, "error": f"项目 {project_name} 不存在"}
+        
+        # 获取并验证端口
+        frontend_port = ports.get('frontend_dev')
+        backend_port = ports.get('api_gateway')
+        websocket_port = ports.get('websocket')
+        
+        if frontend_port and (frontend_port < 1024 or frontend_port > 65535):
+            return {"success": False, "error": "前端端口必须在1024-65535范围内"}
+        
+        if backend_port and (backend_port < 1024 or backend_port > 65535):
+            return {"success": False, "error": "后端端口必须在1024-65535范围内"}
+            
+        if websocket_port and (websocket_port < 1024 or websocket_port > 65535):
+            return {"success": False, "error": "WebSocket端口必须在1024-65535范围内"}
+        
+        framework_root = Path(__file__).parent.parent.parent.parent
+        
+        # 获取项目管理配置
+        config_path = os.path.join(framework_root, "shared/ProjectManager/config.json")
+        if not os.path.exists(config_path):
+            return {"success": False, "error": "项目管理配置不存在"}
+        
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+        
+        # 更新项目端口配置
+        for i, project in enumerate(config.get("managed_projects", [])):
+            if project["name"] == project_name:
+                # 确保存在ports字段
+                if "ports" not in project:
+                    project["ports"] = {}
+                
+                # 更新端口值
+                if frontend_port:
+                    project["ports"]["frontend_dev"] = frontend_port
+                
+                if backend_port:
+                    project["ports"]["api_gateway"] = backend_port
+                
+                if websocket_port:
+                    project["ports"]["websocket"] = websocket_port
+                
+                # 同时更新其他相关字段
+                if frontend_port and "frontend" in project:
+                    project["frontend"]["port"] = frontend_port
+                
+                if backend_port and "backend" in project:
+                    if "api_gateway" in project["backend"]:
+                        project["backend"]["api_gateway"]["port"] = backend_port
+                    else:
+                        project["backend"]["api_gateway_port"] = backend_port
+                
+                # 更新健康检查URLs
+                if "health_checks" in project:
+                    if frontend_port:
+                        project["health_checks"]["frontend_dev_url"] = f"http://localhost:{frontend_port}"
+                    
+                    if backend_port:
+                        project["health_checks"]["api_docs_url"] = f"http://localhost:{backend_port}/docs"
+                    
+                    if websocket_port:
+                        project["health_checks"]["websocket_url"] = f"ws://localhost:{websocket_port}/ws"
+                
+                # 更新config中的project
+                config["managed_projects"][i] = project
+                break
+        
+        # 保存配置
+        with open(config_path, 'w', encoding='utf-8') as f:
+            json.dump(config, f, indent=2, ensure_ascii=False)
+        
+        # 重新加载配置
+        manager._load_managed_projects_config()
+        
+        return {
+            "success": True,
+            "message": f"项目 {project_name} 端口配置已更新",
+            "ports": ports
+        }
+        
+    except Exception as e:
+        logger.error(f"更新项目端口配置失败: {str(e)}")
+        return {"success": False, "error": str(e)}

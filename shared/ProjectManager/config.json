@@ -12,7 +12,12 @@
       "enabled": true,
       "import_directory": "imports",
       "temp_directory": "temp",
-      "required_folders": ["frontend_projects", "backend_projects", "modules", "shared"],
+      "required_folders": [
+        "frontend_projects",
+        "backend_projects",
+        "modules",
+        "shared"
+      ],
       "validate_config": true
     },
     "project_operations": {
