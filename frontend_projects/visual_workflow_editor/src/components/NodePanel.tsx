@@ -1,13 +1,4 @@
 import React from 'react';
-import { Card, Typography, Space } from 'antd';
-import {
-  RobotOutlined,
-  ImportOutlined,
-  ExportOutlined,
-  CodeOutlined
-} from '@ant-design/icons';
-
-const { Title, Text } = Typography;
 
 interface NodePanelProps {
   onAddNode: (nodeType: string, position: { x: number; y: number }) => void;
@@ -16,146 +7,85 @@ interface NodePanelProps {
 interface NodeTypeConfig {
   type: string;
   label: string;
-  icon: React.ReactNode;
   description: string;
-  color: string;
+  emoji: string;
 }
 
 const nodeTypes: NodeTypeConfig[] = [
-  {
-    type: 'llm',
-    label: 'LLM节点',
-    icon: <RobotOutlined />,
-    description: '调用大语言模型进行文本生成',
-    color: '#52c41a'
-  },
-  {
-    type: 'input',
-    label: '输入节点',
-    icon: <ImportOutlined />,
-    description: '接收用户输入或外部数据',
-    color: '#1890ff'
-  },
-  {
-    type: 'output',
-    label: '输出节点',
-    icon: <ExportOutlined />,
-    description: '输出处理结果',
-    color: '#fa541c'
-  },
-  {
-    type: 'code',
-    label: '代码块节点',
-    icon: <CodeOutlined />,
-    description: '执行Python或JavaScript代码',
-    color: '#722ed1'
-  }
+  { type: 'input', label: '输入节点', description: '接收用户输入或外部数据', emoji: '⬅️' },
+  { type: 'llm', label: 'LLM节点', description: '调用大语言模型进行文本生成', emoji: '🤖' },
+  { type: 'code', label: '代码块节点', description: '执行自定义代码逻辑', emoji: '⌨️' },
+  { type: 'condition', label: '条件判断', description: '根据条件进行分支', emoji: '⚖️' },
+  { type: 'switch', label: '开关路由', description: '按信号值进行路由', emoji: '🔀' },
+  { type: 'merger', label: '结果聚合', description: '聚合多个输入结果', emoji: '🔗' },
+  { type: 'output', label: '输出节点', description: '输出处理结果', emoji: '➡️' },
 ];
 
 const NodePanel: React.FC<NodePanelProps> = ({ onAddNode }) => {
-  // 处理拖拽开始
   const handleDragStart = (event: React.DragEvent, nodeType: string) => {
     event.dataTransfer.setData('application/reactflow', nodeType);
     event.dataTransfer.effectAllowed = 'move';
   };
 
-  // 处理点击添加节点
   const handleAddNode = (nodeType: string) => {
-    // 在画布中心位置添加节点
-    const position = {
-      x: Math.random() * 300 + 100,
-      y: Math.random() * 300 + 100
-    };
+    const position = { x: Math.random() * 300 + 120, y: Math.random() * 300 + 120 };
     onAddNode(nodeType, position);
   };
 
   return (
-    <div style={{ padding: '16px', height: '100%', overflow: 'auto' }}>
-      <Title level={4} style={{ marginBottom: '16px', textAlign: 'center' }}>
-        节点面板
-      </Title>
-      
-      <Space direction="vertical" style={{ width: '100%' }} size="middle">
-        {nodeTypes.map((nodeConfig) => (
-          <Card
-            key={nodeConfig.type}
-            size="small"
-            hoverable
-            style={{
-              cursor: 'grab',
-              border: `2px solid ${nodeConfig.color}`,
-              borderRadius: '8px',
-              transition: 'all 0.2s ease'
-            }}
-            bodyStyle={{ padding: '12px' }}
+    <div className="node-panel h-[calc(100vh-56px)] overflow-auto rounded border border-gray-200 bg-white p-4 space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-black text-xl font-semibold leading-7">节点面板</h2>
+      </div>
+
+      <div className="space-y-2">
+        {nodeTypes.map((n) => (
+          <div
+            key={n.type}
+            role="button"
+            tabIndex={0}
+            aria-label={`添加节点：${n.label}`}
+            title={`${n.label}：${n.description}`}
+            className="rounded border border-gray-200 p-3 h-12 hover:shadow-sm hover:bg-gray-50 cursor-pointer select-none transition-all duration-200 active:opacity-80 group focus:outline-none focus:ring-2 ring-black overflow-hidden"
             draggable
-            onDragStart={(e) => handleDragStart(e, nodeConfig.type)}
-            onClick={() => handleAddNode(nodeConfig.type)}
-            onMouseDown={(e) => {
-              e.currentTarget.style.cursor = 'grabbing';
-            }}
-            onMouseUp={(e) => {
-              e.currentTarget.style.cursor = 'grab';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.cursor = 'grab';
+            onDragStart={(e) => handleDragStart(e, n.type)}
+            onClick={() => handleAddNode(n.type)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleAddNode(n.type);
+              }
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-              <div 
-                style={{ 
-                  fontSize: '18px', 
-                  color: nodeConfig.color, 
-                  marginRight: '8px',
-                  display: 'flex',
-                  alignItems: 'center'
-                }}
-              >
-                {nodeConfig.icon}
+            <div className="flex items-center justify-between gap-2 h-full">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-gray-100 text-black text-sm shrink-0">
+                  {n.emoji}
+                </span>
+                <div className="text-base font-semibold leading-6 text-black min-w-0 truncate">{n.label}</div>
               </div>
-              <Text strong style={{ color: nodeConfig.color }}>
-                {nodeConfig.label}
-              </Text>
+              <div className="text-gray-600 text-sm cursor-grab active:cursor-grabbing shrink-0" title="拖拽到画布" aria-label="拖拽句柄">
+                ::
+              </div>
             </div>
-            
-            <Text 
-              type="secondary" 
-              style={{ 
-                fontSize: '12px',
-                lineHeight: '1.4',
-                display: 'block'
-              }}
-            >
-              {nodeConfig.description}
-            </Text>
-          </Card>
+          </div>
         ))}
-      </Space>
-      
-      <div style={{ marginTop: '24px', padding: '12px', background: '#f5f5f5', borderRadius: '6px' }}>
-        <Text type="secondary" style={{ fontSize: '12px' }}>
-          💡 提示：拖拽节点到画布中或点击节点直接添加
-        </Text>
       </div>
-      
-      <div style={{ marginTop: '16px' }}>
-        <Title level={5} style={{ marginBottom: '8px' }}>
-          使用说明
-        </Title>
-        <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.6' }}>
-          <div style={{ marginBottom: '4px' }}>
-            • <strong>LLM节点</strong>：配置AI模型和提示词
-          </div>
-          <div style={{ marginBottom: '4px' }}>
-            • <strong>输入节点</strong>：设置工作流的输入参数
-          </div>
-          <div style={{ marginBottom: '4px' }}>
-            • <strong>输出节点</strong>：定义工作流的输出格式
-          </div>
-          <div style={{ marginBottom: '4px' }}>
-            • <strong>代码块</strong>：编写自定义处理逻辑
-          </div>
+
+      <div className="rounded border border-gray-200 bg-white p-3">
+        <div className="text-sm text-gray-600">
+          提示：可以将节点拖拽到画布中，或点击条目直接添加到画布中心。
         </div>
+      </div>
+
+      <div className="space-y-1">
+        <h3 className="text-base font-semibold leading-6 text-black">使用说明</h3>
+        <ul className="list-disc pl-5 text-sm text-gray-600 space-y-1">
+          <li><strong className="text-black">LLM节点</strong>：配置模型与提示词</li>
+          <li><strong className="text-black">输入节点</strong>：设置工作流输入参数</li>
+          <li><strong className="text-black">输出节点</strong>：定义输出格式</li>
+          <li><strong className="text-black">代码块</strong>：编写自定义逻辑</li>
+        </ul>
       </div>
     </div>
   );

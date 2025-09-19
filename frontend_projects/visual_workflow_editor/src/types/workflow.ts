@@ -3,9 +3,22 @@ export interface WorkflowNode {
   id: string;
   type: 'llm' | 'input' | 'output' | 'code' | 'condition' | 'switch' | 'merger' | 'loop';
   position: { x: number; y: number };
+  /**
+   * 逻辑分组与锁定（Polish v5）
+   * - groupId: 仅逻辑分组，便于整体移动/对齐/复制/删除
+   * - locked: 锁定后不可拖动/连接，视觉改为浅灰轮廓
+   */
+  groupId?: string;
+  locked?: boolean;
   data: {
     label: string;
     config: NodeConfig;
+    /**
+     * UI 元信息（尺寸等），用于导出/导入布局与对齐/分布计算
+     */
+    ui?: {
+      size?: { width: number; height: number };
+    };
   };
 }
 
@@ -16,6 +29,12 @@ export interface WorkflowEdge {
   target: string;
   sourceHandle?: string;
   targetHandle?: string;
+  /**
+   * 边路由样式（Polish v5）
+   * - 'smooth': 平滑曲线（默认）
+   * - 'orthogonal': 直角折线（最小可行避让）
+   */
+  edgeType?: 'smooth' | 'orthogonal';
 }
 
 // 节点配置基类
@@ -26,12 +45,20 @@ export interface BaseNodeConfig {
 
 // LLM节点配置
 export interface LLMNodeConfig extends BaseNodeConfig {
-  provider: 'openai' | 'anthropic' | 'local';
+  // standard keys expected by backend
+  provider: string;
   model: string;
   prompt: string;
-  temperature?: number;
-  maxTokens?: number;
+  system_prompt?: string;
+  temperature?: number; // 0-1
+  max_tokens?: number;
+
+  // legacy compatibility (UI may read; service will normalize before sending)
   systemPrompt?: string;
+  maxTokens?: number;
+  llmProvider?: string;
+  modelName?: string;
+  promptText?: string;
 }
 
 // 输入节点配置
@@ -49,8 +76,12 @@ export interface OutputNodeConfig extends BaseNodeConfig {
 
 // 代码块节点配置
 export interface CodeNodeConfig extends BaseNodeConfig {
-  language: 'python' | 'javascript';
+  // standard keys expected by backend
+  code_type: 'python';
   code: string;
+
+  // legacy compatibility
+  language?: 'python' | 'javascript';
   dependencies?: string[];
 }
 

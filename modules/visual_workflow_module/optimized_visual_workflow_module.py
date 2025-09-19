@@ -9,6 +9,7 @@
 4. 性能监控接口
 5. 缓存管理接口
 """
+# 注入 GatewayWebSocketAdapter 以启用实时广播
 
 import asyncio
 import uuid
@@ -23,9 +24,10 @@ from orchestrators.optimized_visual_workflow import (
     OptimizedVisualWorkflow, create_optimized_workflow
 )
 from orchestrators.visual_workflow import (
-    WorkflowDefinition, WorkflowNode, WorkflowEdge, NodeType,
+    WorkflowDefinition, WorkflowNode, WorkflowEdge, NodeType, WorkflowExecutionMonitor,
     create_node, create_edge
 )
+from modules.api_gateway_module.api_gateway_module import get_api_gateway
 from modules.visual_workflow_module import variables as v
 
 
@@ -113,6 +115,32 @@ def get_optimized_workflow_manager() -> OptimizedWorkflowManager:
         g.optimized_workflow_manager = OptimizedWorkflowManager()
     return g.optimized_workflow_manager
 
+class GatewayWebSocketAdapter:
+    """基于API Gateway的WebSocket广播适配器"""
+    def broadcast(self, message: Dict[str, Any]) -> None:
+        try:
+            gateway = get_api_gateway()
+        except Exception:
+            # 若API网关未初始化，直接忽略广播
+            return
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # 在已有事件循环中异步调度广播任务
+                loop.create_task(gateway.broadcast_message(message))
+            else:
+                # 当前线程有loop但未运行，直接同步执行
+                loop.run_until_complete(gateway.broadcast_message(message))
+        except RuntimeError:
+            # 无活动事件循环，创建临时事件循环执行
+            new_loop = asyncio.new_event_loop()
+            try:
+                asyncio.set_event_loop(new_loop)
+                new_loop.run_until_complete(gateway.broadcast_message(message))
+            finally:
+                new_loop.close()
+                asyncio.set_event_loop(None)
+
 
 # ========== 异步工作流CRUD API函数 ==========
 
@@ -147,6 +175,12 @@ def create_optimized_workflow_api(name: str, description: str = "") -> Dict[str,
         
         # 创建优化工作流
         workflow = create_optimized_workflow(workflow_def)
+        # 注入执行监控器以通过API网关广播
+        try:
+            if hasattr(workflow, "base_workflow"):
+                workflow.base_workflow.execution_monitor = WorkflowExecutionMonitor(GatewayWebSocketAdapter())
+        except Exception:
+            pass
         
         # 添加到管理器
         manager.add_workflow(workflow)
@@ -190,6 +224,12 @@ def execute_optimized_workflow_api(workflow_id: str, input_data: Dict[str, Any] 
             }
         
         # 在事件循环中执行异步工作流
+        # 兜底注入执行监控器（确保广播能力）
+        try:
+            if hasattr(workflow, "base_workflow") and not getattr(workflow.base_workflow, "execution_monitor", None):
+                workflow.base_workflow.execution_monitor = WorkflowExecutionMonitor(GatewayWebSocketAdapter())
+        except Exception:
+            pass
         try:
             loop = asyncio.get_event_loop()
         except RuntimeError:

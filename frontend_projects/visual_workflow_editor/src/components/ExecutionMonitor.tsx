@@ -1,17 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Card, Badge, Button, Timeline, Progress, Alert, Tabs, Typography, Space, Tag, Divider } from 'antd';
-import { 
-  PlayCircleOutlined, 
-  PauseCircleOutlined, 
-  StopOutlined, 
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Card, Badge, Button, Tabs, Typography, Space, Tag, Divider, Alert, Progress } from 'antd';
+import {
+  PlayCircleOutlined,
+  PauseCircleOutlined,
+  StopOutlined,
   BugOutlined,
-  ClockCircleOutlined, 
+  ClockCircleOutlined,
   CheckCircleOutlined,
   ExclamationCircleOutlined,
   ThunderboltOutlined,
-  EyeOutlined
+  EyeOutlined,
+  ReloadOutlined
 } from '@ant-design/icons';
-import type { WorkflowNode, WorkflowExecution, NodeExecutionResult } from '../types/workflow';
+import type { WorkflowNode, WorkflowExecution } from '../types/workflow';
+import { websocketApi } from '../services/api';
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
@@ -46,7 +48,15 @@ interface DataFlow {
   animated?: boolean;
 }
 
+type SummaryEvent = {
+  t: number; // timestamp (ms)
+  type: 'execution_start' | 'node_state_change' | 'data_flow' | 'execution_complete' | 'execution_failed' | 'breakpoint_hit' | string;
+  execution_id?: string;
+};
+
 export interface ExecutionMonitorProps {
+  // 新增可选 executionId：若存在则仅展示该执行的事件
+  executionId?: string;
   workflowId: string;
   nodes: WorkflowNode[];
   execution?: WorkflowExecution | null;
@@ -58,7 +68,12 @@ export interface ExecutionMonitorProps {
   className?: string;
 }
 
+const MAX_EVENT_BUFFER = 200;
+const SUMMARY_DISPLAY_SIZE = 20;
+const DUP_WINDOW_MS = 100;
+
 const ExecutionMonitor: React.FC<ExecutionMonitorProps> = ({
+  executionId,
   workflowId,
   nodes,
   execution,
@@ -75,7 +90,17 @@ const ExecutionMonitor: React.FC<ExecutionMonitorProps> = ({
   const [isPaused, setIsPaused] = useState(false);
   const [debugMode, setDebugMode] = useState(false);
   const [currentExecutionId, setCurrentExecutionId] = useState<string | null>(null);
-  const websocketRef = useRef<WebSocket | null>(null);
+
+  // WS 连接状态与失败提示
+  const [connectionState, setConnectionState] = useState<'connecting' | 'open' | 'closing' | 'closed'>('closed');
+  const [wsFailed, setWsFailed] = useState(false);
+
+  // 事件摘要（仅显示最近20条类型+时间）
+  const eventBufferRef = useRef<SummaryEvent[]>([]);
+  const [summaryEvents, setSummaryEvents] = useState<SummaryEvent[]>([]);
+
+  // 订阅ID，用于卸载时取消订阅；不直接关闭全局WS，避免影响其它组件
+  const subscriptionIdRef = useRef<string | null>(null);
   const logsEndRef = useRef<HTMLDivElement | null>(null);
 
   // 初始化节点状态
@@ -92,84 +117,96 @@ const ExecutionMonitor: React.FC<ExecutionMonitorProps> = ({
     setNodeStates(initialStates);
   }, [nodes]);
 
-  // WebSocket连接和消息处理
+  // 轮询连接状态（轻量，每1s）
   useEffect(() => {
-    if (!workflowId) return;
+    const timer = setInterval(() => {
+      setConnectionState(websocketApi.getConnectionState());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
-    const connectWebSocket = () => {
-      // 注意：这里使用相对路径，实际部署时需要配置正确的WebSocket地址
-      const wsUrl = `ws://localhost:8000/ws/workflow/${workflowId}`;
-      
+  // 统一通过 services 层的 websocketApi 接入；仅在未连接时尝试连接；并基于 executionId/workflowId 订阅主题
+  useEffect(() => {
+    // 计算订阅主题：优先 executionId，其次 workflowId，否则全局
+    const topics: string[] | undefined = executionId ? [`execution:${executionId}`] : (workflowId ? [`workflow:${workflowId}`] : undefined);
+
+    let mounted = true;
+
+    const ensureConnectedAndSubscribe = async () => {
       try {
-        websocketRef.current = new WebSocket(wsUrl);
-        
-        websocketRef.current.onopen = () => {
-          console.log('ExecutionMonitor WebSocket连接已建立');
-          addLog('info', 'WebSocket连接已建立', 'system');
-        };
-        
-        websocketRef.current.onmessage = (event) => {
-          try {
-            const message = JSON.parse(event.data);
-            handleWebSocketMessage(message);
-          } catch (error) {
-            console.error('WebSocket消息解析失败:', error);
+        if (!websocketApi.isConnected()) {
+          await websocketApi.connectToMonitor(); // 统一 /ws
+        }
+        // 清理旧订阅
+        if (subscriptionIdRef.current) {
+          websocketApi.unsubscribe(subscriptionIdRef.current);
+          subscriptionIdRef.current = null;
+        }
+        // 订阅
+        const sid = websocketApi.subscribe((msg) => {
+          // 捕捉服务层“连接失败达上限”通知
+          if (msg?.type === 'execution_failed' && msg?.error === 'WebSocket连接失败' && !msg?.execution_id) {
+            setWsFailed(true);
+            return;
           }
-        };
-        
-        websocketRef.current.onclose = () => {
-          console.log('ExecutionMonitor WebSocket连接已关闭');
-          addLog('warning', 'WebSocket连接已关闭', 'system');
-          
-          // 自动重连（如果还在执行中）
-          if (isExecuting) {
-            setTimeout(connectWebSocket, 3000);
-          }
-        };
-        
-        websocketRef.current.onerror = (error) => {
-          console.error('ExecutionMonitor WebSocket连接错误:', error);
-          addLog('error', 'WebSocket连接错误', 'system');
-        };
-      } catch (error) {
-        console.error('WebSocket连接失败:', error);
-        addLog('error', `WebSocket连接失败: ${error}`, 'system');
+          // 正常事件处理
+          handleWebSocketMessage(msg as any);
+        }, topics);
+        subscriptionIdRef.current = sid;
+        setWsFailed(false);
+        setConnectionState(websocketApi.getConnectionState());
+      } catch (_e) {
+        // 连接失败时交由自动重连机制处理；若超限，服务层会推送“WebSocket连接失败”
       }
     };
 
-    connectWebSocket();
+    ensureConnectedAndSubscribe();
 
     return () => {
-      if (websocketRef.current) {
-        websocketRef.current.close();
+      mounted = false;
+      if (subscriptionIdRef.current) {
+        websocketApi.unsubscribe(subscriptionIdRef.current);
+        subscriptionIdRef.current = null;
       }
+      // 不调用 websocketApi.disconnect()，避免影响其他使用者
     };
-  }, [workflowId, isExecuting]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [executionId, workflowId]);
 
-  // 处理WebSocket消息
+  // 处理WebSocket消息（遵循 { type, execution_id, ... }）
   const handleWebSocketMessage = (message: any) => {
-    const { type, execution_id, node_id, status, result, error, flow, state } = message;
-    
+    const { type, execution_id, node_id, status, result, error, flow, state, timestamp } = message || {};
+    // 过滤：若 props.executionId 存在，仅处理匹配的 execution_id；若消息无 execution_id 字段，则视为全局事件，仅当未传 executionId 时纳入摘要
+    const now = typeof timestamp === 'number' ? timestamp : Date.now();
+    const hasExecId = typeof execution_id === 'string' && execution_id.length > 0;
+    if (executionId) {
+      if (!hasExecId || execution_id !== executionId) return;
+    }
+
+    // 事件摘要：类型 + 时间戳（隐藏敏感 payload）
+    addEventSummary({ t: now, type: type || 'unknown', execution_id });
+
     switch (type) {
       case 'execution_start':
-        setCurrentExecutionId(execution_id);
-        addLog('info', '工作流开始执行', 'execution', { execution_id });
+        setCurrentExecutionId(execution_id || null);
+        addLog('info', '工作流开始执行', 'execution');
         break;
-        
-      case 'node_state_change':
+
+      case 'node_state_change': {
         updateNodeState(node_id, { status, result, error });
         const node = nodes.find(n => n.id === node_id);
         const nodeName = node?.data.label || node_id;
-        
+
         if (status === 'running') {
           addLog('info', `节点开始执行: ${nodeName}`, node_id);
         } else if (status === 'completed') {
-          addLog('success', `节点执行完成: ${nodeName}`, node_id, { result });
+          addLog('success', `节点执行完成: ${nodeName}`, node_id);
         } else if (status === 'error') {
-          addLog('error', `节点执行失败: ${nodeName}`, node_id, { error });
+          addLog('error', `节点执行失败: ${nodeName}`, node_id);
         }
         break;
-        
+      }
+
       case 'data_flow':
         if (flow) {
           const newFlow: DataFlow = {
@@ -181,37 +218,70 @@ const ExecutionMonitor: React.FC<ExecutionMonitorProps> = ({
             animated: true
           };
           setDataFlows(prev => [...prev, newFlow]);
-          
+
           // 3秒后移除动画效果
           setTimeout(() => {
-            setDataFlows(prev => prev.map(f => 
+            setDataFlows(prev => prev.map(f =>
               f.id === newFlow.id ? { ...f, animated: false } : f
             ));
           }, 3000);
-          
+
           const fromNode = nodes.find(n => n.id === flow.from_node);
           const toNode = nodes.find(n => n.id === flow.to_node);
-          addLog('info', `数据流动: ${fromNode?.data.label} → ${toNode?.data.label}`, 'flow', { data: flow.data });
+          addLog('info', `数据流动: ${fromNode?.data.label} → ${toNode?.data.label}`, 'flow');
         }
         break;
-        
+
       case 'execution_complete':
-        addLog('success', '工作流执行完成', 'execution', { final_result: state?.final_result });
+        addLog('success', '工作流执行完成', 'execution');
         break;
-        
+
       case 'execution_failed':
-        addLog('error', `工作流执行失败: ${error}`, 'execution', { error });
+        // 注意：此类事件也用于WS连接失败达上限的提示；连接失败的已在订阅回调前置处理
+        if (error) {
+          addLog('error', `工作流执行失败: ${error}`, 'execution');
+        } else {
+          addLog('error', '工作流执行失败', 'execution');
+        }
+        break;
+
+      default:
+        // 其他或未知类型：记录摘要即可（不展示 payload）
         break;
     }
   };
 
+  // 事件摘要 ring buffer（最多200），去重：同一 timestamp±100ms 且 type/execution_id 相同跳过
+  const addEventSummary = (evt: SummaryEvent) => {
+    const buf = eventBufferRef.current;
+    // 去重检查：从尾部向前扫描，直到时间差 > 100ms
+    for (let i = buf.length - 1; i >= 0; i--) {
+      const e = buf[i];
+      if (Math.abs(e.t - evt.t) > DUP_WINDOW_MS) break;
+      if (e.type === evt.type && (e.execution_id || '') === (evt.execution_id || '')) {
+        return; // 视为重复，跳过
+      }
+    }
+    buf.push(evt);
+    if (buf.length > MAX_EVENT_BUFFER) {
+      buf.splice(0, buf.length - MAX_EVENT_BUFFER);
+    }
+    // 若传入了 executionId，仅摘要此执行；若未传 executionId，则显示全局摘要（含无 execution_id 的事件）
+    let filtered = buf;
+    if (executionId) {
+      filtered = buf.filter(e => (e.execution_id || '') === executionId);
+    }
+    setSummaryEvents(filtered.slice(-SUMMARY_DISPLAY_SIZE));
+  };
+
   // 更新节点状态
   const updateNodeState = (nodeId: string, updates: Partial<NodeState>) => {
+    if (!nodeId) return;
     setNodeStates(prev => {
       const newMap = new Map(prev);
       const currentState = newMap.get(nodeId) || { id: nodeId, name: '', status: 'pending' as const };
-      const updatedState = { 
-        ...currentState, 
+      const updatedState = {
+        ...currentState,
         ...updates,
         endTime: updates.status === 'completed' || updates.status === 'error' ? Date.now() : currentState.endTime
       };
@@ -220,21 +290,24 @@ const ExecutionMonitor: React.FC<ExecutionMonitorProps> = ({
     });
   };
 
-  // 添加日志
+  // 添加日志（限制最多200条）
   const addLog = (level: ExecutionLog['level'], message: string, nodeId?: string, data?: any) => {
     const newLog: ExecutionLog = {
       id: `log_${Date.now()}_${Math.random()}`,
       timestamp: Date.now(),
-      event_type: nodeId === 'system' ? 'node_start' : 
-                 nodeId === 'execution' ? 'execution_start' : 
-                 nodeId === 'flow' ? 'data_flow' : 'node_start',
+      event_type: nodeId === 'system' ? 'node_start' :
+        nodeId === 'execution' ? 'execution_start' :
+          nodeId === 'flow' ? 'data_flow' : 'node_start',
       node_id: nodeId,
       message,
       data,
       level
     };
-    
-    setExecutionLogs(prev => [...prev, newLog]);
+
+    setExecutionLogs(prev => {
+      const arr = [...prev, newLog];
+      return arr.length > MAX_EVENT_BUFFER ? arr.slice(-MAX_EVENT_BUFFER) : arr;
+    });
   };
 
   // 滚动到日志底部
@@ -274,27 +347,45 @@ const ExecutionMonitor: React.FC<ExecutionMonitorProps> = ({
     return total > 0 ? Math.round((completed / total) * 100) : 0;
   };
 
-  // 格式化时间
+  // 时间格式
   const formatTime = (timestamp: number) => {
-    return new Date(timestamp).toLocaleTimeString();
+    const d = new Date(timestamp);
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    const ss = String(d.getSeconds()).padStart(2, '0');
+    return `${hh}:${mm}:${ss}`;
   };
 
-  // 格式化持续时间
-  const formatDuration = (startTime?: number, endTime?: number) => {
-    if (!startTime) return '0ms';
-    const end = endTime || Date.now();
-    const duration = end - startTime;
-    if (duration < 1000) return `${duration}ms`;
-    return `${(duration / 1000).toFixed(1)}s`;
+  const handleManualReconnect = async () => {
+    setWsFailed(false);
+    try {
+      await websocketApi.connectToMonitor();
+      setConnectionState(websocketApi.getConnectionState());
+      // 订阅保持由 useEffect 管理，当连接恢复时仍有效；若已被清理，App 侧/本组件会再次订阅
+    } catch {
+      // 由服务层自动重连与告警处理
+    }
   };
+
+  const connectionBadge = useMemo(() => {
+    const map: Record<typeof connectionState, { text: string; status: any }> = {
+      connecting: { text: '连接中', status: 'processing' },
+      open: { text: '已连接', status: 'success' },
+      closing: { text: '关闭中', status: 'warning' },
+      closed: { text: '已断开', status: 'error' }
+    };
+    const it = map[connectionState];
+    return <Badge status={it.status} text={it.text} />;
+  }, [connectionState]);
 
   return (
-    <div className={`execution-monitor ${className}`}>
-      <Card 
+    <div className={`execution-monitor ${className || ''}`}>
+      <Card
         title={
           <Space>
             <ThunderboltOutlined />
             <span>执行监控</span>
+            {connectionBadge}
             {isExecuting && <Badge status="processing" text="运行中" />}
           </Space>
         }
@@ -308,6 +399,9 @@ const ExecutionMonitor: React.FC<ExecutionMonitorProps> = ({
             >
               调试模式
             </Button>
+            {connectionState === 'closed' && (
+              <Button size="small" icon={<ReloadOutlined />} onClick={handleManualReconnect}>重试连接</Button>
+            )}
             {isExecuting && (
               <>
                 {isPaused ? (
@@ -357,14 +451,25 @@ const ExecutionMonitor: React.FC<ExecutionMonitorProps> = ({
         }
         size="small"
       >
+        {/* 断开告警与手动重连 */}
+        {wsFailed && (
+          <Alert
+            type="warning"
+            message="实时连接已断开（点击重试以恢复）"
+            action={<Button size="small" type="primary" onClick={handleManualReconnect}>重试</Button>}
+            showIcon
+            style={{ marginBottom: 12 }}
+          />
+        )}
+
         {/* 总体进度 */}
         <div style={{ marginBottom: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <Text strong>执行进度</Text>
             <Text type="secondary">{calculateProgress()}%</Text>
           </div>
-          <Progress 
-            percent={calculateProgress()} 
+          <Progress
+            percent={calculateProgress()}
             status={isExecuting ? 'active' : 'normal'}
             strokeColor={{
               '0%': '#108ee9',
@@ -373,15 +478,35 @@ const ExecutionMonitor: React.FC<ExecutionMonitorProps> = ({
           />
         </div>
 
-        {/* 执行信息标签页 */}
+        {/* 事件摘要（最近20条，仅显示类型与时间） */}
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+            <Text strong>事件摘要（最近{SUMMARY_DISPLAY_SIZE}条）</Text>
+            <Text type="secondary" style={{ fontSize: 12 }}>仅显示类型与时间，隐藏敏感内容</Text>
+          </div>
+          <div style={{ maxHeight: 120, overflowY: 'auto', padding: '6px 8px', background: '#fafafa', borderRadius: 4 }}>
+            {summaryEvents.length === 0 ? (
+              <Text type="secondary">暂无事件</Text>
+            ) : (
+              summaryEvents.slice().reverse().map((e, idx) => (
+                <div key={`${e.t}_${e.type}_${idx}`} style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
+                  <Text style={{ fontSize: 12 }}>{e.type}</Text>
+                  <Text type="secondary" style={{ fontSize: 12 }}>{formatTime(e.t)}</Text>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* 执行信息标签页（保持原风格） */}
         <Tabs defaultActiveKey="nodes" size="small">
           {/* 节点状态 */}
           <TabPane tab="节点状态" key="nodes">
             <div style={{ maxHeight: 300, overflowY: 'auto' }}>
               {Array.from(nodeStates.values()).map(nodeState => (
-                <div key={nodeState.id} style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
+                <div key={nodeState.id} style={{
+                  display: 'flex',
+                  alignItems: 'center',
                   justifyContent: 'space-between',
                   padding: '8px 0',
                   borderBottom: '1px solid #f0f0f0'
@@ -393,13 +518,13 @@ const ExecutionMonitor: React.FC<ExecutionMonitorProps> = ({
                   <Space>
                     <Tag color={getStatusColor(nodeState.status)}>
                       {nodeState.status === 'pending' ? '等待' :
-                       nodeState.status === 'running' ? '运行中' :
-                       nodeState.status === 'completed' ? '完成' :
-                       nodeState.status === 'error' ? '错误' : '跳过'}
+                        nodeState.status === 'running' ? '运行中' :
+                          nodeState.status === 'completed' ? '完成' :
+                            nodeState.status === 'error' ? '错误' : '跳过'}
                     </Tag>
                     {nodeState.startTime && (
                       <Text type="secondary" style={{ fontSize: '12px' }}>
-                        {formatDuration(nodeState.startTime, nodeState.endTime)}
+                        {nodeState.endTime ? `${Math.max(0, Math.round((nodeState.endTime - nodeState.startTime) / 100) / 10)}s` : ''}
                       </Text>
                     )}
                   </Space>
@@ -418,7 +543,7 @@ const ExecutionMonitor: React.FC<ExecutionMonitorProps> = ({
                   const fromNode = nodes.find(n => n.id === flow.from_node);
                   const toNode = nodes.find(n => n.id === flow.to_node);
                   return (
-                    <div key={flow.id} style={{ 
+                    <div key={flow.id} style={{
                       padding: '8px 0',
                       borderBottom: '1px solid #f0f0f0',
                       ...(flow.animated && { backgroundColor: '#f6ffed' })
@@ -433,13 +558,6 @@ const ExecutionMonitor: React.FC<ExecutionMonitorProps> = ({
                           {formatTime(flow.timestamp)}
                         </Text>
                       </div>
-                      {flow.data && (
-                        <div style={{ marginTop: 4, fontSize: '12px', color: '#666' }}>
-                          数据: {typeof flow.data === 'string' ? 
-                            (flow.data.length > 50 ? flow.data.substring(0, 50) + '...' : flow.data) :
-                            JSON.stringify(flow.data).substring(0, 50) + '...'}
-                        </div>
-                      )}
                     </div>
                   );
                 })
@@ -447,27 +565,27 @@ const ExecutionMonitor: React.FC<ExecutionMonitorProps> = ({
             </div>
           </TabPane>
 
-          {/* 执行日志 */}
+          {/* 执行日志（受 debugMode 控制是否显示详情，默认隐藏敏感信息） */}
           <TabPane tab="执行日志" key="logs">
             <div style={{ maxHeight: 300, overflowY: 'auto', backgroundColor: '#fafafa', padding: 8 }}>
               {executionLogs.length === 0 ? (
                 <Text type="secondary">暂无执行日志</Text>
               ) : (
                 executionLogs.map(log => (
-                  <div key={log.id} style={{ 
+                  <div key={log.id} style={{
                     marginBottom: 8,
                     padding: '6px 8px',
                     backgroundColor: 'white',
                     borderRadius: 4,
                     borderLeft: `3px solid ${
                       log.level === 'error' ? '#ff4d4f' :
-                      log.level === 'warning' ? '#faad14' :
-                      log.level === 'success' ? '#52c41a' : '#1890ff'
+                        log.level === 'warning' ? '#faad14' :
+                          log.level === 'success' ? '#52c41a' : '#1890ff'
                     }`
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <Text 
-                        style={{ 
+                      <Text
+                        style={{
                           fontSize: '13px',
                           color: log.level === 'error' ? '#ff4d4f' : undefined
                         }}
@@ -479,9 +597,9 @@ const ExecutionMonitor: React.FC<ExecutionMonitorProps> = ({
                       </Text>
                     </div>
                     {log.data && debugMode && (
-                      <div style={{ 
-                        marginTop: 4, 
-                        fontSize: '11px', 
+                      <div style={{
+                        marginTop: 4,
+                        fontSize: '11px',
                         color: '#666',
                         backgroundColor: '#f5f5f5',
                         padding: '4px 8px',
@@ -500,7 +618,7 @@ const ExecutionMonitor: React.FC<ExecutionMonitorProps> = ({
           </TabPane>
         </Tabs>
 
-        {/* 当前执行状态 */}
+        {/* 当前执行状态（保持原结构） */}
         {execution && (
           <Divider />
         )}
@@ -510,8 +628,8 @@ const ExecutionMonitor: React.FC<ExecutionMonitorProps> = ({
               <Text type="secondary">执行ID: {currentExecutionId}</Text>
               <Text type="secondary">
                 状态: {execution.status === 'running' ? '运行中' :
-                      execution.status === 'completed' ? '已完成' :
-                      execution.status === 'failed' ? '执行失败' : '等待中'}
+                  execution.status === 'completed' ? '已完成' :
+                    execution.status === 'failed' ? '执行失败' : '等待中'}
               </Text>
               {execution.startTime && (
                 <Text type="secondary">

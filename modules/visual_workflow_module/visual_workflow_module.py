@@ -4,18 +4,21 @@
 
 所有注册的函数都会自动暴露为REST API端点
 """
+# 注入 GatewayWebSocketAdapter 以启用实时广播
 
 import uuid
 import json
 import time
+import asyncio
 from typing import Dict, Any, List, Optional
 
 from core.function_registry import register_function
 from core.services import get_current_globals
 from orchestrators.visual_workflow import (
-    VisualWorkflow, WorkflowDefinition, WorkflowNode, WorkflowEdge,
+    VisualWorkflow, WorkflowDefinition, WorkflowNode, WorkflowEdge, WorkflowExecutionMonitor,
     create_visual_workflow, create_node, create_edge, NodeType
 )
+from modules.api_gateway_module.api_gateway_module import get_api_gateway
 from modules.visual_workflow_module import variables as v
 
 
@@ -61,6 +64,32 @@ def get_visual_workflow_manager() -> VisualWorkflowManager:
         g.visual_workflow_manager = VisualWorkflowManager()
     return g.visual_workflow_manager
 
+class GatewayWebSocketAdapter:
+    """基于API Gateway的WebSocket广播适配器"""
+    def broadcast(self, message: Dict[str, Any]) -> None:
+        try:
+            gateway = get_api_gateway()
+        except Exception:
+            # 若API网关未初始化，直接忽略广播
+            return
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # 在已有事件循环中异步调度广播任务
+                loop.create_task(gateway.broadcast_message(message))
+            else:
+                # 当前线程有loop但未运行，直接同步执行
+                loop.run_until_complete(gateway.broadcast_message(message))
+        except RuntimeError:
+            # 无活动事件循环，创建临时事件循环执行
+            new_loop = asyncio.new_event_loop()
+            try:
+                asyncio.set_event_loop(new_loop)
+                new_loop.run_until_complete(gateway.broadcast_message(message))
+            finally:
+                new_loop.close()
+                asyncio.set_event_loop(None)
+
 
 # ========== 工作流CRUD API函数 ==========
 
@@ -88,6 +117,8 @@ def create_workflow(name: str, description: str = "") -> Dict[str, Any]:
         
         # 创建新工作流
         workflow = create_visual_workflow(name, description)
+        # 注入执行监控器以通过API网关广播
+        workflow.execution_monitor = WorkflowExecutionMonitor(GatewayWebSocketAdapter())
         
         # 添加到管理器
         manager.add_workflow(workflow)
@@ -1220,6 +1251,12 @@ def create_workflow_from_template(template_id: str, name: str = None) -> Dict[st
             return create_result
         
         workflow_id = create_result["workflow_id"]
+        
+        # 注入执行监控器（兜底，确保实例具备广播能力）
+        manager = get_visual_workflow_manager()
+        wf = manager.get_workflow(workflow_id)
+        if wf:
+            wf.execution_monitor = WorkflowExecutionMonitor(GatewayWebSocketAdapter())
         
         # 添加节点
         node_id_mapping = {}

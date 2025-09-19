@@ -11,7 +11,7 @@ import {
   Button,
   Divider
 } from 'antd';
-import { DeleteOutlined } from '@ant-design/icons';
+import { DeleteOutlined, PlusOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import Editor from '@monaco-editor/react';
 import type { WorkflowNode, LLMNodeConfig, InputNodeConfig, OutputNodeConfig, CodeNodeConfig } from '../types/workflow';
 
@@ -27,31 +27,180 @@ interface PropertyPanelProps {
 const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedNode, onNodeUpdate }) => {
   const [form] = Form.useForm();
 
-  // 当选中节点变化时，更新表单
+  // 辅助：将 switch_map 转换为可编辑的键值对列表
+  const mapToPairs = (m?: Record<string, string>) => {
+    if (!m) return [];
+    return Object.entries(m).map(([key, value]) => ({ key, value }));
+  };
+  const pairsToMap = (pairs?: { key?: string; value?: string }[]) => {
+    const result: Record<string, string> = {};
+    (pairs || []).forEach((p) => {
+      const k = String(p.key || '').trim();
+      const v = String(p.value || '').trim();
+      if (k.length > 0) result[k] = v;
+    });
+    return result;
+  };
+
+  // 当选中节点变化时，更新表单（标准键回填 + 默认值）
   React.useEffect(() => {
     if (selectedNode) {
-      form.setFieldsValue(selectedNode.data.config);
+      const cfg: any = selectedNode.data?.config || {};
+      if (selectedNode.type === 'llm') {
+        const provider = (cfg.provider || cfg.llmProvider || 'gemini') as string;
+        const model = (cfg.model || cfg.modelName || 'gemini-2.5-flash') as string;
+        const prompt = (cfg.prompt ?? cfg.promptText ?? 'Return a single word: ping') as string;
+        const system_prompt = (cfg.system_prompt ?? cfg.systemPrompt) as string | undefined;
+        let temperature: number | undefined = cfg.temperature;
+        if (typeof temperature === 'string') {
+          const t = parseFloat(temperature);
+          temperature = isNaN(t) ? undefined : t;
+        }
+        if (typeof temperature === 'number') {
+          temperature = Math.max(0, Math.min(1, temperature));
+        }
+        let max_tokens: number | undefined = cfg.max_tokens ?? cfg.maxTokens;
+        if (typeof max_tokens === 'string') {
+          const m = parseInt(max_tokens, 10);
+          max_tokens = isNaN(m) ? undefined : m;
+        }
+        form.setFieldsValue({
+          ...cfg,
+          provider,
+          model,
+          prompt,
+          system_prompt,
+          temperature,
+          max_tokens,
+        });
+      } else if (selectedNode.type === 'code') {
+        const code_type = (cfg.code_type || 'python') as 'python';
+        const template = "text = inputs.get('text') or inputs.get('input') or 'hello'\noutput = {'text': f'len={len(str(text))}', 'signal': 1}";
+        const code = (cfg.code && String(cfg.code).length > 0) ? cfg.code : template;
+        form.setFieldsValue({
+          ...cfg,
+          code_type,
+          code,
+        });
+      } else if (selectedNode.type === 'condition') {
+        form.setFieldsValue({
+          ...cfg,
+          condition: cfg.condition ?? '',
+          true_output: cfg.true_output ?? '',
+          false_output: cfg.false_output ?? '',
+          description: cfg.description ?? '',
+        });
+      } else if (selectedNode.type === 'switch') {
+        form.setFieldsValue({
+          ...cfg,
+          switch_map_list: mapToPairs(cfg.switch_map),
+        });
+      } else if (selectedNode.type === 'merger') {
+        form.setFieldsValue({
+          ...cfg,
+          merge_strategy: cfg.merge_strategy ?? 'concat',
+          separator: cfg.separator ?? '\n',
+        });
+      } else {
+        form.setFieldsValue(cfg);
+      }
     } else {
       form.resetFields();
     }
   }, [selectedNode, form]);
 
-  // 处理表单值变化
+  // 处理表单值变化（标准键序列化 + sanitize）
   const handleFormChange = (changedValues: any, allValues: any) => {
     if (!selectedNode) return;
-    
+  
+    let normalizedConfig: any = { ...allValues };
+  
+    if (selectedNode.type === 'llm') {
+      const provider = String(allValues.provider || '').trim() || 'gemini';
+      const model = String(allValues.model || '').trim() || 'gemini-2.5-flash';
+      const prompt = String(allValues.prompt || '').trim() || 'Return a single word: ping';
+      const system_prompt_raw = allValues.system_prompt ?? allValues.systemPrompt;
+      const system_prompt = typeof system_prompt_raw === 'string' ? system_prompt_raw.trim() : undefined;
+  
+      const rawTemp: any = allValues.temperature;
+      let temperature: number | undefined;
+      if (rawTemp === '' || rawTemp === null || rawTemp === undefined) {
+        temperature = undefined;
+      } else if (typeof rawTemp === 'string') {
+        const t = parseFloat(rawTemp);
+        temperature = isNaN(t) ? undefined : t;
+      } else if (typeof rawTemp === 'number') {
+        temperature = rawTemp;
+      }
+      if (typeof temperature === 'number') {
+        temperature = Math.max(0, Math.min(1, temperature));
+      }
+  
+      const rawMax: any = (allValues as any).max_tokens ?? (allValues as any).maxTokens;
+      let max_tokens: number | undefined;
+      if (rawMax === '' || rawMax === null || rawMax === undefined) {
+        max_tokens = undefined;
+      } else if (typeof rawMax === 'string') {
+        const m = parseInt(rawMax, 10);
+        max_tokens = isNaN(m) ? undefined : m;
+      } else if (typeof rawMax === 'number') {
+        max_tokens = rawMax;
+      }
+  
+      normalizedConfig = {
+        label: allValues.label,
+        provider,
+        model,
+        prompt,
+        ...(system_prompt ? { system_prompt } : {}),
+        ...(temperature !== undefined ? { temperature } : {}),
+        ...(max_tokens !== undefined ? { max_tokens } : {}),
+      };
+    } else if (selectedNode.type === 'code') {
+      const template = "text = inputs.get('text') or inputs.get('input') or 'hello'\noutput = {'text': f'len={len(str(text))}', 'signal': 1}";
+      const code = (typeof allValues.code === 'string' && allValues.code.trim().length > 0)
+        ? allValues.code
+        : template;
+      normalizedConfig = {
+        label: allValues.label,
+        code_type: 'python',
+        code,
+        ...(allValues.dependencies ? { dependencies: allValues.dependencies } : {}),
+      };
+    } else if (selectedNode.type === 'condition') {
+      normalizedConfig = {
+        label: allValues.label,
+        condition: String(allValues.condition || ''),
+        true_output: String(allValues.true_output || ''),
+        false_output: String(allValues.false_output || ''),
+        ...(allValues.description ? { description: String(allValues.description) } : {}),
+      };
+    } else if (selectedNode.type === 'switch') {
+      const switch_map = pairsToMap(allValues.switch_map_list);
+      normalizedConfig = {
+        label: allValues.label,
+        switch_map,
+      };
+    } else if (selectedNode.type === 'merger') {
+      const merge_strategy = String(allValues.merge_strategy || 'concat') as 'concat' | 'first' | 'last' | 'weighted';
+      normalizedConfig = {
+        label: allValues.label,
+        merge_strategy,
+        ...(merge_strategy === 'concat' ? { separator: String(allValues.separator ?? '\n') } : {}),
+      };
+    }
+  
     onNodeUpdate(selectedNode.id, {
       data: {
         ...selectedNode.data,
-        config: allValues
+        config: normalizedConfig,
       }
     });
   };
 
-  // 删除节点
+  // 删除节点（占位：若有真正的删除逻辑，应由上层提供回调）
   const handleDeleteNode = () => {
     if (selectedNode) {
-      // TODO: 调用删除节点的方法
       console.log('删除节点:', selectedNode.id);
     }
   };
@@ -63,55 +212,56 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedNode, onNodeUpdat
         <Input placeholder="请输入节点名称" />
       </Form.Item>
       
-      <Form.Item name="provider" label="AI提供商" rules={[{ required: true }]}>
+      <Form.Item name="provider" label="AI提供商" rules={[{ required: true, message: '请选择提供商' }]}>
         <Select placeholder="选择AI提供商">
+          <Option value="gemini">Gemini</Option>
           <Option value="openai">OpenAI</Option>
           <Option value="anthropic">Anthropic</Option>
           <Option value="local">本地模型</Option>
         </Select>
       </Form.Item>
       
-      <Form.Item name="model" label="模型" rules={[{ required: true }]}>
-        <Select placeholder="选择模型">
-          <Option value="gpt-3.5-turbo">GPT-3.5 Turbo</Option>
-          <Option value="gpt-4">GPT-4</Option>
-          <Option value="claude-3-sonnet">Claude 3 Sonnet</Option>
-          <Option value="claude-3-opus">Claude 3 Opus</Option>
+      <Form.Item name="model" label="模型" rules={[{ required: true, message: '请选择模型' }]}>
+        <Select placeholder="选择模型或手动输入" allowClear showSearch>
+          <Option value="gemini-2.5-flash">gemini-2.5-flash</Option>
+          <Option value="gemini-1.5-pro">gemini-1.5-pro</Option>
+          <Option value="gpt-4o-mini">gpt-4o-mini</Option>
+          <Option value="claude-3-5-sonnet">claude-3-5-sonnet</Option>
         </Select>
       </Form.Item>
       
-      <Form.Item name="systemPrompt" label="系统提示词">
-        <TextArea 
-          placeholder="请输入系统提示词（可选）" 
+      <Form.Item name="system_prompt" label="系统提示词">
+        <TextArea
+          placeholder="请输入系统提示词（可选）"
           rows={3}
           showCount
           maxLength={1000}
         />
       </Form.Item>
       
-      <Form.Item name="prompt" label="用户提示词" rules={[{ required: true }]}>
-        <TextArea 
-          placeholder="请输入提示词模板，使用 {{变量名}} 引用输入" 
+      <Form.Item name="prompt" label="用户提示词" rules={[{ required: true, message: '请输入提示词' }]}>
+        <TextArea
+          placeholder="请输入提示词模板，使用 {{变量名}} 引用输入"
           rows={4}
           showCount
           maxLength={2000}
         />
       </Form.Item>
       
-      <Form.Item name="temperature" label="温度">
-        <Slider 
-          min={0} 
-          max={2} 
-          step={0.1} 
-          marks={{ 0: '0', 1: '1', 2: '2' }}
+      <Form.Item name="temperature" label="温度（0-1）">
+        <Slider
+          min={0}
+          max={1}
+          step={0.1}
+          marks={{ 0: '0', 0.5: '0.5', 1: '1' }}
           tooltip={{ formatter: (value) => `${value}` }}
         />
       </Form.Item>
       
-      <Form.Item name="maxTokens" label="最大令牌数">
-        <InputNumber 
-          min={1} 
-          max={4000} 
+      <Form.Item name="max_tokens" label="最大令牌数">
+        <InputNumber
+          min={1}
+          max={400000}
           style={{ width: '100%' }}
           placeholder="最大生成令牌数"
         />
@@ -175,19 +325,16 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedNode, onNodeUpdat
         <Input placeholder="请输入节点名称" />
       </Form.Item>
       
-      <Form.Item name="language" label="编程语言" rules={[{ required: true }]}>
-        <Select placeholder="选择编程语言">
-          <Option value="python">Python</Option>
-          <Option value="javascript">JavaScript</Option>
-        </Select>
+      <Form.Item name="code_type" hidden initialValue="python">
+        <Input />
       </Form.Item>
       
       <Form.Item name="code" label="代码" rules={[{ required: true }]}>
         <div style={{ border: '1px solid #d9d9d9', borderRadius: '6px' }}>
           <Editor
             height="200px"
-            language={config.language || 'python'}
-            value={config.code || ''}
+            language={(config as any).code_type || (config as any).language || 'python'}
+            value={(config as any).code || ''}
             onChange={(value) => {
               form.setFieldsValue({ code: value });
               handleFormChange({ code: value }, { ...form.getFieldsValue(), code: value });
@@ -217,22 +364,120 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedNode, onNodeUpdat
     </>
   );
 
+  // 渲染 Condition 节点配置（固定大小，侧栏编辑）
+  const renderConditionConfig = () => (
+    <>
+      <Form.Item name="label" label="节点名称" rules={[{ required: true }]}>
+        <Input placeholder="请输入节点名称" />
+      </Form.Item>
+
+      <Form.Item name="condition" label="条件表达式">
+        <Input placeholder="例如: length > 10" />
+      </Form.Item>
+
+      <Form.Item name="true_output" label="True 输出">
+        <Input placeholder="条件为真时的输出" />
+      </Form.Item>
+
+      <Form.Item name="false_output" label="False 输出">
+        <Input placeholder="条件为假时的输出" />
+      </Form.Item>
+
+      <Form.Item name="description" label="描述">
+        <TextArea rows={3} placeholder="可选描述" />
+      </Form.Item>
+    </>
+  );
+
+  // 渲染 Switch 节点配置（键值对表格编辑）
+  const renderSwitchConfig = () => (
+    <>
+      <Form.Item name="label" label="节点名称" rules={[{ required: true }]}>
+        <Input placeholder="请输入节点名称" />
+      </Form.Item>
+
+      <Form.List name="switch_map_list">
+        {(fields, { add, remove }) => (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+              <Text strong>路由规则</Text>
+              <Button type="dashed" onClick={() => add()} icon={<PlusOutlined />}>
+                添加路由
+              </Button>
+            </div>
+            {fields.map((field) => (
+              <Space key={field.key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
+                <Form.Item
+                  {...field}
+                  name={[field.name, 'key']}
+                  fieldKey={[field.fieldKey!, 'key']}
+                  rules={[{ required: true, message: '请输入信号值键' }]}
+                >
+                  <Input placeholder="信号值 (如: 1, default)" style={{ width: 140 }} />
+                </Form.Item>
+                <span style={{ color: '#666' }}>→</span>
+                <Form.Item
+                  {...field}
+                  name={[field.name, 'value']}
+                  fieldKey={[field.fieldKey!, 'value']}
+                  rules={[{ required: true, message: '请输入输出内容' }]}
+                >
+                  <Input placeholder="输出内容" style={{ width: 240 }} />
+                </Form.Item>
+                <MinusCircleOutlined onClick={() => remove(field.name)} style={{ color: '#ff4d4f' }} />
+              </Space>
+            ))}
+          </div>
+        )}
+      </Form.List>
+    </>
+  );
+
+  // 渲染 Merger 节点配置（策略 + 分隔符）
+  const renderMergerConfig = () => (
+    <>
+      <Form.Item name="label" label="节点名称" rules={[{ required: true }]}>
+        <Input placeholder="请输入节点名称" />
+      </Form.Item>
+
+      <Form.Item name="merge_strategy" label="合并策略" rules={[{ required: true }]}>
+        <Select placeholder="选择合并策略">
+          <Option value="concat">连接合并</Option>
+          <Option value="first">取第一个</Option>
+          <Option value="last">取最后一个</Option>
+          <Option value="weighted">加权合并</Option>
+        </Select>
+      </Form.Item>
+
+      {/* 仅 concat 显示分隔符 */}
+      <Form.Item noStyle shouldUpdate={(prev, cur) => prev.merge_strategy !== cur.merge_strategy}>
+        {({ getFieldValue }) =>
+          (getFieldValue('merge_strategy') || 'concat') === 'concat' ? (
+            <Form.Item name="separator" label="分隔符">
+              <Input placeholder="例如: \\n, , 或自定义" />
+            </Form.Item>
+          ) : null
+        }
+      </Form.Item>
+    </>
+  );
+
   if (!selectedNode) {
     return (
-      <div style={{ padding: '16px', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center', color: '#999' }}>
-          <Text type="secondary">请选择一个节点来编辑属性</Text>
+      <div className="property-panel h-[calc(100vh-56px)] overflow-auto rounded border border-gray-200 bg-white p-4 flex items-center justify-center">
+        <div className="text-gray-600 text-sm text-center">
+          请选择一个节点来编辑属性
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '16px', height: '100%', overflow: 'auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-        <Title level={4} style={{ margin: 0 }}>
+    <div className="property-panel h-[calc(100vh-56px)] overflow-auto rounded border border-gray-200 bg-white p-4 space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-black text-xl font-semibold leading-7 m-0">
           节点属性
-        </Title>
+        </h2>
         <Button 
           type="text" 
           danger 
@@ -244,7 +489,7 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedNode, onNodeUpdat
         </Button>
       </div>
       
-      <Card size="small" style={{ marginBottom: '16px' }}>
+      <Card size="small" style={{ marginBottom: 0 }}>
         <Space direction="vertical" size="small" style={{ width: '100%' }}>
           <Text strong>节点ID:</Text>
           <Text code copyable>{selectedNode.id}</Text>
@@ -259,18 +504,21 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedNode, onNodeUpdat
         form={form}
         layout="vertical"
         onValuesChange={handleFormChange}
-        size="small"
+        size="middle"
       >
         {selectedNode.type === 'llm' && renderLLMConfig(selectedNode.data.config as LLMNodeConfig)}
         {selectedNode.type === 'input' && renderInputConfig(selectedNode.data.config as InputNodeConfig)}
         {selectedNode.type === 'output' && renderOutputConfig(selectedNode.data.config as OutputNodeConfig)}
         {selectedNode.type === 'code' && renderCodeConfig(selectedNode.data.config as CodeNodeConfig)}
+        {selectedNode.type === 'condition' && renderConditionConfig()}
+        {selectedNode.type === 'switch' && renderSwitchConfig()}
+        {selectedNode.type === 'merger' && renderMergerConfig()}
       </Form>
       
-      <div style={{ marginTop: '24px', padding: '12px', background: '#f5f5f5', borderRadius: '6px' }}>
-        <Text type="secondary" style={{ fontSize: '12px' }}>
+      <div className="rounded border border-gray-200 bg-white p-3">
+        <span className="text-sm text-gray-600">
           💡 提示：修改配置后会自动保存到节点
-        </Text>
+        </span>
       </div>
     </div>
   );

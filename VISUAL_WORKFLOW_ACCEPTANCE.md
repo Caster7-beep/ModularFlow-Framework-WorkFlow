@@ -213,26 +213,30 @@ npm install
 
 ### 步骤2: 启动后端服务
 
-⚠️ **重要提示**: 标准的 `start_server.py` 脚本**不包含**可视化工作流模块！
+使用独立启动脚本（推荐）：
 
-#### 选项A: 使用优化启动脚本（推荐）
-```bash
-# 使用包含可视化工作流模块的优化脚本
-python backend_projects/SmartTavern/optimized_start_server.py
-```
+PowerShell 7 示例（端口 6502）：
+```powershell
+# 1) 停旧实例（忽略失败）
+try {
+  $conn = Get-NetTCPConnection -LocalPort 6502 -ErrorAction Stop | Select-Object -First 1
+  if ($conn) { Stop-Process -Id $conn.OwningProcess -Force -ErrorAction SilentlyContinue }
+} catch {}
 
-#### 选项B: 手动加载模块
-```python
-# 在Python交互环境中手动加载
-from modules.visual_workflow_module import visual_workflow_module
-from modules.visual_workflow_module import optimized_visual_workflow_module
+# 2) 设置密钥（同一会话）
+$env:GEMINI_API_KEY="<你的密钥>"
+
+# 3) 启动后端（后台）
+python backend_projects/visual_work_flow/startserver.py --background
+
+# 4) 健康检查
+Invoke-RestMethod http://localhost:6502/api/v1/health
 ```
 
 **验证点**:
-- [ ] API网关成功启动在端口6500（注意：不是8000）
-- [ ] 访问 http://localhost:6500/docs 显示API文档
-- [ ] 控制台显示"visual_workflow"模块加载信息
-- [ ] API文档中包含 visual_workflow 相关端点
+- [ ] API 文档: http://localhost:6502/docs 可访问
+- [ ] API 前缀: http://localhost:6502/api/v1 可访问
+- [ ] WebSocket: ws://localhost:6502/ws 可建立连接
 
 ### 步骤3: 启动前端服务
 ```bash
@@ -247,6 +251,13 @@ npm run dev
 - [ ] 页面无控制台错误
 - [ ] 前端能够连接到后端API（检查网络请求）
 
+#### 快速自检
+- 打开编辑器后点击工具栏“快速自检”，期望弹窗五行摘要：
+  - Frontend E2E Smoke (LLM): PASS
+  - Final Output (LLM): ping
+  - Frontend E2E Smoke (CodeBlock): PASS
+  - Final Output (CodeBlock): len=5
+  - WS Events (last 20): execution_start, execution_complete, …
 ### 步骤4: 基础功能测试
 
 #### 4.1 界面渲染测试 ✅
@@ -394,21 +405,17 @@ npm run dev
 ## ⚠️ 已知问题和注意事项
 
 ### 🔴 1. 模块加载问题（关键）
-**问题**: 可视化工作流模块默认未被加载
-- 标准的 `start_server.py` 脚本不包含visual_workflow模块导入
-- 导致所有visual_workflow API端点返回404错误
-- 只有 `optimized_start_server.py` 包含相关模块
+**问题**: 标准启动脚本为 [`startserver.py`](backend_projects/visual_work_flow/startserver.py:1)，可视化工作流模块已包含在该脚本中。若出现 404（如 /api/v1/visual_workflow/* 端点不存在），通常为环境变量未注入或旧进程未重启所致。
 
 **解决方案**:
-1. 使用 `optimized_start_server.py` 替代标准启动脚本
-2. 或在 `start_server.py` 中手动添加模块导入：
-   ```python
-   from modules.visual_workflow_module import visual_workflow_module
-   from modules.visual_workflow_module import optimized_visual_workflow_module
-   ```
-3. 或创建专门的visual_workflow启动脚本
+1. 在同一 PowerShell 7 会话中先设置 GEMINI_API_KEY，再启动 [`startserver.py`](backend_projects/visual_work_flow/startserver.py:1)
+2. 变更密钥或环境后请重启后端
+3. 核对服务端口与路径：
+   - API 文档: http://localhost:6502/docs
+   - API 前缀: http://localhost:6502/api/v1
+   - WS: ws://localhost:6502/ws
 
-**影响**: 这是一个**阻塞性问题**，不解决将无法使用任何可视化工作流功能。
+**影响**: 未按上述方式启动或环境未注入时，将导致可视化工作流 API 返回 404 或鉴权失败。
 
 ### 2. 架构复杂性问题
 **问题**: 系统存在一定的过度工程化倾向

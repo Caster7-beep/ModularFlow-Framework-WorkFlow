@@ -102,6 +102,50 @@ python runner.py <workflow_name> --debug
 python runner.py --help
 ```
 
+### VisualWorkFlow 快速开始
+
+- 后端采用独立启动脚本：[`startserver.py`](backend_projects/visual_work_flow/startserver.py:1)
+- 端口约定：HTTP http://localhost:6502，API 前缀 /api/v1，WebSocket 路径 /ws
+
+后端启动（PowerShell 7 示范）：
+```powershell
+# 1) 停旧实例（忽略失败）
+try {
+  $conn = Get-NetTCPConnection -LocalPort 6502 -ErrorAction Stop | Select-Object -First 1
+  if ($conn) { Stop-Process -Id $conn.OwningProcess -Force -ErrorAction SilentlyContinue }
+} catch {}
+
+# 2) 设置密钥（同一会话）
+$env:GEMINI_API_KEY="<你的密钥>"
+
+# 3) 启动后端（后台）
+python backend_projects/visual_work_flow/startserver.py --background
+
+# 4) 健康检查
+Invoke-RestMethod http://localhost:6502/api/v1/health
+```
+
+前端启动：
+```bash
+cd frontend_projects/visual_workflow_editor && npm i && npm run dev
+# 浏览器访问：http://localhost:3002
+```
+
+一键“快速自检”：
+- 在编辑器工具栏点击“快速自检”，期望弹窗五行摘要：
+  - Frontend E2E Smoke (LLM): PASS
+  - Final Output (LLM): ping
+  - Frontend E2E Smoke (CodeBlock): PASS
+  - Final Output (CodeBlock): len=5
+  - WS Events (last 20): execution_start, execution_complete, …
+
+环境变量覆盖：
+- 前端：
+  - VITE_API_BASE=http://localhost:6502/api/v1
+  - VITE_WS_URL=ws://localhost:6502/ws
+- 后端：
+  - GEMINI_API_KEY 必须在同一 PowerShell 会话设置后再启动 [`startserver.py`](backend_projects/visual_work_flow/startserver.py:1)，变量才会被自动注入
+
 ## 📦 创建一个新模块
 
 1.  **确定作用域**:
@@ -164,6 +208,15 @@ ModularFlow Framework 已完成 LLM API 系统的重大重构，采用**模块�
 - `shared/resources.py`: 同上。
 - `orchestrators/`: 编排器的概念已被更灵活的工作流所取代。
 - **交互模式**: `runner.py` 现在专注于直接执行。
+- 已移除/不再使用 [`optimized_start_server.py`](backend_projects/SmartTavern/optimized_start_server.py:1)，请使用 [`startserver.py`](backend_projects/visual_work_flow/startserver.py:1)
+
+## 🛠️ 故障排除（简表）
+- 问题：LLM 返回“未配置密钥/基础URL”
+  - 解决：在同一 PowerShell 会话中设置 $env:GEMINI_API_KEY 后，再运行 [`startserver.py`](backend_projects/visual_work_flow/startserver.py:1)
+- 问题：前端“快速自检”失败但 CodeBlock 通过
+  - 解决：确认后端端口与前端环境变量一致（VITE_API_BASE、VITE_WS_URL），或在前端 .env.local 指定
+- 问题：WS 无事件
+  - 解决：确认 WS 地址为 ws://localhost:6502/ws，并检查浏览器控制台的连接状态/重连提示
 
 ## 📄 许可证
 

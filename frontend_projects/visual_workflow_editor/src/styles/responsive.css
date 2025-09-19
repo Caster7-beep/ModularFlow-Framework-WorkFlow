@@ -463,3 +463,21 @@
     gap: 14px;
   }
 }
+/* ===== Desktop-first adjustments for 1366x768 and below, anti-dual-scroll ===== */
+
+/* 1366x768 及以下宽度调节 */
+@media (max-width: 1440px) {
+  .property-panel { max-width: 40vw; }
+  .node-panel, .left-panel, .sidebar { max-width: 34vw; }
+}
+
+/* 800px 及以下高度调节：压缩 Toolbar 高度并保持剩余区域自适应 */
+@media (max-height: 800px) {
+  .app-toolbar { --toolbar-height: 52px; height: var(--toolbar-height); }
+  .canvas-wrap, .property-panel, .node-panel, .left-panel, .sidebar {
+    height: calc(100vh - var(--toolbar-height));
+  }
+}
+
+/* 防双滚动策略：只允许面板/内部容器滚动 */
+html, body { overflow: hidden; }

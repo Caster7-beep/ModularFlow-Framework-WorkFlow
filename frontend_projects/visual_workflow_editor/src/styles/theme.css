@@ -337,6 +337,14 @@
     transition-duration: 0.01ms !important;
   }
 }
+/* 显式 Reduced Motion（由 App 在根容器 data-reduced-motion=1 控制） */
+[data-reduced-motion="1"] *,
+[data-reduced-motion="1"] *::before,
+[data-reduced-motion="1"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
 
 /* 高对比度模式 */
 @media (prefers-contrast: high) {
@@ -347,4 +355,196 @@
   .workflow-edge {
     stroke-width: 3px;
   }
+}
+/* ===== Layout variables and desktop-first baseline (Canvas/Toolbar/Panel) ===== */
+:root {
+  --toolbar-height: 56px;
+  --sidebar-width: 280px;
+  --z-toolbar: 1000;
+  --z-over-canvas: 1200;
+  --z-modal: 1400;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  overflow: hidden; /* 避免双滚动，内部容器自行滚动 */
+}
+
+/* Toolbar 吸顶并不遮挡画布 */
+.app-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-toolbar);
+  height: var(--toolbar-height);
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
+/* 画布区域高度与滚动控制 */
+.canvas-wrap {
+  position: relative;
+  height: calc(100vh - var(--toolbar-height));
+  width: 100%;
+  overflow: hidden; /* 画布不产生页面滚动 */
+  background: #fafafa;
+}
+
+.canvas-wrap .react-flow {
+  height: 100% !important;
+  width: 100% !important;
+}
+
+/* 右侧属性面板与左侧节点面板（若存在）内部滚动 */
+.property-panel {
+  height: calc(100vh - var(--toolbar-height));
+  overflow: auto;
+  min-width: 260px;
+  max-width: 36vw; /* 避免溢出过宽 */
+  border-left: 1px solid rgba(0,0,0,0.06);
+  background: #fff;
+}
+
+.node-panel, .left-panel, .sidebar {
+  height: calc(100vh - var(--toolbar-height));
+  overflow: auto;
+  min-width: 220px;
+  max-width: 28vw;
+  border-right: 1px solid rgba(0,0,0,0.06);
+  background: #fff;
+}
+
+/* ReactFlow 内部控件与归属层级 */
+.react-flow__minimap,
+.react-flow__controls,
+.react-flow__panel {
+  z-index: var(--z-over-canvas);
+}
+
+.react-flow__attribution {
+  display: none; /* 保持画布简洁 */
+}
+
+/* 弹窗/浮层的分层保障（若使用自定义 Modal/Popover） */
+.modal-root, .popover-root, .ant-modal-root, .ant-dropdown {
+  z-index: var(--z-modal);
+  position: relative;
+}
+/* ReactFlow edges clarity (global) */
+.react-flow__edge-path {
+  stroke: #0B0B0B !important;
+  stroke-width: 2 !important;
+}
+.react-flow__edge:hover .react-flow__edge-path,
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke-width: 3 !important;
+}
+/* Polish v3: invisible hit-area for handles, two-line clamp, form focus ring, align guides, sr-only */
+
+/* Expand React Flow handle hit area via pseudo-element without visible artifacts */
+.react-flow__handle {
+  position: relative;
+}
+.react-flow__handle::after {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: -8px;
+  right: -8px;
+  bottom: -8px;
+  background: transparent !important;
+  border: 0 none !important;
+  box-shadow: none !important;
+  pointer-events: auto; /* allow clicks to hit the handle via its pseudo-element */
+}
+/* Optional hook class if needed on specific handles */
+.rf-handle-hit::after {
+  content: '';
+  position: absolute;
+  inset: -8px; /* 等价于 -inset-2 */
+  background: transparent !important; /* 不渲染背景 */
+  border: 0 none !important;
+  box-shadow: none !important; /* 不渲染阴影 */
+  pointer-events: auto; /* 命中但不出现可视伪影 */
+}
+
+/* Two-line truncation utility */
+.truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Accessibility: screen-reader only utility */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* PropertyPanel form controls: 48px touch target and black focus ring */
+.ant-input,
+.ant-input-number,
+.ant-select-selector,
+.ant-cascader-selector,
+.ant-picker,
+.ant-input-affix-wrapper {
+  min-height: 48px !important; /* h-12 */
+}
+.ant-input:focus,
+.ant-input-number:focus,
+.ant-input-affix-wrapper-focused,
+.ant-select-focused .ant-select-selector,
+.ant-cascader-focused .ant-cascader-selector,
+.ant-picker-focused {
+  border-color: #0B0B0B !important;
+  box-shadow: 0 0 0 2px rgba(11, 11, 11, 0.8) !important; /* ring-2 ring-black */
+}
+
+/* Node selection subtle elevation */
+.workflow-node.selected,
+.react-flow__node.selected > div {
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.10), 0 2px 4px -1px rgba(0,0,0,0.06);
+}
+
+/* Alignment guide lines (rendered by WorkflowCanvas) */
+.canvas-wrap .align-guide-h {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: #0B0B0B;
+  opacity: 0.6;
+  pointer-events: none;
+  z-index: var(--z-over-canvas);
+}
+.canvas-wrap .align-guide-v {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 1px;
+  background: #0B0B0B;
+  opacity: 0.6;
+  pointer-events: none;
+  z-index: var(--z-over-canvas);
+}
+/* Polish v3 - Performance while dragging: disable heavy effects to reduce jank */
+body[data-dragging="1"] .react-flow__node > div {
+  transition: none !important;
+  box-shadow: none !important;
+}
+body[data-dragging="1"] .react-flow__node:hover > div {
+  box-shadow: none !important;
 }

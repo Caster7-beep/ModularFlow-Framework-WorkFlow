@@ -1,426 +1,175 @@
-import React, { useState } from 'react';
-import { Handle, Position, NodeProps } from 'reactflow';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { Handle, Position, NodeProps, useNodeId, useReactFlow } from 'reactflow';
 
 interface MergerNodeData {
   label: string;
-  merge_strategy: 'concat' | 'first' | 'last' | 'weighted';
-  separator: string;
+  merge_strategy?: 'concat' | 'first' | 'last' | 'weighted';
+  separator?: string;
   description?: string;
+  ui?: {
+    size?: { w?: number; h?: number };
+  };
 }
 
-const MergerNode: React.FC<NodeProps<MergerNodeData>> = ({ 
-  data, 
-  selected,
-  id 
-}) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [localData, setLocalData] = useState(data);
+const MergerNode: React.FC<NodeProps<MergerNodeData>> = ({ data, selected }) => {
+  const nodeId = useNodeId();
+  const rf = useReactFlow();
 
-  const handleSave = () => {
-    // 这里应该调用父组件的更新函数
-    setIsEditing(false);
-  };
+  const label: string = useMemo(
+    () => (data?.label || (data as any)?.config?.label || '结果聚合').toString(),
+    [data?.label, (data as any)?.config?.label]
+  );
+  const strategy: string = useMemo(
+    () => ((data?.merge_strategy || (data as any)?.config?.merge_strategy || 'concat') as string).toUpperCase(),
+    [data?.merge_strategy, (data as any)?.config?.merge_strategy]
+  );
 
-  const handleCancel = () => {
-    setLocalData(data);
-    setIsEditing(false);
-  };
+  useEffect(() => {
+    (window as any)?.lucide?.createIcons?.();
+  }, []);
 
-  const mergeStrategies = [
-    { value: 'concat', label: '连接合并', description: '将所有输入连接在一起' },
-    { value: 'first', label: '取第一个', description: '只保留第一个输入' },
-    { value: 'last', label: '取最后一个', description: '只保留最后一个输入' },
-    { value: 'weighted', label: '加权合并', description: '基于信号值加权合并' }
-  ];
+  // 调整尺寸模式：按 R 切换（在 WorkflowCanvas.tsx 中已注入 body.dataset.resize='1'）
+  const resizeEnabled = typeof document !== 'undefined' && document.body?.dataset?.resize === '1';
 
-  const currentStrategy = mergeStrategies.find(s => s.value === data.merge_strategy) || mergeStrategies[0];
+  // 尺寸持久化（每个实例单独保存）
+  const cardRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!cardRef.current || !nodeId) return;
+
+    const obs = new ResizeObserver((entries) => {
+      if (!entries?.length) return;
+      if (!(typeof document !== 'undefined' && document.body?.dataset?.resize === '1')) return;
+
+      const rect = entries[0].contentRect;
+      const w = Math.round(rect.width);
+      const h = Math.round(rect.height);
+
+      rf.setNodes((nodes) =>
+        nodes.map((n) =>
+          n.id === nodeId
+            ? {
+                ...n,
+                data: {
+                  ...n.data,
+                  ui: {
+                    ...(n.data as any)?.ui,
+                    size: { w, h },
+                  },
+                },
+              }
+            : n
+        )
+      );
+    });
+
+    obs.observe(cardRef.current);
+    return () => obs.disconnect();
+  }, [rf, nodeId]);
+
+  // 读出保存的实例尺寸
+  const savedSize = (data as any)?.ui?.size || {};
+  const savedWidth = typeof savedSize.w === 'number' ? savedSize.w : undefined;
+  const savedHeight = typeof savedSize.h === 'number' ? savedSize.h : undefined;
+
+  // 1.5 倍放大后的默认卡片尺寸
+  const sizeClass = 'min-w-[240px] max-w-[420px]';
 
   return (
-    <div className={`merger-node ${selected ? 'selected' : ''}`}>
-      {/* 多个输入端口 */}
-      <Handle
-        type="target"
-        position={Position.Left}
-        id="input1"
-        className="handle-input"
-        style={{ top: '25%' }}
-      />
-      <Handle
-        type="target"
-        position={Position.Left}
-        id="input2"
-        className="handle-input"
-        style={{ top: '50%' }}
-      />
-      <Handle
-        type="target"
-        position={Position.Left}
-        id="input3"
-        className="handle-input"
-        style={{ top: '75%' }}
-      />
-      
-      <div className="node-header">
-        <div className="node-icon">🔗</div>
-        <div className="node-title">{data.label || '结果聚合'}</div>
+    <div
+      tabIndex={0}
+      aria-label={`结果聚合 节点: ${label}`}
+      className={`relative ${selected ? 'ring-1 ring-black' : ''} focus:outline-none focus-visible:ring-2 focus-visible:ring-black cursor-grab active:cursor-grabbing`}
+      style={{ willChange: 'transform' }}
+    >
+      {/* 左侧多输入句柄（保持 3 个输入） */}
+      <div className="absolute left-[-12px]" style={{ top: '25%' }}>
+        <Handle
+          type="target"
+          position={Position.Left}
+          id="input1"
+          style={{
+            width: 16,
+            height: 16,
+            borderWidth: 2,
+            borderColor: '#FFFFFF',
+            background: '#0B0B0B',
+          }}
+        />
       </div>
-      
-      <div className="node-content">
-        {isEditing ? (
-          <div className="edit-form">
-            <div className="form-group">
-              <label>合并策略:</label>
-              <select
-                value={localData.merge_strategy || 'concat'}
-                onChange={(e) => setLocalData({
-                  ...localData,
-                  merge_strategy: e.target.value as any
-                })}
-                className="strategy-select"
-              >
-                {mergeStrategies.map(strategy => (
-                  <option key={strategy.value} value={strategy.value}>
-                    {strategy.label}
-                  </option>
-                ))}
-              </select>
-              <div className="strategy-description">
-                {mergeStrategies.find(s => s.value === localData.merge_strategy)?.description}
+      <div className="absolute left-[-12px]" style={{ top: '50%' }}>
+        <Handle
+          type="target"
+          position={Position.Left}
+          id="input2"
+          style={{
+            width: 16,
+            height: 16,
+            borderWidth: 2,
+            borderColor: '#FFFFFF',
+            background: '#0B0B0B',
+          }}
+        />
+      </div>
+      <div className="absolute left-[-12px]" style={{ top: '75%' }}>
+        <Handle
+          type="target"
+          position={Position.Left}
+          id="input3"
+          style={{
+            width: 16,
+            height: 16,
+            borderWidth: 2,
+            borderColor: '#FFFFFF',
+            background: '#0B0B0B',
+          }}
+        />
+      </div>
+
+      {/* 极简卡片：图标 + 标题 + 一行徽标（策略）。名称可换行，节点随内容伸缩 */}
+      <div
+        ref={cardRef}
+        className={`group rounded border border-gray-200 bg-white text-black shadow-sm hover:shadow-md transition-shadow duration-200 focus-within:ring-2 focus-within:ring-black ${sizeClass}`}
+        style={{
+          ...(savedWidth ? { width: savedWidth } : {}),
+          ...(savedHeight ? { height: savedHeight } : {}),
+          ...(resizeEnabled
+            ? { resize: 'both', overflow: 'auto', cursor: 'nwse-resize', borderStyle: 'dashed', borderColor: '#d1d5db' } as React.CSSProperties
+            : { borderStyle: 'solid', borderColor: '#e5e7eb' } as React.CSSProperties),
+        }}
+      >
+        <div className="p-4 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded bg-gray-100 text-black shrink-0">
+                <i data-lucide="git-merge" className="w-4 h-4"></i>
+              </span>
+              <div className="text-base font-semibold leading-6 min-w-0 truncate-2 break-words whitespace-normal" title={label}>
+                <span className="mr-1 text-gray-600 select-none cursor-grab active:cursor-grabbing" aria-label="drag handle" title="拖拽句柄">::</span>
+                {label}
               </div>
             </div>
-            
-            {(localData.merge_strategy === 'concat' || !localData.merge_strategy) && (
-              <div className="form-group">
-                <label>分隔符:</label>
-                <input
-                  type="text"
-                  value={localData.separator || '\n'}
-                  onChange={(e) => setLocalData({
-                    ...localData,
-                    separator: e.target.value
-                  })}
-                  placeholder="例如: \n, , 或自定义"
-                  className="separator-input"
-                />
-                <div className="separator-presets">
-                  <button 
-                    onClick={() => setLocalData({...localData, separator: '\n'})}
-                    className="preset-btn"
-                  >
-                    换行
-                  </button>
-                  <button 
-                    onClick={() => setLocalData({...localData, separator: ', '})}
-                    className="preset-btn"
-                  >
-                    逗号
-                  </button>
-                  <button 
-                    onClick={() => setLocalData({...localData, separator: ' '})}
-                    className="preset-btn"
-                  >
-                    空格
-                  </button>
-                </div>
-              </div>
-            )}
-            
-            <div className="form-actions">
-              <button onClick={handleSave} className="btn-save">保存</button>
-              <button onClick={handleCancel} className="btn-cancel">取消</button>
+            <div className="px-2 py-0.5 rounded border border-gray-200 text-xs text-black uppercase shrink-0" title="合并策略">
+              {strategy}
             </div>
           </div>
-        ) : (
-          <div className="display-content" onClick={() => setIsEditing(true)}>
-            <div className="strategy-display">
-              <div className="strategy-info">
-                <span className="strategy-label">{currentStrategy.label}</span>
-                <div className="strategy-desc">{currentStrategy.description}</div>
-              </div>
-              {data.merge_strategy === 'concat' && (
-                <div className="separator-display">
-                  <strong>分隔符:</strong> 
-                  <span className="separator-value">
-                    {data.separator === '\n' ? '换行' : 
-                     data.separator === ', ' ? '逗号' :
-                     data.separator === ' ' ? '空格' :
-                     data.separator || '换行'}
-                  </span>
-                </div>
-              )}
-            </div>
-            
-            <div className="inputs-preview">
-              <div className="input-slot">
-                <div className="input-indicator"></div>
-                <span>输入 1</span>
-              </div>
-              <div className="input-slot">
-                <div className="input-indicator"></div>
-                <span>输入 2</span>
-              </div>
-              <div className="input-slot">
-                <div className="input-indicator"></div>
-                <span>输入 3</span>
-              </div>
-              <div className="merge-arrow">⬇</div>
-              <div className="output-preview">合并输出</div>
-            </div>
-            
-            {data.description && (
-              <div className="node-description">{data.description}</div>
-            )}
-          </div>
-        )}
+        </div>
       </div>
-      
-      {/* 输出端口 */}
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="output"
-        className="handle-output"
-      />
-      
-      <style>{`
-        .merger-node {
-          background: linear-gradient(135deg, #f0f8ff 0%, #e1f5fe 100%);
-          border: 2px solid #00bcd4;
-          border-radius: 12px;
-          min-width: 200px;
-          max-width: 280px;
-          box-shadow: 0 4px 12px rgba(0, 188, 212, 0.2);
-          transition: all 0.3s ease;
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        .merger-node.selected {
-          border-color: #0097a7;
-          box-shadow: 0 6px 20px rgba(0, 188, 212, 0.4);
-          transform: translateY(-2px);
-        }
-        
-        .merger-node .node-header {
-          display: flex;
-          align-items: center;
-          padding: 12px 16px;
-          background: rgba(0, 188, 212, 0.1);
-          border-bottom: 1px solid rgba(0, 188, 212, 0.2);
-          border-radius: 10px 10px 0 0;
-        }
-        
-        .merger-node .node-icon {
-          font-size: 18px;
-          margin-right: 8px;
-        }
-        
-        .merger-node .node-title {
-          font-weight: 600;
-          color: #0097a7;
-          font-size: 14px;
-        }
-        
-        .merger-node .node-content {
-          padding: 16px;
-        }
-        
-        .merger-node .display-content {
-          cursor: pointer;
-          transition: background-color 0.2s ease;
-        }
-        
-        .merger-node .display-content:hover {
-          background-color: rgba(0, 188, 212, 0.05);
-          border-radius: 6px;
-        }
-        
-        .merger-node .strategy-display {
-          margin-bottom: 12px;
-          padding: 8px;
-          background: rgba(0, 188, 212, 0.1);
-          border-radius: 6px;
-        }
-        
-        .merger-node .strategy-label {
-          font-weight: bold;
-          color: #0097a7;
-          font-size: 13px;
-        }
-        
-        .merger-node .strategy-desc {
-          font-size: 11px;
-          color: #546e7a;
-          margin-top: 2px;
-        }
-        
-        .merger-node .separator-display {
-          margin-top: 6px;
-          font-size: 11px;
-          color: #546e7a;
-        }
-        
-        .merger-node .separator-value {
-          background: #00bcd4;
-          color: white;
-          padding: 1px 4px;
-          border-radius: 2px;
-          margin-left: 4px;
-        }
-        
-        .merger-node .inputs-preview {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 4px;
-        }
-        
-        .merger-node .input-slot {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 11px;
-          color: #546e7a;
-        }
-        
-        .merger-node .input-indicator {
-          width: 8px;
-          height: 8px;
-          background: #00bcd4;
-          border-radius: 50%;
-        }
-        
-        .merger-node .merge-arrow {
-          font-size: 16px;
-          color: #00bcd4;
-          margin: 4px 0;
-        }
-        
-        .merger-node .output-preview {
-          background: #00bcd4;
-          color: white;
-          padding: 4px 8px;
-          border-radius: 4px;
-          font-size: 11px;
-          font-weight: bold;
-        }
-        
-        .merger-node .edit-form {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-        
-        .merger-node .form-group {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-        
-        .merger-node .form-group label {
-          font-size: 12px;
-          font-weight: 600;
-          color: #0097a7;
-        }
-        
-        .merger-node .strategy-select {
-          padding: 6px 8px;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          font-size: 12px;
-          background: white;
-        }
-        
-        .merger-node .strategy-description {
-          font-size: 10px;
-          color: #666;
-          font-style: italic;
-          margin-top: 2px;
-        }
-        
-        .merger-node .separator-input {
-          padding: 6px 8px;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          font-size: 12px;
-          font-family: 'Courier New', monospace;
-        }
-        
-        .merger-node .separator-presets {
-          display: flex;
-          gap: 4px;
-          margin-top: 4px;
-        }
-        
-        .merger-node .preset-btn {
-          padding: 2px 6px;
-          border: 1px solid #00bcd4;
-          background: white;
-          color: #00bcd4;
-          border-radius: 3px;
-          font-size: 10px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-        
-        .merger-node .preset-btn:hover {
-          background: #00bcd4;
-          color: white;
-        }
-        
-        .merger-node .form-actions {
-          display: flex;
-          gap: 8px;
-          justify-content: flex-end;
-        }
-        
-        .merger-node .btn-save, .merger-node .btn-cancel {
-          padding: 6px 12px;
-          border: none;
-          border-radius: 4px;
-          font-size: 12px;
-          cursor: pointer;
-          transition: background-color 0.2s ease;
-        }
-        
-        .merger-node .btn-save {
-          background: #27ae60;
-          color: white;
-        }
-        
-        .merger-node .btn-save:hover {
-          background: #229954;
-        }
-        
-        .merger-node .btn-cancel {
-          background: #95a5a6;
-          color: white;
-        }
-        
-        .merger-node .btn-cancel:hover {
-          background: #7f8c8d;
-        }
-        
-        .merger-node .node-description {
-          margin-top: 8px;
-          font-size: 11px;
-          color: #666;
-          font-style: italic;
-        }
-        
-        .merger-node .handle-input {
-          background: #ff9800 !important;
-          border: 2px solid white !important;
-          width: 12px !important;
-          height: 12px !important;
-        }
-        
-        .merger-node .handle-output {
-          background: #00bcd4 !important;
-          border: 2px solid white !important;
-          width: 12px !important;
-          height: 12px !important;
-        }
-      `}</style>
+
+      {/* 右侧输出句柄 */}
+      <div className="absolute right-[-12px] top-1/2 -translate-y-1/2">
+        <Handle
+          type="source"
+          position={Position.Right}
+          id="output"
+          style={{
+            width: 16,
+            height: 16,
+            borderWidth: 2,
+            borderColor: '#FFFFFF',
+            background: '#0B0B0B',
+          }}
+        />
+      </div>
     </div>
   );
 };

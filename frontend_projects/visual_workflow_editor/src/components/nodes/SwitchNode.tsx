@@ -1,409 +1,320 @@
-import React, { useState } from 'react';
-import { Handle, Position, NodeProps } from 'reactflow';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Handle, Position, NodeProps, useReactFlow, useNodeId } from 'reactflow';
 
 interface SwitchNodeData {
   label: string;
   switch_map: Record<string, string>;
   description?: string;
+  ui?: {
+    size?: { w?: number; h?: number };
+  };
 }
 
-const SwitchNode: React.FC<NodeProps<SwitchNodeData>> = ({ 
-  data, 
-  selected,
-  id 
-}) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [localData, setLocalData] = useState(data);
-  const [newKey, setNewKey] = useState('');
-  const [newValue, setNewValue] = useState('');
+const SwitchNode: React.FC<NodeProps<SwitchNodeData>> = ({ id, data, selected }) => {
+  const rf = useReactFlow();
+  const nodeId = useNodeId();
 
-  const handleSave = () => {
-    // 这里应该调用父组件的更新函数
-    setIsEditing(false);
+  const cfgLabel = (data as any)?.config?.label;
+  const label = (cfgLabel || data?.label || '开关路由').toString();
+
+  const routes = useMemo(() => Object.entries(data?.switch_map || {}), [data?.switch_map]);
+
+  // 展开编辑模式（双击进入）
+  const [expanded, setExpanded] = useState(false);
+  const [pairs, setPairs] = useState<{ key: string; value: string }[]>(() =>
+    routes.map(([k, v]) => ({ key: String(k), value: String(v) }))
+  );
+
+  useEffect(() => {
+    (window as any)?.lucide?.createIcons?.();
+  }, []);
+
+  // 同步外部数据变化
+  useEffect(() => {
+    setPairs(routes.map(([k, v]) => ({ key: String(k), value: String(v) })));
+  }, [routes]);
+
+  const addPair = () => {
+    setPairs((prev) => [...prev, { key: '', value: '' }]);
   };
 
-  const handleCancel = () => {
-    setLocalData(data);
-    setIsEditing(false);
+  const removePair = (index: number) => {
+    setPairs((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const addRoute = () => {
-    if (newKey && newValue) {
-      setLocalData({
-        ...localData,
-        switch_map: {
-          ...localData.switch_map,
-          [newKey]: newValue
-        }
-      });
-      setNewKey('');
-      setNewValue('');
-    }
-  };
-
-  const removeRoute = (key: string) => {
-    const newSwitchMap = { ...localData.switch_map };
-    delete newSwitchMap[key];
-    setLocalData({
-      ...localData,
-      switch_map: newSwitchMap
+  const updatePair = (index: number, field: 'key' | 'value', value: string) => {
+    setPairs((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], [field]: value };
+      return next;
     });
   };
 
-  const switchMap = data.switch_map || {};
-  const routes = Object.entries(switchMap);
+  const savePairs = () => {
+    // 序列化为 map
+    const nextMap: Record<string, string> = {};
+    pairs.forEach(({ key, value }) => {
+      const k = String(key || '').trim();
+      const v = String(value || '').trim();
+      if (k.length) nextMap[k] = v;
+    });
+    // 通过 useReactFlow.setNodes() 原地更新该节点的数据
+    rf.setNodes((nds) =>
+      nds.map((n) =>
+        n.id === id
+          ? {
+              ...n,
+              data: {
+                ...n.data,
+                config: {
+                  ...(n.data?.config || {}),
+                  label,
+                  switch_map: nextMap,
+                },
+                // 兼容 data.switch_map 的读取（不破坏现有结构）
+                switch_map: nextMap,
+              },
+            }
+          : n
+      )
+    );
+    setExpanded(false);
+  };
+
+  // 调整尺寸模式：按 R 切换（由 WorkflowCanvas 注入 body.dataset.resize）
+  const resizeEnabled = typeof document !== 'undefined' && document.body?.dataset?.resize === '1';
+  // 拖拽态标记（由 WorkflowCanvas 写入），用于抑制拖拽过程中的尺寸写回与样式强制
+  const isDragging = typeof document !== 'undefined' && document.body?.dataset?.dragging === '1';
+  const isThisDragging =
+    isDragging &&
+    typeof document !== 'undefined' &&
+    document.body?.dataset?.dragNodeId === nodeId;
+
+  // 尺寸持久化（每个实例单独保存）
+  const cardRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!cardRef.current || !nodeId) return;
+
+    const obs = new ResizeObserver((entries) => {
+      if (!entries?.length) return;
+      const isResize = typeof document !== 'undefined' && document.body?.dataset?.resize === '1';
+      const dragging = typeof document !== 'undefined' && document.body?.dataset?.dragging === '1';
+      // 仅在调整尺寸模式且未拖拽时写回，避免拖拽时触发抖动与卡顿
+      if (!isResize || dragging) return;
+
+      const rect = entries[0].contentRect;
+      const w = Math.round(rect.width);
+      const h = Math.round(rect.height);
+
+      rf.setNodes((nodes) =>
+        nodes.map((n) =>
+          n.id === nodeId
+            ? {
+                ...n,
+                data: {
+                  ...n.data,
+                  ui: {
+                    ...(n.data as any)?.ui,
+                    size: { w, h },
+                  },
+                },
+              }
+            : n
+        )
+      );
+    });
+
+    obs.observe(cardRef.current);
+    return () => obs.disconnect();
+  }, [rf, nodeId]);
+
+  // 读出保存的实例尺寸
+  const savedSize = (data as any)?.ui?.size || {};
+  const savedWidth = typeof savedSize.w === 'number' ? savedSize.w : undefined;
+  const savedHeight = typeof savedSize.h === 'number' ? savedSize.h : undefined;
+
+  // 1.5 倍放大后的默认卡片尺寸（折叠态/展开态）
+  const collapsedSize = 'min-w-[240px] max-w-[420px]';
+  const expandedSize = 'min-w-[330px] max-w-[540px]';
 
   return (
-    <div className={`switch-node ${selected ? 'selected' : ''}`}>
-      <Handle
-        type="target"
-        position={Position.Left}
-        id="input"
-        className="handle-input"
-      />
-      
-      <div className="node-header">
-        <div className="node-icon">🔀</div>
-        <div className="node-title">{data.label || '开关路由'}</div>
-      </div>
-      
-      <div className="node-content">
-        {isEditing ? (
-          <div className="edit-form">
-            <div className="routes-list">
-              <h4>路由规则:</h4>
-              {Object.entries(localData.switch_map || {}).map(([key, value]) => (
-                <div key={key} className="route-item">
-                  <span className="route-key">{key}</span>
-                  <span className="route-arrow">→</span>
-                  <span className="route-value">{value}</span>
-                  <button 
-                    onClick={() => removeRoute(key)}
-                    className="btn-remove"
-                    title="删除路由"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-            </div>
-            
-            <div className="add-route">
-              <div className="add-route-inputs">
-                <input
-                  type="text"
-                  value={newKey}
-                  onChange={(e) => setNewKey(e.target.value)}
-                  placeholder="信号值 (如: 1, >5, default)"
-                  className="route-key-input"
-                />
-                <span className="route-arrow">→</span>
-                <input
-                  type="text"
-                  value={newValue}
-                  onChange={(e) => setNewValue(e.target.value)}
-                  placeholder="输出内容"
-                  className="route-value-input"
-                />
-                <button onClick={addRoute} className="btn-add">+</button>
-              </div>
-            </div>
-            
-            <div className="form-actions">
-              <button onClick={handleSave} className="btn-save">保存</button>
-              <button onClick={handleCancel} className="btn-cancel">取消</button>
-            </div>
-          </div>
-        ) : (
-          <div className="display-content" onClick={() => setIsEditing(true)}>
-            <div className="routes-display">
-              {routes.length > 0 ? (
-                routes.map(([key, value]) => (
-                  <div key={key} className="route-display-item">
-                    <span className="route-key-display">{key}</span>
-                    <span className="route-arrow">→</span>
-                    <span className="route-value-display">{value}</span>
-                  </div>
-                ))
-              ) : (
-                <div className="no-routes">未配置路由规则</div>
-              )}
-            </div>
-            {data.description && (
-              <div className="node-description">{data.description}</div>
-            )}
-          </div>
-        )}
-      </div>
-      
-      {/* 输出端口 - 根据路由数量动态生成 */}
-      {routes.map(([key], index) => (
+    <div
+      tabIndex={0}
+      aria-label={`开关 节点: ${label}`}
+      className={`relative ${selected ? 'ring-1 ring-black' : ''} focus:outline-none focus-visible:ring-2 focus-visible:ring-black cursor-grab active:cursor-grabbing`}
+      style={{ willChange: 'transform' }}
+      onDoubleClick={() => setExpanded((v) => !v)}
+      title="双击展开/收起编辑"
+    >
+      {/* 左侧目标句柄（输入） */}
+      <div className="absolute left-[-12px] top-1/2 -translate-y-1/2">
         <Handle
-          key={key}
-          type="source"
-          position={Position.Right}
-          id={key}
-          className="handle-output"
-          style={{ 
-            top: `${30 + (index * 15)}%`,
-            background: `hsl(${(index * 60) % 360}, 70%, 50%)`
+          type="target"
+          position={Position.Left}
+          id="input"
+          style={{
+            width: 16,
+            height: 16,
+            borderWidth: 2,
+            borderColor: '#FFFFFF',
+            background: '#0B0B0B',
           }}
         />
-      ))}
-      
-      {/* 默认输出端口 */}
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="default"
-        className="handle-output handle-default"
-        style={{ bottom: '10px' }}
-      />
-      
-      <style>{`
-        .switch-node {
-          background: linear-gradient(135deg, #e8f4fd 0%, #b3d9ff 100%);
-          border: 2px solid #3498db;
-          border-radius: 12px;
-          min-width: 220px;
-          max-width: 350px;
-          box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2);
-          transition: all 0.3s ease;
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        .switch-node.selected {
-          border-color: #2980b9;
-          box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
-          transform: translateY(-2px);
-        }
-        
-        .switch-node .node-header {
-          display: flex;
-          align-items: center;
-          padding: 12px 16px;
-          background: rgba(52, 152, 219, 0.1);
-          border-bottom: 1px solid rgba(52, 152, 219, 0.2);
-          border-radius: 10px 10px 0 0;
-        }
-        
-        .switch-node .node-icon {
-          font-size: 18px;
-          margin-right: 8px;
-        }
-        
-        .switch-node .node-title {
-          font-weight: 600;
-          color: #2980b9;
-          font-size: 14px;
-        }
-        
-        .switch-node .node-content {
-          padding: 16px;
-        }
-        
-        .switch-node .display-content {
-          cursor: pointer;
-          transition: background-color 0.2s ease;
-        }
-        
-        .switch-node .display-content:hover {
-          background-color: rgba(52, 152, 219, 0.05);
-          border-radius: 6px;
-        }
-        
-        .switch-node .routes-display {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-        
-        .switch-node .route-display-item {
-          display: flex;
-          align-items: center;
-          padding: 6px 8px;
-          background: rgba(52, 152, 219, 0.1);
-          border-radius: 4px;
-          font-size: 12px;
-        }
-        
-        .switch-node .route-key-display {
-          background: #3498db;
-          color: white;
-          padding: 2px 6px;
-          border-radius: 3px;
-          font-weight: bold;
-          min-width: 40px;
-          text-align: center;
-        }
-        
-        .switch-node .route-arrow {
-          margin: 0 8px;
-          color: #7f8c8d;
-          font-weight: bold;
-        }
-        
-        .switch-node .route-value-display {
-          color: #2c3e50;
-          flex: 1;
-        }
-        
-        .switch-node .no-routes {
-          text-align: center;
-          color: #7f8c8d;
-          font-style: italic;
-          padding: 20px;
-        }
-        
-        .switch-node .edit-form {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-        }
-        
-        .switch-node .routes-list h4 {
-          margin: 0 0 8px 0;
-          font-size: 12px;
-          color: #2980b9;
-        }
-        
-        .switch-node .route-item {
-          display: flex;
-          align-items: center;
-          padding: 6px 8px;
-          background: #f8f9fa;
-          border-radius: 4px;
-          margin-bottom: 4px;
-          font-size: 12px;
-        }
-        
-        .switch-node .route-key {
-          background: #3498db;
-          color: white;
-          padding: 2px 6px;
-          border-radius: 3px;
-          font-weight: bold;
-          min-width: 40px;
-          text-align: center;
-        }
-        
-        .switch-node .route-value {
-          color: #2c3e50;
-          flex: 1;
-          margin-left: 8px;
-        }
-        
-        .switch-node .btn-remove {
-          background: #e74c3c;
-          color: white;
-          border: none;
-          border-radius: 3px;
-          width: 20px;
-          height: 20px;
-          cursor: pointer;
-          font-size: 10px;
-          margin-left: 8px;
-        }
-        
-        .switch-node .btn-remove:hover {
-          background: #c0392b;
-        }
-        
-        .switch-node .add-route-inputs {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-        
-        .switch-node .route-key-input, .switch-node .route-value-input {
-          padding: 6px 8px;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          font-size: 12px;
-        }
-        
-        .switch-node .route-key-input {
-          width: 120px;
-          font-family: 'Courier New', monospace;
-        }
-        
-        .switch-node .route-value-input {
-          flex: 1;
-        }
-        
-        .switch-node .btn-add {
-          background: #27ae60;
-          color: white;
-          border: none;
-          border-radius: 4px;
-          width: 30px;
-          height: 30px;
-          cursor: pointer;
-          font-size: 16px;
-          font-weight: bold;
-        }
-        
-        .switch-node .btn-add:hover {
-          background: #229954;
-        }
-        
-        .switch-node .form-actions {
-          display: flex;
-          gap: 8px;
-          justify-content: flex-end;
-        }
-        
-        .switch-node .btn-save, .switch-node .btn-cancel {
-          padding: 6px 12px;
-          border: none;
-          border-radius: 4px;
-          font-size: 12px;
-          cursor: pointer;
-          transition: background-color 0.2s ease;
-        }
-        
-        .switch-node .btn-save {
-          background: #27ae60;
-          color: white;
-        }
-        
-        .switch-node .btn-save:hover {
-          background: #229954;
-        }
-        
-        .switch-node .btn-cancel {
-          background: #95a5a6;
-          color: white;
-        }
-        
-        .switch-node .btn-cancel:hover {
-          background: #7f8c8d;
-        }
-        
-        .switch-node .node-description {
-          margin-top: 8px;
-          font-size: 11px;
-          color: #666;
-          font-style: italic;
-        }
-        
-        .switch-node .handle-input {
-          background: #e74c3c !important;
-          border: 2px solid white !important;
-          width: 12px !important;
-          height: 12px !important;
-        }
-        
-        .switch-node .handle-output {
-          border: 2px solid white !important;
-          width: 12px !important;
-          height: 12px !important;
-        }
-        
-        .switch-node .handle-default {
-          background: #95a5a6 !important;
-        }
-      `}</style>
+      </div>
+
+      {/* 极简卡片：图标 + 标题 + 一行徽标（路由数量） */}
+      <div
+        ref={cardRef}
+        className={`group rounded border border-gray-200 bg-white text-black shadow-sm hover:shadow-md transition-all duration-200 focus-within:ring-2 focus-within:ring-black ${expanded ? expandedSize : collapsedSize}`}
+        style={{
+          // 拖拽中不应用持久化尺寸，避免抖动
+          ...(savedWidth && !isThisDragging ? { width: savedWidth } : {}),
+          ...(savedHeight && !isThisDragging ? { height: savedHeight } : {}),
+          ...(resizeEnabled && !isThisDragging
+            ? {
+                resize: 'both',
+                overflow: 'auto',
+                cursor: 'nwse-resize',
+                borderStyle: 'dashed',
+                borderColor: '#d1d5db',
+              }
+            : { borderStyle: 'solid', borderColor: '#e5e7eb' }),
+        }}
+      >
+        <div className={`${expanded ? 'p-4 space-y-3' : 'p-4 space-y-2'}`}>
+          {/* 顶部标题行 */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded bg-gray-100 text-black shrink-0">
+                <i data-lucide="shuffle" className="w-4 h-4"></i>
+              </span>
+              <div className="text-base font-semibold leading-6 min-w-0 truncate-2 break-words whitespace-normal" title={label}>
+                <span className="mr-1 text-gray-600 select-none cursor-grab active:cursor-grabbing" aria-label="drag handle" title="拖拽句柄">::</span>
+                {label}
+              </div>
+            </div>
+            <div className="px-2 py-0.5 rounded border border-gray-200 text-xs text-black shrink-0" title="路由数量">
+              {routes.length} 条
+            </div>
+          </div>
+
+          {/* 折叠态：仅预览若干路由 */}
+          {!expanded && (
+            <div className="space-y-1 text-sm text-gray-600">
+              {routes.length === 0 ? (
+                <div className="italic">未配置路由</div>
+              ) : (
+                routes.slice(0, 2).map(([k, v]) => (
+                  <div key={k} className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded border border-gray-200 bg-white min-w-[44px] text-center font-medium">
+                      {k}
+                    </span>
+                    <span className="text-gray-600">→</span>
+                    <span className="truncate">{v}</span>
+                  </div>
+                ))
+              )}
+              {routes.length > 2 && <div className="text-xs text-gray-600">…</div>}
+              <div className="text-xs text-gray-600">双击可展开编辑</div>
+            </div>
+          )}
+
+          {/* 展开态：键值对编辑（保存后收起） */}
+          {expanded && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-600">路由规则（键值对）</div>
+                <button
+                  onClick={addPair}
+                  className="h-8 px-2 rounded border border-gray-300 text-sm hover:bg-gray-50 transition-colors duration-200"
+                >
+                  添加
+                </button>
+              </div>
+              <div className="space-y-1">
+                {pairs.length === 0 && (
+                  <div className="text-xs text-gray-600 italic">暂无路由，点击“添加”新建</div>
+                )}
+                {pairs.map((p, i) => (
+                  <div key={`${i}_${p.key}`} className="flex items-center gap-2">
+                    <input
+                      className="h-9 px-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm w-[120px] font-mono"
+                      placeholder="键 (如: 1 或 default)"
+                      value={p.key}
+                      onChange={(e) => updatePair(i, 'key', e.target.value)}
+                    />
+                    <span className="text-gray-600">→</span>
+                    <input
+                      className="h-9 px-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm flex-1"
+                      placeholder="输出内容"
+                      value={p.value}
+                      onChange={(e) => updatePair(i, 'value', e.target.value)}
+                    />
+                    <button
+                      onClick={() => removePair(i)}
+                      className="h-9 px-2 rounded bg-black text-white text-sm hover:opacity-90 transition-colors duration-200"
+                      title="删除"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  onClick={() => setExpanded(false)}
+                  className="h-9 px-4 rounded border border-gray-300 text-sm hover:bg-gray-50 transition-colors duration-200"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={savePairs}
+                  className="h-9 px-4 rounded bg-black text-white text-sm hover:opacity-90 transition-colors duration-200"
+                >
+                  保存
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 动态输出句柄（纵向分布） */}
+      {routes.map(([key], index) => {
+        const topPercent = 30 + index * 15;
+        return (
+          <div key={key} className="absolute right-[-12px]" style={{ top: `${topPercent}%` }}>
+            <Handle
+              type="source"
+              position={Position.Right}
+              id={key}
+              style={{
+                width: 16,
+                height: 16,
+                borderWidth: 2,
+                borderColor: '#FFFFFF',
+                background: '#0B0B0B',
+              }}
+            />
+          </div>
+        );
+      })}
+
+      {/* 默认输出端口（底部偏右） */}
+      <div className="absolute right-[-12px] bottom-[10px]">
+        <Handle
+          type="source"
+          position={Position.Right}
+          id="default"
+          style={{
+            width: 16,
+            height: 16,
+            borderWidth: 2,
+            borderColor: '#FFFFFF',
+            background: '#0B0B0B',
+          }}
+        />
+      </div>
     </div>
   );
 };

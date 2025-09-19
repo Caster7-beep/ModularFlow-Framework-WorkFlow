@@ -5,9 +5,107 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>可视化工作流编辑器</title>
+
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind runtime config -->
+    <script>
+      // Tailwind CDN runtime configuration
+      window.tailwind = window.tailwind || {};
+      window.tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Arial', 'sans-serif']
+            },
+            colors: {
+              black: '#0B0B0B',
+              white: '#FFFFFF',
+              gray: {
+                50:  '#f9fafb',
+                100: '#f3f4f6',
+                200: '#e5e7eb',
+                300: '#d1d5db',
+                600: '#4b5563',
+                900: '#111827'
+              }
+            },
+            boxShadow: {
+              sm: '0 1px 2px 0 rgba(0,0,0,0.05)',
+              md: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)'
+            },
+            borderRadius: {
+              DEFAULT: '4px'
+            }
+          }
+        },
+        corePlugins: {
+          preflight: true
+        }
+      };
+    </script>
+
+    <!-- TailwindCSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Flowbite (Tailwind components) -->
+    <script src="https://cdn.jsdelivr.net/npm/flowbite@2.0.0/dist/flowbite.min.js"></script>
+
+    <!-- Lucide Icons UMD -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+    <!-- Minimal CSS for React Flow edge/connection polish and connecting highlight -->
+    <style>
+      /* Unify edges: black, thick, rounded; selected/hover thicker */
+      .react-flow__edge-path,
+      .react-flow__connection-path {
+        stroke: #0B0B0B !important;
+        stroke-width: 2 !important;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .react-flow__edge:hover .react-flow__edge-path,
+      .react-flow__edge.selected .react-flow__edge-path {
+        stroke-width: 3 !important;
+      }
+      /* While dragging a connection, make potential targets subtly ring on hover */
+      body[data-connecting="1"] .react-flow__node:hover > div {
+        box-shadow: 0 0 0 1px rgba(11,11,11,0.7), 0 1px 2px rgba(0,0,0,0.05);
+        transition: box-shadow 120ms ease;
+      }
+      /* Ensure root takes full height; scrolling is inside internal containers */
+      html, body, #root { height: 100%; }
+
+      /* v5: Context menu a11y/focus polish (black/white, 4px radius, 48px rows) */
+      [role="menu"] {
+        background: #FFFFFF;
+        color: #0B0B0B;
+        border: 1px solid #e5e7eb;
+        border-radius: 4px;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.10), 0 2px 4px -1px rgba(0,0,0,0.06);
+      }
+      [role="menu"] [role="menuitem"] {
+        height: 48px;
+        line-height: 48px;
+      }
+      [role="menu"] [role="menuitem"]:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(11,11,11,1);
+      }
+
+      /* Reduced motion honor */
+      @media (prefers-reduced-motion: reduce) {
+        * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+      }
+    </style>
   </head>
-  <body>
-    <div id="root"></div>
+  <body class="min-h-screen bg-gray-50 text-black antialiased overflow-hidden">
+    <div id="root" class="min-h-screen"></div>
+    <!-- A11y live region: announce connection progress without visible UI -->
+    <div id="live-region-connection" role="status" aria-live="polite" class="sr-only">连接状态：空闲</div>
+    <!-- QA hooks container (hidden, non-intrusive) -->
+    <div id="qa-hooks" style="position:fixed; width:0; height:0; opacity:0; pointer-events:none;" aria-hidden="true"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

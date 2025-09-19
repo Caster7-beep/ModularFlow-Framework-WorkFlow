@@ -1,19 +1,6 @@
 {
+  "default_project": "VisualWorkFlow",
   "projects": [
-    {
-      "name": "SmartTavern",
-      "namespace": "SmartTavern",
-      "modules_path": "modules/SmartTavern",
-      "shared_path": "shared/SmartTavern",
-      "globals_module": "globals",
-      "enabled": true,
-      "priority": 0,
-      "metadata": {
-        "description": "SmartTavern text processing workflow system",
-        "version": "1.0.0",
-        "author": "System"
-      }
-    },
     {
       "name": "SmartTavern",
       "namespace": "SmartTavern",
@@ -27,6 +14,16 @@
         "version": "1.0.0",
         "author": "System"
       }
+    },
+    {
+      "name": "VisualWorkFlow",
+      "namespace": "VisualWorkFlow",
+      "modules_path": "modules",
+      "shared_path": "shared/VisualWorkFlow",
+      "globals_module": "globals",
+      "enabled": true,
+      "priority": 0,
+      "metadata": {}
     }
   ]
 }

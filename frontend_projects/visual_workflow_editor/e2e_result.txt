@@ -1,0 +1,20 @@
+--- Frontend E2E Browser Smoke (Puppeteer) ---
+[conf] UI_URL=http://localhost:3002
+[conf] API_BASE=http://localhost:6502/api/v1
+[conf] WS_URL=ws://localhost:6502/ws
+[step] 鎵撳紑 UI: http://localhost:3002
+============================================
+Frontend E2E Smoke (LLM): FAIL
+Final Output (LLM):
+ERROR: Gemini 鏈厤缃湁鏁堝瘑閽ユ垨鍩虹URL銆傝璁剧疆鐜鍙橀噺锛欸EMINI_API_KEY, GEMINI_BASE_URL(鍙€?
+--------------------------------------------
+Frontend E2E Smoke (CodeBlock): PASS
+Final Output (CodeBlock):
+len=5
+--------------------------------------------
+WS Events (last 20):
+- 2025-09-19T05:17:47.287Z | execution_start
+- 2025-09-19T05:17:47.288Z | execution_complete
+- 2025-09-19T05:17:47.918Z | execution_start
+- 2025-09-19T05:17:47.918Z | execution_complete
+============================================
