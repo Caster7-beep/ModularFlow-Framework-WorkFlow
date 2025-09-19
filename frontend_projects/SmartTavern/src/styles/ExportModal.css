@@ -1,0 +1,382 @@
+/* ExportModal 组件样式 */
+
+/* 导出面板样式 */
+.export-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(8px);
+}
+
+.export-modal-content {
+  background: var(--glass-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  max-width: 800px;
+  width: 90%;
+  max-height: 80vh;
+  overflow: hidden;
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+.export-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(135deg, #e0f2fe, #b3e5fc);
+}
+
+.export-modal-icon {
+  font-size: 24px;
+  animation: exportIconFloat 3s ease-in-out infinite;
+}
+
+@keyframes exportIconFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.export-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #0277bd;
+  margin: 0;
+  flex: 1;
+}
+
+.export-modal-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.export-modal-close:hover {
+  background: var(--hover-bg);
+  color: var(--text);
+}
+
+.export-modal-close:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.export-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  max-height: calc(80vh - 140px);
+}
+
+.export-modal-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.export-section-left,
+.export-section-right {
+  display: flex;
+  flex-direction: column;
+}
+
+.export-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 16px 0;
+}
+
+/* 图片上传区域 */
+.export-image-upload-area {
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.export-image-upload-area:hover {
+  border-color: var(--accent);
+  background: var(--hover-bg);
+}
+
+.export-image-placeholder {
+  text-align: center;
+  cursor: pointer;
+  padding: 20px;
+  width: 100%;
+}
+
+.export-placeholder-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.6;
+}
+
+.export-placeholder-text {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.export-placeholder-hint {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.export-image-preview {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+}
+
+.export-preview-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.export-image-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 8px;
+}
+
+.export-image-action-btn {
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.export-image-action-btn:hover {
+  background: rgba(0, 0, 0, 0.9);
+}
+
+.export-image-action-btn.remove {
+  background: rgba(220, 38, 38, 0.8);
+}
+
+.export-image-action-btn.remove:hover {
+  background: rgba(220, 38, 38, 1);
+}
+
+.export-image-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 文件信息区域 */
+.export-file-info {
+  background: var(--glass-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  min-height: 200px;
+}
+
+.export-file-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.export-file-icon {
+  font-size: 32px;
+  opacity: 0.8;
+}
+
+.export-file-details {
+  flex: 1;
+}
+
+.export-file-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.export-file-type {
+  font-size: 13px;
+  color: var(--accent);
+  font-weight: 500;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.export-file-size {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* 提示信息 */
+.export-modal-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: linear-gradient(135deg, #f0f9ff, #e0f7fa);
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid #b3e5fc;
+}
+
+.export-notice-icon {
+  font-size: 20px;
+  margin-top: 2px;
+}
+
+.export-notice-text {
+  font-size: 14px;
+  color: #0277bd;
+  line-height: 1.5;
+}
+
+/* 操作按钮区域 */
+.export-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px 24px;
+  background: var(--hover-bg);
+  border-top: 1px solid var(--border);
+}
+
+/* 处理中覆盖层 */
+.export-processing-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  backdrop-filter: blur(4px);
+}
+
+.export-processing-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top: 3px solid var(--accent);
+  border-radius: 50%;
+  animation: exportSpinnerRotate 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes exportSpinnerRotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.export-processing-text {
+  color: white;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .export-modal-content {
+    width: 95%;
+    max-width: none;
+  }
+
+  .export-modal-section {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .export-modal-header {
+    padding: 16px 20px;
+  }
+
+  .export-modal-body {
+    padding: 20px;
+  }
+
+  .export-modal-actions {
+    padding: 16px 20px;
+    flex-direction: column-reverse;
+  }
+
+  .export-modal-actions .animated-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .export-modal-header {
+    padding: 14px 16px;
+  }
+
+  .export-modal-body {
+    padding: 16px;
+  }
+
+  .export-modal-actions {
+    padding: 14px 16px;
+  }
+
+  .export-modal-title {
+    font-size: 16px;
+  }
+
+  .export-section-title {
+    font-size: 14px;
+  }
+
+  .export-image-upload-area {
+    min-height: 150px;
+  }
+
+  .export-placeholder-icon {
+    font-size: 36px;
+  }
+
+  .export-placeholder-text {
+    font-size: 14px;
+  }
+}

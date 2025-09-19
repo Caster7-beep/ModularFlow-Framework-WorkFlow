@@ -4,6 +4,7 @@ import { Api } from '@/services/api'
 import { API_BASE_URL } from '@/config'
 import OverlayScrollbar from './OverlayScrollbar'
 import { EmbeddedRegexRules } from './EmbeddedPanels'
+import ExportModal from './ExportModal'
 import '@/styles/PresetPanel.css'
 import {
   DndContext,
@@ -450,6 +451,7 @@ export default function PresetPanel({
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedForDeletion, setSelectedForDeletion] = useState<Set<string>>(new Set())
   const [showVisibilityModal, setShowVisibilityModal] = useState(false)
+  const [showExportModal, setShowExportModal] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -607,6 +609,14 @@ export default function PresetPanel({
               title="导入预设"
             >
               📥
+            </button>
+            <button
+              className="preset-panel-button"
+              onClick={() => setShowExportModal(true)}
+              disabled={!activeConfig?.presets || !presetContent}
+              title="导出预设"
+            >
+              📤
             </button>
             <button
               className="preset-panel-button"
@@ -916,6 +926,16 @@ export default function PresetPanel({
           <div className="preset-import-text">正在导入文件...</div>
         </div>
       )}
+
+      {/* 导出模态框 */}
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        fileContent={presetContent}
+        fileType="PS"
+        fileName={activeConfig?.presets ? activeConfig.presets.split('/').pop() || 'preset.json' : 'preset.json'}
+        panelTitle="预设"
+      />
     </motion.div>
   )
 }
