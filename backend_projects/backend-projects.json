@@ -27,6 +27,20 @@
         "version": "1.0.0",
         "author": "System"
       }
+    },
+    {
+      "name": "ProjectManager",
+      "namespace": "ProjectManager",
+      "modules_path": "modules/ProjectManager",
+      "shared_path": "shared/ProjectManager",
+      "globals_module": "globals",
+      "enabled": true,
+      "priority": -10,
+      "metadata": {
+        "description": "Unified Project Management Panel",
+        "version": "1.0.0",
+        "author": "System"
+      }
     }
   ]
 }
