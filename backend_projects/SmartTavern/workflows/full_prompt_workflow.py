@@ -68,8 +68,28 @@ def full_prompt_generation_workflow(
     processed_prompt_after_macro = macro_result.get("processed_messages", [])
     
     # b. 正则表达式处理 (分两个视图)
-    # 直接使用数据管理器加载的正则规则文件
-    all_rules = g.regex_rules_files if hasattr(g, 'regex_rules_files') else []
+    # 收集所有来源的正则规则：独立文件、角色卡内嵌、预设内嵌
+    all_rules = []
+    
+    # 1. 添加独立正则规则文件
+    if hasattr(g, 'regex_rules_files') and g.regex_rules_files:
+        all_rules.extend(g.regex_rules_files)
+    
+    # 2. 添加角色卡内嵌正则规则
+    if hasattr(g, 'character') and g.character and 'regex_rules' in g.character:
+        character_regex_rules = g.character['regex_rules']
+        if isinstance(character_regex_rules, list):
+            all_rules.extend(character_regex_rules)
+            print(f"🔧 已提取角色卡内嵌正则规则: {len(character_regex_rules)} 条")
+    
+    # 3. 添加预设内嵌正则规则
+    if hasattr(g, 'preset') and g.preset and 'regex_rules' in g.preset:
+        preset_regex_rules = g.preset['regex_rules']
+        if isinstance(preset_regex_rules, list):
+            all_rules.extend(preset_regex_rules)
+            print(f"🔧 已提取预设内嵌正则规则: {len(preset_regex_rules)} 条")
+    
+    print(f"📋 正则规则总计: {len(all_rules)} 条")
 
     # 这是最终的、包含所有元数据的 PROCESSED 格式
     final_processed_prompt_user_view = []

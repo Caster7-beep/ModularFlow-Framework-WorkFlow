@@ -4,7 +4,7 @@ import os
 import json
 from datetime import datetime
 from core.function_registry import get_registry, register_workflow
-from core.services import get_current_globals
+from core.services import get_current_globals, get_service_manager
 
 @register_workflow(name="prompt_only_workflow")
 def prompt_only_workflow(
@@ -37,8 +37,27 @@ def prompt_only_workflow(
     registry = get_registry()
     g = get_current_globals()
 
+    # 优先加载本次会话指定的角色卡，而不是依赖全局或默认配置
+    service_manager = get_service_manager()
+    shared_path = service_manager.get_shared_path()
+    
+    # 清空可能存在的旧角色数据，确保本次加载的是正确的
+    g.character = {}
+    
+    if character_file and shared_path:
+        character_full_path = shared_path / character_file
+        if character_full_path.exists():
+            try:
+                with open(character_full_path, 'r', encoding='utf-8') as f:
+                    g.character = json.load(f)
+                    print(f"✅ [工作流] 成功加载指定角色卡: {character_file}")
+            except Exception as e:
+                print(f"❌ [工作流] 加载指定角色卡失败: {character_file}, 错误: {e}")
+        else:
+            print(f"⚠️ [工作流] 指定的角色卡文件不存在: {character_full_path}")
+
     # 1. 初始化与数据加载
-    # 首先加载配置管理器选中的配置
+    # 加载配置管理器选中的配置 (如预设, 独立世界书, 独立正则等)
     registry.call("config_manager.load_selected_config")
     
     # 读取指定的对话文件而不是使用全局对话历史
@@ -81,6 +100,24 @@ def prompt_only_workflow(
     triggered_wb_ids = trigger_result.get("triggered_ids", [])
     if triggered_wb_ids:
         print(f"已触发 {len(triggered_wb_ids)} 个世界书条目。")
+    
+    # 打印世界书数据来源
+    world_book_data = None
+    if hasattr(g, 'world_book_files') and g.world_book_files:
+        world_book_data = g.world_book_files
+        print(f"📚 从g.world_book_files中读取世界书数据，条目数: {len(g.world_book_files)}")
+    
+    # 打印角色卡内嵌世界书
+    character_data = None
+    if hasattr(g, 'character') and g.character:
+        character_data = g.character
+    elif hasattr(g, 'character_data') and g.character_data:
+        character_data = g.character_data
+    
+    if character_data and 'world_book' in character_data:
+        print(f"📚 角色卡内嵌世界书: {character_data['world_book'].get('name', '未命名')}")
+        world_book_entries = character_data['world_book'].get('entries', [])
+        print(f"📚 角色卡内嵌世界书条目数: {len(world_book_entries)}")
 
     # 构建框架提示词 (前缀部分)
     framing_result = registry.call("framing.assemble", triggered_wb_ids=triggered_wb_ids)
@@ -99,7 +136,37 @@ def prompt_only_workflow(
     processed_prompt_after_macro = macro_result.get("processed_messages", [])
     
     # b. 正则表达式处理 (为 user_view)
-    all_rules = g.regex_rules_files if hasattr(g, 'regex_rules_files') else []
+    # 收集所有来源的正则规则：独立文件、角色卡内嵌、预设内嵌
+    all_rules = []
+    
+    # 1. 添加独立正则规则文件
+    if hasattr(g, 'regex_rules_files') and g.regex_rules_files:
+        all_rules.extend(g.regex_rules_files)
+        print(f"🔧 已提取独立正则规则文件: {len(g.regex_rules_files)} 条")
+    
+    # 2. 添加角色卡内嵌正则规则
+    character_data = None
+    if hasattr(g, 'character') and g.character:
+        character_data = g.character
+        print(f"🔍 从g.character中读取角色卡数据")
+    elif hasattr(g, 'character_data') and g.character_data:
+        character_data = g.character_data
+        print(f"🔍 从g.character_data中读取角色卡数据")
+    
+    if character_data and 'regex_rules' in character_data:
+        character_regex_rules = character_data['regex_rules']
+        if isinstance(character_regex_rules, list):
+            all_rules.extend(character_regex_rules)
+            print(f"🔧 已提取角色卡内嵌正则规则: {len(character_regex_rules)} 条")
+    
+    # 3. 添加预设内嵌正则规则
+    if hasattr(g, 'preset') and g.preset and 'regex_rules' in g.preset:
+        preset_regex_rules = g.preset['regex_rules']
+        if isinstance(preset_regex_rules, list):
+            all_rules.extend(preset_regex_rules)
+            print(f"🔧 已提取预设内嵌正则规则: {len(preset_regex_rules)} 条")
+    
+    print(f"📋 正则规则总计: {len(all_rules)} 条")
 
     final_processed_prompt_user_view = []
     for raw_message, processed_message in zip(raw_full_prompt, processed_prompt_after_macro):
