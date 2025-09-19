@@ -7,6 +7,8 @@ class ProjectManagerApp {
     constructor() {
         this.projects = {};
         this.portUsage = {};
+        this.managedProjects = [];
+        this.currentDeleteProject = null;
         this.refreshInterval = null;
         this.init();
     }
@@ -44,10 +46,28 @@ class ProjectManagerApp {
             // 端口使用
             portUsage: document.getElementById('portUsage'),
             
+            // 项目管理
+            managedProjectsList: document.getElementById('managedProjectsList'),
+            
             // 按钮
             refreshBtn: document.getElementById('refreshBtn'),
             startAllBtn: document.getElementById('startAllBtn'),
             stopAllBtn: document.getElementById('stopAllBtn'),
+            importProjectBtn: document.getElementById('importProjectBtn'),
+            importProjectBtnSection: document.getElementById('importProjectBtnSection'),
+            
+            // 导入项目模态框
+            importProjectModal: document.getElementById('importProjectModal'),
+            closeImportModal: document.getElementById('closeImportModal'),
+            importProjectForm: document.getElementById('importProjectForm'),
+            cancelImportBtn: document.getElementById('cancelImportBtn'),
+            
+            // 删除项目确认模态框
+            deleteProjectModal: document.getElementById('deleteProjectModal'),
+            closeDeleteModal: document.getElementById('closeDeleteModal'),
+            deleteProjectName: document.getElementById('deleteProjectName'),
+            confirmDeleteBtn: document.getElementById('confirmDeleteBtn'),
+            cancelDeleteBtn: document.getElementById('cancelDeleteBtn'),
             
             // 模态框和通知
             loadingModal: document.getElementById('loadingModal'),
@@ -72,6 +92,20 @@ class ProjectManagerApp {
         // 批量操作按钮
         this.elements.startAllBtn.addEventListener('click', () => this.startAllProjects());
         this.elements.stopAllBtn.addEventListener('click', () => this.stopAllProjects());
+        
+        // 项目管理按钮
+        this.elements.importProjectBtn.addEventListener('click', () => this.showImportProjectModal());
+        this.elements.importProjectBtnSection.addEventListener('click', () => this.showImportProjectModal());
+        
+        // 导入项目模态框
+        this.elements.closeImportModal.addEventListener('click', () => this.hideImportProjectModal());
+        this.elements.cancelImportBtn.addEventListener('click', () => this.hideImportProjectModal());
+        this.elements.importProjectForm.addEventListener('submit', (e) => this.handleProjectImport(e));
+        
+        // 删除项目模态框
+        this.elements.closeDeleteModal.addEventListener('click', () => this.hideDeleteProjectModal());
+        this.elements.cancelDeleteBtn.addEventListener('click', () => this.hideDeleteProjectModal());
+        this.elements.confirmDeleteBtn.addEventListener('click', () => this.deleteProject());
         
         // WebSocket消息监听
         window.addEventListener('websocket-message', (event) => {
@@ -111,13 +145,15 @@ class ProjectManagerApp {
 
         try {
             // 并行加载数据
-            const [statusResult, portResult] = await Promise.all([
+            const [statusResult, portResult, managedProjectsResult] = await Promise.all([
                 window.apiClient.getProjectStatus(),
-                window.apiClient.getPortUsage()
+                window.apiClient.getPortUsage(),
+                window.apiClient.getManagedProjects()
             ]);
 
             console.log('状态结果:', statusResult);
             console.log('端口结果:', portResult);
+            console.log('项目管理结果:', managedProjectsResult);
 
             // 处理项目状态数据
             if (statusResult.status) {
@@ -141,6 +177,18 @@ class ProjectManagerApp {
             } else {
                 console.warn('未找到端口数据:', portResult);
                 this.portUsage = {};
+            }
+
+            // 处理可管理项目数据
+            if (managedProjectsResult.projects) {
+                this.managedProjects = managedProjectsResult.projects;
+            } else if (managedProjectsResult.result) {
+                this.managedProjects = managedProjectsResult.result;
+            } else if (managedProjectsResult.data) {
+                this.managedProjects = managedProjectsResult.data;
+            } else {
+                console.warn('未找到可管理项目数据:', managedProjectsResult);
+                this.managedProjects = [];
             }
 
             // 如果没有项目状态数据，但有端口数据，从端口数据构建项目信息
@@ -182,6 +230,7 @@ class ProjectManagerApp {
         this.updateStatistics();
         this.updateProjectsGrid();
         this.updatePortUsage();
+        this.updateManagedProjectsList();
     }
 
     /**
@@ -550,6 +599,134 @@ class ProjectManagerApp {
         setTimeout(() => {
             this.elements.toast.classList.add('hidden');
         }, 3000);
+    }
+
+    /**
+     * 更新可管理项目列表
+     */
+    updateManagedProjectsList() {
+        if (!this.managedProjects || this.managedProjects.length === 0) {
+            this.elements.managedProjectsList.innerHTML = `
+                <p class="text-gray-500 text-center py-4">暂无可管理项目</p>
+            `;
+            return;
+        }
+
+        this.elements.managedProjectsList.innerHTML = this.managedProjects.map(project => {
+            return `
+                <div class="flex items-center justify-between py-2 border-b border-gray-200 last:border-0">
+                    <div>
+                        <h5 class="font-medium text-gray-900">${project.name}</h5>
+                        <p class="text-sm text-gray-600">${project.description || '无描述'}</p>
+                    </div>
+                    <button onclick="app.confirmDeleteProject('${project.name}')"
+                            class="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1 rounded text-sm flex items-center justify-center space-x-1">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        <span>删除</span>
+                    </button>
+                </div>
+            `;
+        }).join('');
+        
+        lucide.createIcons();
+    }
+
+    /**
+     * 显示导入项目模态框
+     */
+    showImportProjectModal() {
+        this.elements.importProjectModal.classList.remove('hidden');
+        this.elements.importProjectModal.classList.add('flex');
+    }
+
+    /**
+     * 隐藏导入项目模态框
+     */
+    hideImportProjectModal() {
+        this.elements.importProjectModal.classList.remove('flex');
+        this.elements.importProjectModal.classList.add('hidden');
+        this.elements.importProjectForm.reset();
+    }
+
+    /**
+     * 处理项目导入
+     */
+    async handleProjectImport(event) {
+        event.preventDefault();
+        
+        const formData = new FormData(this.elements.importProjectForm);
+        const file = formData.get('projectArchive');
+        
+        if (!file || file.size === 0) {
+            this.showToast('error', '导入失败', '请选择有效的项目压缩包');
+            return;
+        }
+        
+        this.hideImportProjectModal();
+        this.showLoading('正在导入项目...');
+        
+        try {
+            const result = await window.apiClient.importProject(formData);
+            
+            if (result.success || (result.result && result.result.success)) {
+                const projectName = result.project_name || (result.result && result.result.project_name) || '新项目';
+                this.showToast('success', '导入成功', `项目 ${projectName} 已导入`);
+                await this.loadData(false);
+            } else {
+                const error = result.error || (result.result && result.result.error) || '未知错误';
+                this.showToast('error', '导入失败', error);
+            }
+        } catch (error) {
+            this.showToast('error', '导入失败', error.message);
+        } finally {
+            this.hideLoading();
+        }
+    }
+
+    /**
+     * 确认删除项目
+     */
+    confirmDeleteProject(projectName) {
+        this.currentDeleteProject = projectName;
+        this.elements.deleteProjectName.textContent = projectName;
+        this.elements.deleteProjectModal.classList.remove('hidden');
+        this.elements.deleteProjectModal.classList.add('flex');
+    }
+
+    /**
+     * 隐藏删除项目确认模态框
+     */
+    hideDeleteProjectModal() {
+        this.elements.deleteProjectModal.classList.remove('flex');
+        this.elements.deleteProjectModal.classList.add('hidden');
+        this.currentDeleteProject = null;
+    }
+
+    /**
+     * 删除项目
+     */
+    async deleteProject() {
+        if (!this.currentDeleteProject) return;
+        
+        const projectName = this.currentDeleteProject;
+        this.hideDeleteProjectModal();
+        this.showLoading(`正在删除项目 ${projectName}...`);
+        
+        try {
+            const result = await window.apiClient.deleteProject(projectName);
+            
+            if (result.success || (result.result && result.result.success)) {
+                this.showToast('success', '删除成功', `项目 ${projectName} 已删除`);
+                await this.loadData(false);
+            } else {
+                const error = result.error || (result.result && result.result.error) || '未知错误';
+                this.showToast('error', '删除失败', error);
+            }
+        } catch (error) {
+            this.showToast('error', '删除失败', error.message);
+        } finally {
+            this.hideLoading();
+        }
     }
 }
 

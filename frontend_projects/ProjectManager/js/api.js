@@ -118,6 +118,42 @@ class APIClient {
     async performHealthCheck() {
         return this.post('/project_manager/health_check');
     }
+    
+    /**
+     * 项目管理API
+     */
+    async getManagedProjects() {
+        return this.post('/project_manager/get_managed_projects');
+    }
+
+    async importProject(formData) {
+        const url = `${this.baseURL}${this.apiPrefix}/project_manager/import_project`;
+        
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                body: formData, // 直接使用FormData，不需要JSON序列化
+                // 不设置Content-Type，让浏览器自动设置multipart/form-data
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.message || `HTTP ${response.status}`);
+            }
+            
+            return data;
+        } catch (error) {
+            console.error('导入项目失败:', error);
+            throw error;
+        }
+    }
+
+    async deleteProject(projectName) {
+        return this.post('/project_manager/delete_project', {
+            project_name: projectName
+        });
+    }
 
     /**
      * WebSocket连接

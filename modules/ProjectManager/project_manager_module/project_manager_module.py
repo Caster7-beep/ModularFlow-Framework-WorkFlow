@@ -12,6 +12,8 @@ import psutil
 import logging
 import os
 import shutil
+import tempfile
+import zipfile
 from typing import Dict, List, Optional, Any
 from pathlib import Path
 from datetime import datetime
@@ -603,3 +605,208 @@ def perform_health_check():
         results[project_name] = manager.get_project_status(project_name)
     
     return results
+
+@register_function(name="project_manager.get_managed_projects", outputs=["projects"])
+def get_managed_projects():
+    """获取可管理项目列表"""
+    manager = get_project_manager()
+    return manager.managed_projects_config
+
+@register_function(name="project_manager.import_project", outputs=["result"])
+def import_project(project_archive):
+    """导入项目"""
+    manager = get_project_manager()
+    
+    try:
+        # 获取上传的文件
+        if hasattr(project_archive, 'file'):
+            # FastAPI 风格
+            file_content = project_archive.file.read()
+            filename = project_archive.filename
+        elif hasattr(project_archive, 'name'):
+            # Flask 风格
+            file_content = project_archive.read()
+            filename = project_archive.name
+        else:
+            # 直接传递二进制内容
+            file_content = project_archive
+            filename = "project_archive.zip"
+        
+        # 创建临时目录
+        import tempfile
+        import os
+        import zipfile
+        import shutil
+        import json
+        from pathlib import Path
+        
+        temp_dir = tempfile.mkdtemp(prefix="project_import_")
+        archive_path = os.path.join(temp_dir, filename)
+        
+        # 保存文件
+        with open(archive_path, 'wb') as f:
+            f.write(file_content)
+        
+        # 解压文件
+        extract_path = os.path.join(temp_dir, "extracted")
+        os.makedirs(extract_path, exist_ok=True)
+        
+        with zipfile.ZipFile(archive_path, 'r') as zip_ref:
+            zip_ref.extractall(extract_path)
+        
+        # 检查项目配置
+        project_config_path = os.path.join(extract_path, "project_config.json")
+        if not os.path.exists(project_config_path):
+            raise ValueError("项目配置文件不存在")
+        
+        with open(project_config_path, 'r', encoding='utf-8') as f:
+            project_config = json.load(f)
+        
+        # 获取项目名称和命名空间
+        if "name" not in project_config or "namespace" not in project_config:
+            raise ValueError("项目配置缺少必要字段: name 或 namespace")
+        
+        project_name = project_config["name"]
+        project_namespace = project_config["namespace"]
+        
+        # 检查目录结构
+        required_folders = ["frontend_projects", "backend_projects", "modules", "shared"]
+        for folder in required_folders:
+            if not os.path.exists(os.path.join(extract_path, folder)):
+                raise ValueError(f"项目缺少必要目录: {folder}")
+        
+        # 复制文件到对应目录
+        framework_root = Path(__file__).parent.parent.parent.parent
+        
+        # 创建目标目录
+        for folder in required_folders:
+            source_dir = os.path.join(extract_path, folder, project_namespace)
+            if os.path.exists(source_dir):
+                target_dir = os.path.join(framework_root, folder, project_namespace)
+                os.makedirs(os.path.dirname(target_dir), exist_ok=True)
+                
+                # 如果目标目录已存在，先备份
+                if os.path.exists(target_dir):
+                    backup_dir = f"{target_dir}_backup_{int(time.time())}"
+                    shutil.move(target_dir, backup_dir)
+                
+                # 复制文件
+                shutil.copytree(source_dir, target_dir)
+                logger.info(f"✓ 已复制 {source_dir} 到 {target_dir}")
+        
+        # 更新项目管理器配置
+        config_path = os.path.join(framework_root, "shared/ProjectManager/config.json")
+        if os.path.exists(config_path):
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+            
+            # 检查项目是否已存在
+            existing_project = next((p for p in config.get("managed_projects", [])
+                                     if p["name"] == project_name), None)
+            
+            if existing_project:
+                # 更新现有项目
+                for key, value in project_config.items():
+                    existing_project[key] = value
+            else:
+                # 添加新项目
+                if "managed_projects" not in config:
+                    config["managed_projects"] = []
+                config["managed_projects"].append(project_config)
+            
+            # 保存配置
+            with open(config_path, 'w', encoding='utf-8') as f:
+                json.dump(config, f, indent=2, ensure_ascii=False)
+            
+            # 重新加载配置
+            manager._load_managed_projects_config()
+            manager._initialize_project_status()
+        
+        # 清理临时文件
+        shutil.rmtree(temp_dir)
+        
+        return {
+            "success": True,
+            "project_name": project_name,
+            "message": f"项目 {project_name} 导入成功"
+        }
+        
+    except Exception as e:
+        logger.error(f"导入项目失败: {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@register_function(name="project_manager.delete_project", outputs=["result"])
+def delete_project(project_name: str):
+    """删除项目"""
+    manager = get_project_manager()
+    
+    try:
+        # 检查项目是否存在
+        project_config = next((p for p in manager.managed_projects_config
+                              if p["name"] == project_name), None)
+        
+        if not project_config:
+            return {"success": False, "error": f"项目 {project_name} 不存在"}
+        
+        # 首先停止项目
+        if project_name in manager.projects:
+            manager.stop_project(project_name)
+        
+        project_namespace = project_config.get("namespace", project_name)
+        framework_root = Path(__file__).parent.parent.parent.parent
+        
+        # 获取项目管理配置
+        config_path = os.path.join(framework_root, "shared/ProjectManager/config.json")
+        if not os.path.exists(config_path):
+            return {"success": False, "error": "项目管理配置不存在"}
+        
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+        
+        # 创建备份目录
+        backup_root = config.get("project_management", {}).get("project_operations", {}).get("backup_directory", "backups")
+        backup_dir = os.path.join(framework_root, backup_root, f"{project_name}_{int(time.time())}")
+        os.makedirs(backup_dir, exist_ok=True)
+        
+        # 备份项目文件
+        folders_to_check = ["frontend_projects", "backend_projects", "modules", "shared"]
+        backed_up_paths = []
+        
+        for folder in folders_to_check:
+            project_dir = os.path.join(framework_root, folder, project_namespace)
+            if os.path.exists(project_dir):
+                backup_target = os.path.join(backup_dir, folder)
+                os.makedirs(backup_target, exist_ok=True)
+                
+                # 复制到备份目录
+                shutil.copytree(project_dir, os.path.join(backup_target, project_namespace))
+                backed_up_paths.append(project_dir)
+                
+                # 删除原目录
+                shutil.rmtree(project_dir)
+                logger.info(f"✓ 已删除 {project_dir}")
+        
+        # 从配置中移除项目
+        config["managed_projects"] = [p for p in config.get("managed_projects", [])
+                                     if p["name"] != project_name]
+        
+        # 保存配置
+        with open(config_path, 'w', encoding='utf-8') as f:
+            json.dump(config, f, indent=2, ensure_ascii=False)
+        
+        # 重新加载配置
+        manager._load_managed_projects_config()
+        
+        # 从状态中移除项目
+        if project_name in manager.projects:
+            del manager.projects[project_name]
+        
+        return {
+            "success": True,
+            "message": f"项目 {project_name} 已删除",
+            "backup_location": backup_dir
+        }
+        
+    except Exception as e:
+        logger.error(f"删除项目失败: {str(e)}")
+        return {"success": False, "error": str(e)}

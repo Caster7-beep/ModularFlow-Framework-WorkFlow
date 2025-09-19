@@ -6,6 +6,47 @@
     "description": "用于统一管理前后端项目、端口与生命周期的更高一级控制台",
     "type": "manager"
   },
+  "project_management": {
+    "enabled": true,
+    "import_export": {
+      "enabled": true,
+      "import_directory": "imports",
+      "temp_directory": "temp",
+      "required_folders": ["frontend_projects", "backend_projects", "modules", "shared"],
+      "validate_config": true
+    },
+    "project_operations": {
+      "delete_enabled": true,
+      "create_enabled": true,
+      "backup_before_delete": true,
+      "backup_directory": "backups"
+    },
+    "project_config_template": {
+      "name": "",
+      "namespace": "",
+      "description": "",
+      "enabled": true,
+      "frontend": {
+        "type": "html",
+        "path": "",
+        "port": 0,
+        "dev_command": "",
+        "open_browser": true
+      },
+      "backend": {
+        "api_gateway_port": 0,
+        "websocket_path": "/ws",
+        "start_command": "",
+        "stop_strategy": "process_group",
+        "enabled": true
+      },
+      "ports": {
+        "frontend_dev": 0,
+        "api_gateway": 0,
+        "websocket": 0
+      }
+    }
+  },
   "frontend": {
     "path": "frontend_projects/ProjectManager",
     "port": 8080,

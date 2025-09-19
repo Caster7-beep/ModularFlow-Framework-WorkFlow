@@ -1,0 +1,25 @@
+{
+  "name": "SmartTavern",
+  "namespace": "SmartTavern",
+  "description": "集成完整SmartTavern工作流的AI对话系统",
+  "enabled": true,
+  "frontend": {
+    "type": "react",
+    "path": "frontend_projects/SmartTavern",
+    "port": 3000,
+    "dev_command": "npm run dev",
+    "open_browser": true
+  },
+  "backend": {
+    "api_gateway_port": 6500,
+    "websocket_path": "/ws",
+    "start_command": "python backend_projects/SmartTavern/start_server.py",
+    "stop_strategy": "process_group",
+    "enabled": true
+  },
+  "ports": {
+    "frontend_dev": 3000,
+    "api_gateway": 6500,
+    "websocket": 6500
+  }
+}
