@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Api } from '@/services/api'
 import OverlayScrollbar from './OverlayScrollbar'
+import ExportModal from './ExportModal'
 import '@/styles/RegexPanel.css'
 import {
   DndContext,
@@ -292,6 +293,7 @@ export default function RegexPanel({
   const [regexContent, setRegexContent] = useState<any[] | null>(null)
   const [expandedRule, setExpandedRule] = useState<string | null>(null)
   const [isImporting, setIsImporting] = useState(false)
+  const [showExportModal, setShowExportModal] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -471,6 +473,37 @@ export default function RegexPanel({
     e.target.value = ''
   }
 
+  // 准备要导出的正则规则文件
+  const prepareRegexExport = () => {
+    if (!activeConfig?.regex_rules || !regexContent) return [];
+    
+    // 从路径中获取文件名
+    const fileName = activeConfig.regex_rules.split('/').pop() || 'regex_rules.json';
+    const displayName = fileName.replace('.json', '');
+    
+    // 创建导出文件对象
+    const exportFile = {
+      content: regexContent,
+      type: "RX", // 正则规则文件类型标识
+      name: fileName,
+      displayName: displayName,
+      category: "正则规则",
+      icon: "⚙️",
+      selected: true,
+      path: activeConfig.regex_rules
+    };
+    
+    return [exportFile];
+  };
+
+  // 处理导出正则规则
+  const handleExportRegex = () => {
+    if (!activeConfig?.regex_rules || !regexContent) return;
+    
+    // 打开导出模态框
+    setShowExportModal(true);
+  };
+
   const handleDeleteCurrentFile = async () => {
     if (!activeConfig?.regex_rules) {
       alert('没有选中的正则规则文件可删除')
@@ -601,6 +634,14 @@ export default function RegexPanel({
               title="导入正则规则"
             >
               📥
+            </button>
+            <button
+              className="regex-panel-button"
+              onClick={handleExportRegex}
+              title="导出正则规则"
+              disabled={!activeConfig?.regex_rules}
+            >
+              📤
             </button>
             <button
               className={`regex-panel-button ${activeConfig?.regex_rules ? 'regex-panel-button-active' : 'regex-panel-button-inactive'}`}
@@ -777,6 +818,14 @@ export default function RegexPanel({
         )}
       </AnimatePresence>
       
+      {/* 导出模态框 */}
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        files={prepareRegexExport()}
+        panelTitle="正则规则"
+      />
+
       {/* 隐藏的文件输入元素 */}
       <input
         type="file"

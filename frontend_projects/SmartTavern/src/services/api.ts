@@ -344,4 +344,36 @@ export const Api = {
     const url = `${API_BASE_URL}/SmartTavern/get_available_file_types`
     return await request(url)
   },
+
+  // 文件导出相关API
+  async embedFilesToImage(files: Array<{content: any, type: string, name: string}>, baseImageData?: string, outputFormat: string = "image"): Promise<Wrapped<{
+    embedded_files?: any[];
+    image_data?: string;
+    data?: any;
+    format?: string;
+    message?: string;
+  }>> {
+    const url = `${API_BASE_URL}/SmartTavern/embed_files_to_image`
+    return await request(url, {
+      method: 'POST',
+      body: JSON.stringify({
+        files,
+        base_image_data: baseImageData,
+        output_format: outputFormat
+      }),
+    })
+  },
+
+  async getEmbeddedFilesInfo(imageData: string): Promise<Wrapped<{
+    files_info: any[];
+    message?: string;
+  }>> {
+    const url = `${API_BASE_URL}/SmartTavern/get_embedded_files_info`
+    return await request(url, {
+      method: 'POST',
+      body: JSON.stringify({
+        image_data: imageData
+      }),
+    })
+  },
 }

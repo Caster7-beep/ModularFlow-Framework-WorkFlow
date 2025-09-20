@@ -33,12 +33,13 @@ class ImageBindingModule:
         self.export_dir.mkdir(exist_ok=True)
     
     @staticmethod
-    def _auto_detect_file_type(filename: str) -> str:
+    def _auto_detect_file_type(filename: str, file_content: bytes = None) -> str:
         """
         根据文件名或内容自动检测文件类型标签
         
         Args:
             filename: 文件名
+            file_content: 文件内容（可选，用于更准确的类型检测）
             
         Returns:
             文件类型标签
@@ -58,6 +59,48 @@ class ImageBindingModule:
         elif "personas" in str(path):
             return FILE_TYPE_TAGS["PERSONA"]
         else:
+            # 如果基于文件名无法确定类型，尝试根据文件内容判断
+            if file_content and filename_lower.endswith('.json'):
+                try:
+                    import json
+                    content = json.loads(file_content.decode('utf-8'))
+                    
+                    # 检查是否为预设文件
+                    if isinstance(content, dict) and "prompts" in content:
+                        prompts = content["prompts"]
+                        if isinstance(prompts, list) and len(prompts) > 0:
+                            # 检查prompts数组中的元素是否有预设特征
+                            if all("identifier" in p for p in prompts if isinstance(p, dict)):
+                                return FILE_TYPE_TAGS["PRESET"]
+                    
+                    # 检查是否为角色卡文件
+                    if isinstance(content, dict) and "name" in content and "message" in content:
+                        return FILE_TYPE_TAGS["CHARACTER"]
+                    
+                    # 检查是否为世界书文件
+                    if isinstance(content, dict) and ("entries" in content or "worldInfo" in content):
+                        return FILE_TYPE_TAGS["WORLD_BOOK"]
+                    elif isinstance(content, list) and len(content) > 0:
+                        # 检查数组格式的世界书
+                        first_item = content[0]
+                        if isinstance(first_item, list) and len(first_item) > 0:
+                            first_item = first_item[0]
+                        if isinstance(first_item, dict) and all(field in first_item for field in ["id", "name", "content"]):
+                            return FILE_TYPE_TAGS["WORLD_BOOK"]
+                    
+                    # 检查是否为正则规则文件
+                    if isinstance(content, list) and len(content) > 0:
+                        first_item = content[0]
+                        if isinstance(first_item, dict) and "find_regex" in first_item and "replace_regex" in first_item:
+                            return FILE_TYPE_TAGS["REGEX"]
+                    
+                    # 检查是否为用户信息文件
+                    if isinstance(content, dict) and "name" in content and "description" in content and "message" not in content:
+                        return FILE_TYPE_TAGS["PERSONA"]
+                        
+                except (json.JSONDecodeError, UnicodeDecodeError):
+                    pass
+            
             return FILE_TYPE_TAGS["OTHER"]
     
     @staticmethod
@@ -161,8 +204,8 @@ class ImageBindingModule:
             with open(file_path, 'rb') as f:
                 file_content = f.read()
             
-            # 自动检测文件类型
-            file_type = self._auto_detect_file_type(file_path)
+            # 自动检测文件类型，传入文件内容以提高检测准确性
+            file_type = self._auto_detect_file_type(file_path, file_content)
             
             # 准备文件数据
             file_data = {

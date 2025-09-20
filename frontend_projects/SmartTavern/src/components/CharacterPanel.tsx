@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Api } from '@/services/api'
 import OverlayScrollbar from './OverlayScrollbar'
 import { EmbeddedWorldBook, EmbeddedRegexRules } from './EmbeddedPanels'
+import ExportModal from './ExportModal'
 import '../styles/CharacterPanel.css'
 
 interface CharacterPanelProps {
@@ -23,6 +24,9 @@ export default function CharacterPanel({
   const [editedCharacters, setEditedCharacters] = useState<{[path: string]: any}>({})
   const [hoveredCard, setHoveredCard] = useState<string | null>(null)
   const [isImporting, setIsImporting] = useState(false)
+  const [showExportModal, setShowExportModal] = useState(false)
+  const [selectedCharacters, setSelectedCharacters] = useState<Set<string>>(new Set())
+  const [exportCharacters, setExportCharacters] = useState<any[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -209,6 +213,26 @@ export default function CharacterPanel({
     }
   }
 
+  // 处理角色卡导出
+  const handleExportCharacters = () => {
+    // 准备导出数据
+    const exportData = Object.entries(characterContents).map(([path, content]) => {
+      return {
+        content: content,
+        type: "CH", // 角色卡类型标识
+        name: path.split('/').pop() || "",
+        displayName: content.name || path.split('/').pop() || "",
+        category: "角色卡",
+        icon: "👤",
+        selected: true,
+        path: path
+      };
+    });
+    
+    setExportCharacters(exportData);
+    setShowExportModal(true);
+  };
+
   const handleInputChange = (filePath: string, field: string, value: string | string[]) => {
     setEditedCharacters(prev => ({
       ...prev,
@@ -260,6 +284,14 @@ export default function CharacterPanel({
               title="导入角色卡"
             >
               📥
+            </button>
+            <button
+              className="character-panel-add-btn"
+              onClick={handleExportCharacters}
+              title="导出角色卡"
+              disabled={Object.keys(characterContents).length === 0}
+            >
+              📤
             </button>
           </div>
         </div>
@@ -522,6 +554,14 @@ export default function CharacterPanel({
           <div className="character-import-text">正在导入文件...</div>
         </div>
       )}
+
+      {/* 导出模态框 */}
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        files={exportCharacters}
+        panelTitle="角色卡"
+      />
     </motion.div>
   )
 }

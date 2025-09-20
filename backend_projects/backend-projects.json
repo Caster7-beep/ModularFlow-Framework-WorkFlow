@@ -1,6 +1,19 @@
 {
-  "default_project": "VisualWorkFlow",
   "projects": [
+    {
+      "name": "SmartTavern",
+      "namespace": "SmartTavern",
+      "modules_path": "modules/SmartTavern",
+      "shared_path": "shared/SmartTavern",
+      "globals_module": "globals",
+      "enabled": true,
+      "priority": 0,
+      "metadata": {
+        "description": "SmartTavern text processing workflow system",
+        "version": "1.0.0",
+        "author": "System"
+      }
+    },
     {
       "name": "SmartTavern",
       "namespace": "SmartTavern",
@@ -16,14 +29,18 @@
       }
     },
     {
-      "name": "VisualWorkFlow",
-      "namespace": "VisualWorkFlow",
-      "modules_path": "modules",
-      "shared_path": "shared/VisualWorkFlow",
+      "name": "ProjectManager",
+      "namespace": "ProjectManager",
+      "modules_path": "modules/ProjectManager",
+      "shared_path": "shared/ProjectManager",
       "globals_module": "globals",
       "enabled": true,
-      "priority": 0,
-      "metadata": {}
+      "priority": -10,
+      "metadata": {
+        "description": "Unified Project Management Panel",
+        "version": "1.0.0",
+        "author": "System"
+      }
     }
   ]
 }

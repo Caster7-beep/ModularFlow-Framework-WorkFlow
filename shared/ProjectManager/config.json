@@ -1,0 +1,125 @@
+{
+  "project": {
+    "name": "ProjectManager",
+    "display_name": "统一项目管理面板",
+    "version": "1.0.0",
+    "description": "用于统一管理前后端项目、端口与生命周期的更高一级控制台",
+    "type": "manager"
+  },
+  "project_management": {
+    "enabled": true,
+    "import_export": {
+      "enabled": true,
+      "import_directory": "imports",
+      "temp_directory": "temp",
+      "required_folders": [
+        "frontend_projects",
+        "backend_projects",
+        "modules",
+        "shared"
+      ],
+      "validate_config": true
+    },
+    "project_operations": {
+      "delete_enabled": true,
+      "create_enabled": true,
+      "backup_before_delete": true,
+      "backup_directory": "backups"
+    },
+    "project_config_template": {
+      "name": "",
+      "namespace": "",
+      "description": "",
+      "enabled": true,
+      "frontend": {
+        "type": "html",
+        "path": "",
+        "port": 0,
+        "dev_command": "",
+        "open_browser": true
+      },
+      "backend": {
+        "api_gateway_port": 0,
+        "websocket_path": "/ws",
+        "start_command": "",
+        "stop_strategy": "process_group",
+        "enabled": true
+      },
+      "ports": {
+        "frontend_dev": 0,
+        "api_gateway": 0,
+        "websocket": 0
+      }
+    }
+  },
+  "frontend": {
+    "path": "frontend_projects/ProjectManager",
+    "port": 8080,
+    "auto_open_browser": true,
+    "dev_server": "python_http",
+    "dev_command": ""
+  },
+  "backend": {
+    "api_gateway": {
+      "enabled": true,
+      "port": 8000,
+      "cors_origins": [
+        "http://localhost:8080",
+        "http://127.0.0.1:8080"
+      ]
+    },
+    "websocket": {
+      "enabled": true,
+      "path": "/ws"
+    }
+  },
+  "features": {
+    "project_control": true,
+    "websocket_communication": true,
+    "static_file_serving": true
+  },
+  "managed_projects": [
+    {
+      "name": "SmartTavern",
+      "namespace": "SmartTavern",
+      "description": "SmartTavern 对话与工作流系统",
+      "enabled": true,
+      "frontend": {
+        "type": "react",
+        "path": "frontend_projects/SmartTavern",
+        "port": 3000,
+        "dev_command": "npm run dev",
+        "open_browser": true
+      },
+      "console": {
+        "type": "html",
+        "path": "frontend_projects/SmartTavern",
+        "port": 6601,
+        "enabled": true
+      },
+      "backend": {
+        "api_gateway_port": 6500,
+        "websocket_path": "/ws",
+        "start_command": "python backend_projects/SmartTavern/start_server.py",
+        "stop_strategy": "process_group",
+        "enabled": true
+      },
+      "ports": {
+        "frontend_dev": 3000,
+        "frontend_console": 6601,
+        "api_gateway": 6500,
+        "websocket": 6500
+      },
+      "health_checks": {
+        "frontend_dev_url": "http://localhost:3000",
+        "console_url": "http://localhost:6601",
+        "api_docs_url": "http://localhost:6500/docs",
+        "websocket_url": "ws://localhost:6500/ws"
+      }
+    }
+  ],
+  "metadata": {
+    "owner": "System",
+    "created_at": "2025-09-19"
+  }
+}

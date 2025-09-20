@@ -237,8 +237,8 @@ class DevServer:
         
         try:
             if server.process:
-                server.process.terminate()
-                server.process.wait(timeout=10)
+                # 强制终止进程及其子进程
+                self._terminate_process_tree(server.process)
                 logger.info(f"🛑 项目 {project_name} 开发服务器已停止")
             
             server.status = "stopped"
@@ -277,6 +277,42 @@ class DevServer:
                     "url": f"http://localhost:{server.port}"
                 })
         return running_servers
+    
+    def _terminate_process_tree(self, process: subprocess.Popen):
+        """终止进程及其所有子进程"""
+        try:
+            if process.poll() is None:  # 进程仍在运行
+                # 在Windows上，尝试终止整个进程树
+                if hasattr(subprocess, 'CREATE_NEW_CONSOLE') and os.name == 'nt':
+                    try:
+                        # 使用taskkill命令终止进程树
+                        subprocess.run(
+                            ['taskkill', '/F', '/T', '/PID', str(process.pid)],
+                            check=False,
+                            capture_output=True
+                        )
+                        logger.info(f"✓ 使用taskkill终止进程树 PID: {process.pid}")
+                    except Exception as e:
+                        logger.warning(f"taskkill失败，使用标准方法: {e}")
+                        process.terminate()
+                        process.wait(timeout=10)
+                else:
+                    # Unix系统使用进程组终止
+                    try:
+                        import signal
+                        import os
+                        os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+                        process.wait(timeout=10)
+                    except Exception:
+                        process.terminate()
+                        process.wait(timeout=10)
+        except Exception as e:
+            logger.error(f"终止进程树失败: {e}")
+            # 最后尝试强制终止
+            try:
+                process.kill()
+            except:
+                pass
 
 
 # ========== WebSocket 服务器管理 ==========

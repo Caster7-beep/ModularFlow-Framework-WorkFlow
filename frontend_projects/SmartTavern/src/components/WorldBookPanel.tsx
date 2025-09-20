@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Api } from '@/services/api'
 import OverlayScrollbar from './OverlayScrollbar'
+import ExportModal from './ExportModal'
 import '@/styles/WorldBookPanel.css'
 import {
   DndContext,
@@ -200,6 +201,7 @@ export default function WorldBookPanel({
   const [worldBookContent, setWorldBookContent] = useState<any[] | null>(null)
   const [expandedItem, setExpandedItem] = useState<number | null>(null)
   const [isImporting, setIsImporting] = useState(false)
+  const [showExportModal, setShowExportModal] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -359,6 +361,36 @@ export default function WorldBookPanel({
     e.target.value = ''
   }
 
+  // 准备要导出的世界书文件
+  const prepareWorldBookExport = () => {
+    if (!activeConfig?.world_books || !worldBookContent) return [];
+    
+    // 从路径中获取文件名
+    const fileName = activeConfig.world_books.split('/').pop() || 'world_book.json';
+    const displayName = fileName.replace('.json', '');
+    
+    // 创建导出文件对象
+    const exportFile = {
+      content: [worldBookContent], // API返回格式为嵌套数组
+      type: "WB", // 世界书文件类型标识
+      name: fileName,
+      displayName: displayName,
+      category: "世界书",
+      icon: "📚",
+      selected: true,
+      path: activeConfig.world_books
+    };
+    
+    return [exportFile];
+  };
+
+  const handleExportWorldBooks = () => {
+    if (!activeConfig?.world_books || !worldBookContent) return;
+    
+    // 打开导出模态框
+    setShowExportModal(true);
+  }
+
   const handleDeleteFile = async () => {
     if (!activeConfig?.world_books) return;
     if (!confirm(`确定删除 "${activeConfig.world_books}"?`)) return;
@@ -467,6 +499,7 @@ export default function WorldBookPanel({
           <div className="worldbook-panel-buttons">
             <button className="worldbook-panel-button" onClick={handleCreateNewFile} title="添加文件">➕</button>
             <button className="worldbook-panel-button" onClick={handleImportWorldBook} title="导入世界书">📥</button>
+            <button className="worldbook-panel-button" onClick={handleExportWorldBooks} title="导出世界书" disabled={!activeConfig?.world_books}>📤</button>
             <button className={`worldbook-panel-button ${activeConfig?.world_books ? 'worldbook-panel-button-active' : 'worldbook-panel-button-inactive'}`} onClick={handleDeleteFile} disabled={!activeConfig?.world_books} title="删除文件">🗑️</button>
           </div>
         </div>
@@ -607,6 +640,14 @@ export default function WorldBookPanel({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* 导出模态框 */}
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        files={prepareWorldBookExport()}
+        panelTitle="世界书"
+      />
 
       {/* 隐藏的文件输入元素 */}
       <input
