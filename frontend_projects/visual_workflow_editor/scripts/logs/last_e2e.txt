@@ -1,20 +1,20 @@
 === Polish v6 E2E 回归摘要 ===
-时间: 2025-09-19T14:40:53.669Z
-总断言: 35 | 通过: 25 | 失败: 10
+时间: 2025-09-20T10:39:47.603Z
+总断言: 36 | 通过: 20 | 失败: 16
 
 [1] 启动前置与主界面就绪: PASS=1 FAIL=0
   - PASS | 页面加载 | qaHooks=v6
 
 [2] 基础可用性断言: PASS=2 FAIL=0
-  - PASS | Toolbar 触达尺寸>=48 | btnTotal=19 ok=9
+  - PASS | Toolbar 触达尺寸>=48 | btnTotal=20 ok=10
   - PASS | 对齐/分布/RM/? 可见
 
-[3] 节点创建与拖拽 + 网格/吸附/参考线: PASS=3 FAIL=2
-  - PASS | 添加两个节点 | n=2
+[3] 节点创建与拖拽 + 网格/吸附/参考线: PASS=2 FAIL=3
+  - FAIL | 添加两个节点 | n=0
   - FAIL | 拖拽触发 snap-ring
   - PASS | 网格尺寸=16 | grid=16
   - PASS | 网格尺寸=24 | grid=24
-  - FAIL | 吸附到网格 | pos=(349.13,421.13) grid=24
+  - FAIL | 吸附到网格 | pos=(533.13,357.75) grid=24
 
 [4] 多选/对齐/分布 + 撤销/重做 + Toast: PASS=1 FAIL=2
   - FAIL | 左对齐 Toast | 吸附：开
@@ -22,32 +22,33 @@
   - PASS | 撤销/重做快捷键
 
 [5] 复制/剪切/粘贴: PASS=2 FAIL=0
-  - PASS | 复制粘贴新增节点 | count=4
-  - PASS | 剪切/粘贴完成 | n=4
+  - PASS | 复制粘贴新增节点 | count=6
+  - PASS | 剪切/粘贴完成 | n=6
 
-[6] 右键菜单与锁定/组合/解组: PASS=1 FAIL=5
-  - FAIL | 空白右键菜单项存在
-  - FAIL | 单节点右键项 | 组合|粘贴|解组|对齐（左/中/右/顶/中/底）|等分（水平/垂直）|复制|删除|锁定/解锁
-  - FAIL | 锁定后不可拖动
-  - FAIL | 多选右键项 | 重命名|复制|剪切|删除|锁定
+[6] 右键菜单与锁定/组合/解组: PASS=3 FAIL=3
+  - PASS | 空白右键菜单项存在
+  - FAIL | 单节点右键项 | 新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置
+  - PASS | 锁定后不可拖动
+  - FAIL | 多选右键项 | 新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置
   - FAIL | 组合后整体拖动
   - PASS | 解组成功
 
-[7] 连接边样式（Smooth 默认 → Orthogonal → Smooth 往返）: PASS=9 FAIL=0
-  - PASS | 连接创建（默认）
-  - PASS | 默认边样式=Smooth | edgeType=smooth len=1
+[7] 连接边样式（Smooth 默认 → Orthogonal → Smooth 往返）: PASS=3 FAIL=6
+  - FAIL | 连接创建（默认）
+  - PASS | 默认边样式=Smooth | edgeType=smooth len=0
   - PASS | QA Hook edgeStyle=orthogonal | edgeStyle=orthogonal
-  - PASS | 连接创建（Orthogonal）
-  - PASS | 新边样式=Orthogonal(step) | lastEdgeType=orthogonal len=2
-  - PASS | QA Hook edgeStyle=smooth | edgeStyle=smooth
-  - PASS | 连接创建（Smooth 回切）
-  - PASS | 新边样式=Smooth(smoothstep) | lastEdgeType=smooth len=3
-  - PASS | 边路径存在 | path=true len=3
+  - FAIL | 连接创建（Orthogonal）
+  - PASS | 新边样式=Orthogonal(step) | lastEdgeType=smooth len=0
+  - FAIL | QA Hook edgeStyle=smooth | edgeStyle=orthogonal
+  - FAIL | 连接创建（Smooth 回切）
+  - FAIL | 新边样式=Smooth(smoothstep) | lastEdgeType=orthogonal len=0
+  - FAIL | 边路径存在 | path=false len=0
 
-[8] 导出/导入布局: PASS=2 FAIL=1
-  - PASS | 导出 JSON 存在 | nodes=4 edges=3
+[8] 导出/导入布局: PASS=2 FAIL=2
+  - PASS | 导出 JSON 存在 | nodes=7 edges=0
+  - FAIL | 显示清空 Toast | 边样式：直角
   - FAIL | 清空画布后节点=0
-  - PASS | 导入（重建）节点数 | n=2
+  - PASS | 导入（重建）节点数 | n=9
 
 [9] 尺寸模式/Reduced Motion/?: PASS=4 FAIL=0
   - PASS | 尺寸模式切换
@@ -59,5 +60,5 @@
 
 UA: Node.js/23
 
---- 2025-09-19T14:40:53.670Z ---
+--- 2025-09-20T10:39:47.604Z ---
 UA=Node.js/23

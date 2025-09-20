@@ -79,6 +79,9 @@ interface ToolbarProps {
   onToolsExpandedChange?: (expanded: boolean) => void;
   autoAlign?: boolean;
   onToggleAutoAlign?: () => void;
+
+  // v6: 清空画布（第二排按钮触发）
+  onClearCanvas?: () => void;
 }
 
 const Toolbar: React.FC<ToolbarProps> = ({
@@ -124,6 +127,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
   onToolsExpandedChange,
   autoAlign = true,
   onToggleAutoAlign,
+  onClearCanvas,
 }) => {
   const { t } = useTranslation();
   const [saveModalVisible, setSaveModalVisible] = useState(false);
@@ -249,20 +253,36 @@ const Toolbar: React.FC<ToolbarProps> = ({
     setSelfTestLoading(true);
     try {
       const res = await runQuickSelfTest();
+      const getItem = (name: 'Health' | 'Docs' | 'WS' | 'LLM' | 'CodeBlock') =>
+        res.items.find(i => i.name === name);
+      const health = getItem('Health');
+      const docs = getItem('Docs');
+      const ws = getItem('WS');
+      const llm = getItem('LLM');
+      const code = getItem('CodeBlock');
+  
       const lines: string[] = [];
-      lines.push(`Frontend E2E Smoke (LLM): ${res.llm.pass ? 'PASS' : 'FAIL'}`);
-      lines.push(`Final Output (LLM): ${res.llm.output || ''}${res.llm.error ? ` | Error: ${res.llm.error}` : ''}`);
-      lines.push('');
-      lines.push(`Frontend E2E Smoke (CodeBlock): ${res.code.pass ? 'PASS' : 'FAIL'}`);
-      lines.push(`Final Output (CodeBlock): ${res.code.output || ''}${res.code.error ? ` | Error: ${res.code.error}` : ''}`);
-      lines.push('');
-      const eventsText = res.events && res.events.length > 0 ? res.events.join(', ') : 'No Events';
-      lines.push(`WS Events (last 20): ${eventsText}`);
+      if (health) lines.push(`Health: ${health.pass ? 'PASS' : 'FAIL'} - ${health.detail}`);
+      if (docs)   lines.push(`Docs: ${docs.pass ? 'PASS' : 'FAIL'} - ${docs.detail}`);
+      if (ws)     lines.push(`WS: ${ws.pass ? 'PASS' : 'FAIL'} - ${ws.detail}`);
+      if (llm)    lines.push(`LLM: ${llm.pass ? 'PASS' : 'FAIL'} - ${llm.detail}`);
+      if (code)   lines.push(`CodeBlock: ${code.pass ? 'PASS' : 'FAIL'} - ${code.detail}`);
+  
+      const anyFail = res.items.some(i => !i.pass);
+      if (anyFail) {
+        lines.push('');
+        lines.push('建议:');
+        lines.push('- 检查后端 6502 端口可达与代理（/api, /ws）');
+        lines.push('- 检查 CORS 设置');
+        lines.push('- 检查 GEMINI_API_KEY 与模型可用性');
+      }
+  
       setSelfTestSummary(lines.join('\n'));
       setSelfTestVisible(true);
+      // 结果已在 runQuickSelfTest 内写入 window.__qaHooks.lastSelfTest，这里不重复写
     } catch (err: any) {
       const msg = err?.message || '未知错误';
-      setSelfTestSummary(`Frontend E2E Smoke: FAIL\nError: ${msg}`);
+      setSelfTestSummary(`快速自检失败: ${msg}`);
       setSelfTestVisible(true);
     } finally {
       setSelfTestLoading(false);
@@ -409,6 +429,25 @@ const Toolbar: React.FC<ToolbarProps> = ({
             </Button>
           </Tooltip>
 
+          {/* 网格显隐：当 showGrid=false 时，用极简 ring 边框做提示 */}
+          <Tooltip title="切换网格显示">
+            <Button
+              aria-label="切换网格显示"
+              aria-pressed={showGrid}
+              onClick={onToggleShowGrid}
+              className={`focus:outline-none focus:ring-2 focus:ring-black ${!showGrid ? 'ring-1 ring-black/40' : ''}`}
+              style={{
+                height: 48, width: 48, padding: 0,
+                backgroundColor: showGrid ? '#0B0B0B' : '#FFFFFF',
+                color: showGrid ? '#FFFFFF' : '#0B0B0B',
+                borderColor: '#0B0B0B',
+                borderRadius: '4px'
+              }}
+            >
+              <i data-lucide="grid" className="w-5 h-5"></i>
+            </Button>
+          </Tooltip>
+
           <Tooltip title="网格尺寸 8/16/24">
             <Button
               aria-label={`切换网格尺寸，当前=${gridSize}`}
@@ -492,6 +531,20 @@ const Toolbar: React.FC<ToolbarProps> = ({
       {toolsExpanded && (
         <div className="w-full bg-white border-b border-gray-200 px-4 py-2">
           <div className="flex flex-wrap items-center gap-2">
+            {/* 清空画布 */}
+            <Tooltip title="清空画布">
+              <Button
+                aria-label="清空画布"
+                aria-pressed={false}
+                onClick={() => onClearCanvas?.()}
+                className="focus:outline-none focus:ring-2 focus:ring-black"
+                style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '4px', fontWeight: 600 }}
+                title="清空画布"
+              >
+                Clear
+              </Button>
+            </Tooltip>
+
             {/* 水平对齐：左/中/右 */}
             <Button
               aria-label="左对齐"

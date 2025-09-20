@@ -548,3 +548,10 @@ body[data-dragging="1"] .react-flow__node > div {
 body[data-dragging="1"] .react-flow__node:hover > div {
   box-shadow: none !important;
 }
+
+/* v6: snap-ring 提示（黑白极简，不破坏布局，120ms 闪烁） */
+.snap-ring {
+  outline: 2px solid #0B0B0B;
+  outline-offset: 0;
+  border-radius: 4px; /* ≤4px */
+}

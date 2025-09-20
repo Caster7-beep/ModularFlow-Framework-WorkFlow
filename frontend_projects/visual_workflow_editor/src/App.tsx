@@ -813,6 +813,10 @@ const App: React.FC = () => {
           if (ok) showToast('布局已导入');
         } catch {}
       }}
+      // v6: 清空画布（通过 Canvas ref）
+      onClearCanvas={() => {
+        try { canvasRef.current?.clearCanvas?.(); } catch {}
+      }}
       // v6: Toolbar 展开高度同步 + 自动对齐（AA）
       onToolsExpandedChange={(expanded) => {
         try {

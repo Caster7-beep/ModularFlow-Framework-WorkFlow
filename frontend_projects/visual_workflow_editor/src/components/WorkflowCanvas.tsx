@@ -25,6 +25,7 @@ import SwitchNode from './nodes/SwitchNode';
 import MergerNode from './nodes/MergerNode';
 import type { WorkflowNode, WorkflowEdge } from '../types/workflow';
 import ContextMenu, { MenuItem } from './ContextMenu';
+import { showToast } from './Toast';
 
 // 自定义节点类型注册
 const nodeTypes = {
@@ -98,6 +99,9 @@ export type WorkflowCanvasHandle = {
   // v5: 导入/导出布局
   exportLayout: () => any;
   importLayout: (data: any) => boolean;
+
+  // v6: 规范化清空画布
+  clearCanvas: () => boolean;
 };
 
 const DEFAULT_W = 240;
@@ -135,6 +139,8 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({
   // 性能优化：缓存其它节点中心点 + rAF 节流，避免每帧 DOM 扫描
   const centersRef = React.useRef<{ id: string; cx: number; cy: number }[]>([]);
   const rafPendingRef = React.useRef<boolean>(false);
+  const rafIdRef = React.useRef<number | null>(null);
+  const lastDragPosRef = React.useRef<{ x: number; y: number } | null>(null);
 
   // v5: Context Menu state
   const [menuOpen, setMenuOpen] = React.useState(false);
@@ -343,6 +349,13 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({
         return { id, cx: r.left + r.width / 2, cy: r.top + r.height / 2 };
       });
       centersRef.current = centers;
+
+      // 记录起始中心点用于Δ阈值判定
+      const draggedEl = document.querySelector(`.react-flow__node[data-id="${node.id}"]`) as HTMLElement | null;
+      if (draggedEl) {
+        const r = draggedEl.getBoundingClientRect();
+        lastDragPosRef.current = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      }
     } catch {}
   }, [autoAlign]);
 
@@ -352,17 +365,34 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({
     if (!autoAlign) return;
     const wrapper = reactFlowWrapper.current;
     if (!wrapper) return;
+
+    // 预先测量中心点，并进行Δ阈值（≥2px）判定
+    const draggedEl0 = document.querySelector(`.react-flow__node[data-id="${node.id}"]`) as HTMLElement | null;
+    if (!draggedEl0) {
+      setGuideX(null);
+      setGuideY(null);
+      return;
+    }
+    const rect0 = draggedEl0.getBoundingClientRect();
+    const currCx = rect0.left + rect0.width / 2;
+    const currCy = rect0.top + rect0.height / 2;
+    const last = lastDragPosRef.current;
+    if (last && Math.abs(currCx - last.x) < 2 && Math.abs(currCy - last.y) < 2) {
+      // 小于阈值则跳过参考线计算
+      return;
+    }
+    lastDragPosRef.current = { x: currCx, y: currCy };
+
     if (rafPendingRef.current) return;
     rafPendingRef.current = true;
-    requestAnimationFrame(() => {
+    rafIdRef.current = requestAnimationFrame(() => {
       try {
         const wrapRect = wrapper.getBoundingClientRect();
-        // 当前被拖拽节点中心
+        // 当前被拖拽节点中心（再次测量确保与绘制时一致）
         const draggedEl = document.querySelector(`.react-flow__node[data-id="${node.id}"]`) as HTMLElement | null;
         if (!draggedEl) {
           setGuideX(null);
           setGuideY(null);
-          rafPendingRef.current = false;
           return;
         }
         const innerDiv = draggedEl.firstElementChild as HTMLElement | null;
@@ -379,7 +409,7 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({
           if (gx === null && Math.abs(draggedCx - c.cx) <= TOL) {
             gx = c.cx - wrapRect.left;
           }
-          if (gy === null && Math.abs(draggedCy - c.cy) <= TOL) {
+        if (gy === null && Math.abs(draggedCy - c.cy) <= TOL) {
             gy = c.cy - wrapRect.top;
           }
           if (gx !== null && gy !== null) break;
@@ -404,14 +434,21 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({
         } catch {}
       } finally {
         rafPendingRef.current = false;
+        if (rafIdRef.current !== null) rafIdRef.current = null;
       }
     });
   }, [gridSize, reactFlowInstance, autoAlign]);
 
   const handleNodeDragStop = useCallback(() => {
+    // 取消未结算的 rAF
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
+    }
     setGuideX(null);
     setGuideY(null);
     centersRef.current = [];
+    lastDragPosRef.current = null;
     rafPendingRef.current = false;
     try {
       if (typeof document !== 'undefined') {
@@ -861,6 +898,15 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({
     }
   }, [onNodesChange, onEdgesChange, takeSnapshot]);
 
+  // v6: 清空画布（规范化：快照 + 状态复位 + Toast）
+  const clearCanvas = useCallback(() => {
+    try { takeSnapshot('clear'); } catch {}
+    onNodesChange([]);
+    onEdgesChange([]);
+    try { showToast('画布已清空'); } catch {}
+    return true;
+  }, [onNodesChange, onEdgesChange, takeSnapshot]);
+
   // 初始注入 snapshot 函数
   React.useEffect(() => {
     (window as any).__vw_snapshot = (l?: string) => takeSnapshot(l);
@@ -890,12 +936,16 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({
     toggleLockSelected,
     exportLayout,
     importLayout,
+
+    // v6
+    clearCanvas,
   }), [
     alignSelected, distributeSelected, fitViewApi,
     alignLeft, alignCenterX, alignRight, alignTop, alignCenterY, alignBottom,
     distributeH, distributeV, getSelectedWithSize,
     undo, redo, copy, cut, paste, groupSelected, ungroupSelected, toggleLockSelected,
-    exportLayout, importLayout
+    exportLayout, importLayout,
+    clearCanvas
   ]);
 
   // v5: 右键菜单构建函数（在使用前声明，避免 TS 提示“在赋值前使用变量”）

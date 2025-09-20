@@ -357,7 +357,7 @@ class APIGateway:
         self.app.add_middleware(
             CORSMiddleware,
             allow_origins=self.config.cors_origins,
-            allow_credentials=True,
+            allow_credentials=False,
             allow_methods=["*"],
             allow_headers=["*"],
         )
@@ -395,7 +395,7 @@ class APIGateway:
     
     async def _health_check_handler(self):
         """健康检查处理器"""
-        return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+        return {"status": "ok", "service": "visual_work_flow", "ts": datetime.now().isoformat()}
     
     async def _api_info_handler(self):
         """API信息处理器"""
@@ -503,6 +503,7 @@ class APIGateway:
                     try:
                         # 接收消息
                         data = await websocket.receive_text()
+                        if (data or "").strip().lower() == "ping": await websocket.send_text("pong"); continue
                         message = json.loads(data)
                         
                         # 处理消息

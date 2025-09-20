@@ -29,6 +29,8 @@ const ContextMenu: React.FC<ContextMenuProps> = ({ open, x, y, items, onClose, a
   const [activeIndex, setActiveIndex] = useState(0);
   const focusables = useRef<HTMLButtonElement[]>([]);
   focusables.current = [];
+  // 记录菜单打开时间，避免打开触发的右键/按下事件被“外部点击关闭”处理掉
+  const openedAtRef = useRef<number>(0);
 
   const enabledItems = useMemo(() => items, [items]);
 
@@ -53,12 +55,25 @@ const ContextMenu: React.FC<ContextMenuProps> = ({ open, x, y, items, onClose, a
       const firstEnabled = enabledItems.findIndex(i => !i.disabled);
       return firstEnabled >= 0 ? firstEnabled : 0;
     });
+    // 记录打开时刻，防止打开触发的事件立刻被外点关闭逻辑捕获
+    openedAtRef.current = Date.now();
+
     const onDocMouseDown = (e: MouseEvent) => {
+      // 忽略打开后的短时间窗口与右键（button===2）
+      const sinceOpen = Date.now() - (openedAtRef.current || 0);
+      // 某些环境下右键顺序: mousedown(button=2) -> contextmenu -> ...
+      // 这里忽略右键与打开后极短时间内的按下事件
+      // @ts-ignore
+      const btn = (e as any).button;
+      if (btn === 2) return;
+      if (sinceOpen < 120) return;
+
       const t = e.target as Node;
       if (containerRef.current && !containerRef.current.contains(t)) {
         onClose();
       }
     };
+
     const onKey = (e: KeyboardEvent) => {
       if (!open) return;
       if (e.key === 'Escape') {
@@ -96,6 +111,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({ open, x, y, items, onClose, a
         }
       }
     };
+
     document.addEventListener('mousedown', onDocMouseDown);
     document.addEventListener('keydown', onKey);
     return () => {
@@ -112,6 +128,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({ open, x, y, items, onClose, a
       role="menu"
       aria-label={ariaLabel}
       aria-modal="true"
+      onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
       className="fixed z-[1300] bg-white text-black rounded border border-gray-200 shadow-md min-w-[200px] max-w-[280px] focus:outline-none"
       style={{ left: pos.left, top: pos.top }}
     >
