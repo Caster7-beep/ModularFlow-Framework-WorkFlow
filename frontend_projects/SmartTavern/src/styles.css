@@ -537,9 +537,18 @@ body {
   transition: all 0.2s ease;
 }
 
-*::-webkit-scrollbar-thumb:hover { 
+*::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, var(--scrollbar-thumb-hover-start), var(--scrollbar-thumb-hover-end));
   box-shadow: 0 0 10px var(--shadow-glow);
+}
+
+/* 隐藏原生滚动条工具类（由 index.html 迁移） */
+.hide-native-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+.hide-native-scrollbar::-webkit-scrollbar {
+  display: none;            /* Chrome, Safari and Opera */
 }
 
 /* 通用动画和过渡 */
