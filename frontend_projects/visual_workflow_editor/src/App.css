@@ -1,6 +1,8 @@
 .app {
   height: 100vh;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .app-header {
@@ -10,12 +12,14 @@
   display: flex;
   align-items: center;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  flex-shrink: 0;
+  height: var(--toolbar-height, 56px);
 }
 
 .app-sider {
   background: #fafafa;
   border-right: 1px solid #f0f0f0;
-  height: calc(100vh - 64px);
+  height: calc(100vh - var(--toolbar-height, 56px));
   overflow-y: auto;
 }
 
@@ -26,62 +30,118 @@
 
 .app-content {
   background: #fff;
-  height: calc(100vh - 64px);
+  height: calc(100vh - var(--toolbar-height, 56px));
   overflow: hidden;
   position: relative;
+  flex: 1;
 }
 
-/* React Flow 样式覆盖 */
+/* 工作流画布容器 */
+.workflow-canvas {
+  height: calc(100vh - var(--toolbar-height, 56px) - 2rem);
+}
+
+/* 画布包装容器 */
+.canvas-wrap {
+  height: 100%;
+  width: 100%;
+}
+
+/* React Flow 根容器 */
+.canvas-root {
+  height: 100% !important;
+  width: 100% !important;
+}
+
+/* React Flow 样式覆盖 - 符合UI规范 */
 .react-flow__node {
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border: 2px solid #e8e8e8;
+  border-radius: 4px; /* 圆角≤4px */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 2px solid #e5e7eb;
   background: #fff;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease; /* 减少动画时长提升性能 */
 }
 
 .react-flow__node:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-  border-color: #1890ff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  border-color: #0B0B0B; /* 使用黑色替代蓝色 */
 }
 
 .react-flow__node.selected {
-  border-color: #1890ff;
-  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+  border-color: #0B0B0B; /* 黑色边框 */
+  box-shadow: 0 0 0 2px rgba(11, 11, 11, 0.15); /* 黑色阴影 */
 }
 
 .react-flow__handle {
-  width: 8px;
-  height: 8px;
-  border: 2px solid #fff;
-  background: #1890ff;
-  border-radius: 50%;
+  width: 16px; /* 增大句柄尺寸至16px */
+  height: 16px;
+  border: 3px solid #fff;
+  background: #0B0B0B; /* 黑色句柄 */
+  border-radius: 2px; /* 圆角≤4px - 使用2px */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15); /* 微妙阴影 */
+  transition: all 0.15s ease; /* 微交互 */
+}
+
+.react-flow__handle:hover {
+  background: #374151; /* hover状态变灰 */
+  transform: scale(1.1); /* 微妙缩放反馈 */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+}
+
+/* 增大句柄点击区域至48x48px (通过伪元素) */
+.react-flow__handle::after {
+  content: '';
+  position: absolute;
+  left: -16px;
+  top: -16px;
+  width: 48px;
+  height: 48px;
+  background: transparent;
+  pointer-events: auto;
 }
 
 .react-flow__handle-top {
-  top: -4px;
+  top: -8px; /* 调整位置适配新尺寸 */
 }
 
 .react-flow__handle-bottom {
-  bottom: -4px;
+  bottom: -8px;
 }
 
 .react-flow__handle-left {
-  left: -4px;
+  left: -8px;
 }
 
 .react-flow__handle-right {
-  right: -4px;
+  right: -8px;
 }
 
 .react-flow__edge-path {
-  stroke: #b1b1b7;
+  stroke: #4b5563; /* 更深的灰色提高对比度 */
   stroke-width: 2;
+  stroke-linecap: round; /* 圆形线帽 */
+  stroke-linejoin: round; /* 圆形连接 */
+  transition: all 0.15s ease;
+}
+
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke: #374151; /* hover态深灰色 */
+  stroke-width: 3;
 }
 
 .react-flow__edge.selected .react-flow__edge-path {
-  stroke: #1890ff;
+  stroke: #0B0B0B; /* 黑色选中态 */
   stroke-width: 3;
+}
+
+/* 连接线端点美化 */
+.react-flow__edge .react-flow__edge-text {
+  font-size: 12px;
+  color: #374151;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 4px 8px;
+  border-radius: 2px;
+  border: 1px solid #e5e7eb;
 }
 
 .react-flow__controls {
@@ -94,37 +154,37 @@
   right: 20px;
 }
 
-/* 节点类型特定样式 */
+/* 节点类型特定样式 - 黑白极简 */
 .node-llm {
-  border-color: #52c41a;
+  border-left: 4px solid #0B0B0B;
 }
 
 .node-llm .react-flow__handle {
-  background: #52c41a;
+  background: #0B0B0B;
 }
 
 .node-input {
-  border-color: #1890ff;
+  border-left: 4px solid #374151;
 }
 
 .node-input .react-flow__handle {
-  background: #1890ff;
+  background: #374151;
 }
 
 .node-output {
-  border-color: #fa541c;
+  border-left: 4px solid #6b7280;
 }
 
 .node-output .react-flow__handle {
-  background: #fa541c;
+  background: #6b7280;
 }
 
 .node-code {
-  border-color: #722ed1;
+  border-left: 4px solid #4b5563;
 }
 
 .node-code .react-flow__handle {
-  background: #722ed1;
+  background: #4b5563;
 }
 
 /* 响应式设计 */

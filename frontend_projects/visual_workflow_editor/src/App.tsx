@@ -44,6 +44,8 @@ const App: React.FC = () => {
   const [currentExecution, setCurrentExecution] = useState<WorkflowExecution | null>(null);
   const [showExecutionMonitor, setShowExecutionMonitor] = useState(false);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
+  // m2-3: 当前执行 runId（供 ExecutionMonitor 过滤显示）
+  const [executionRunId, setExecutionRunId] = useState<string | null>(null);
   // 移动端侧栏浮层开关（md 以下显示）
   const [showLeftOverlay, setShowLeftOverlay] = useState(false);
   const [showRightOverlay, setShowRightOverlay] = useState(false);
@@ -96,6 +98,9 @@ const App: React.FC = () => {
           edgeType: (e as any).edgeType || edgeStyle,
         }));
       },
+      // m2-3: QA hooks for runId
+      getLastRunId() { return lastRunIdRef.current; },
+      setLastRunId(id: string) { lastRunIdRef.current = String(id); },
     };
     (window as any).__qaHooks = hooks;
     return () => {
@@ -107,6 +112,8 @@ const App: React.FC = () => {
 
   // Canvas ref（对齐/分布 API）
   const canvasRef = useRef<WorkflowCanvasHandle | null>(null);
+  // QA hooks：保存最近一次 runId（供 getLastRunId / setLastRunId）
+  const lastRunIdRef = useRef<string | null>(null);
 
   // Overlay 焦点管理
   const leftOverlayRef = useRef<HTMLDivElement>(null);
@@ -368,31 +375,28 @@ const App: React.FC = () => {
     setIsExecuting(true);
     setShowExecutionMonitor(true);
     try {
-      if (!currentWorkflow) {
-        const tempWorkflow: Omit<Workflow, 'id' | 'createdAt' | 'updatedAt'> = {
-          name: '临时工作流',
-          description: '未保存的工作流',
-          nodes,
-          edges,
-        };
-        const createResponse = await workflowApi.createWorkflow(tempWorkflow);
-        if (createResponse.success && createResponse.data) {
-          setCurrentWorkflow(createResponse.data);
-          const execResponse = await workflowApi.executeWorkflow(createResponse.data.id);
-          if (execResponse.success && execResponse.data) {
-            setCurrentExecution(execResponse.data);
-            message.success('工作流开始执行');
-          }
-        }
-      } else {
-        const response = await workflowApi.executeWorkflow(currentWorkflow.id);
-        if (response.success && response.data) {
-          setCurrentExecution(response.data);
-          message.success('工作流开始执行');
-        } else {
-          throw new Error(response.message || '执行失败');
-        }
+      // m2-3: 统一从画布执行，注入 inputs，并兼容已有 workflowId
+      const exec = await canvasRef.current?.executeFromCanvas?.({ workflowId: currentWorkflow?.id });
+      const runId = exec?.runId || '';
+      if (runId) {
+        setExecutionRunId(runId);
+        lastRunIdRef.current = runId;
+        try { (window as any).__qaHooks?.setLastRunId?.(runId); } catch {}
       }
+      // 将结果尽量映射到 currentExecution 以便右侧状态显示
+      if ((exec?.result as any)?.status) {
+        const now = new Date().toISOString();
+        setCurrentExecution(prev => ({
+          id: runId || (prev?.id || ''),
+          workflowId: currentWorkflow?.id || (prev?.workflowId || ''),
+          status: (exec?.result as any)?.status || 'running',
+          startTime: (exec?.result as any)?.start_time || now,
+          endTime: (exec?.result as any)?.end_time,
+          results: (exec?.result as any)?.results || (exec?.result as any)?.output || {},
+          errors: (exec?.result as any)?.errors,
+        }));
+      }
+      message.success('工作流开始执行');
     } catch (error) {
       console.error('执行工作流失败:', error);
       const errorId = errorService.reportWorkflowError(error as Error, {
@@ -809,9 +813,32 @@ const App: React.FC = () => {
       }}
       onImportLayout={(obj) => {
         try {
-          const ok = canvasRef.current?.importLayout?.(obj);
-          if (ok) showToast('布局已导入');
-        } catch {}
+          // 检查是否是完整的工作流文件（包含nodes和edges）
+          if (obj && obj.nodes && Array.isArray(obj.nodes) && obj.edges && Array.isArray(obj.edges)) {
+            // 完整工作流导入
+            const workflow: Workflow = {
+              id: obj.id || `imported_${Date.now()}`,
+              name: obj.name || '导入的工作流',
+              description: obj.description || '',
+              nodes: obj.nodes,
+              edges: obj.edges,
+              createdAt: obj.createdAt || new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            };
+            
+            setCurrentWorkflow(workflow);
+            setNodes(obj.nodes);
+            setEdges(obj.edges);
+            showToast('工作流已导入');
+          } else {
+            // 仅布局导入（现有逻辑）
+            const ok = canvasRef.current?.importLayout?.(obj);
+            if (ok) showToast('布局已导入');
+          }
+        } catch (error) {
+          console.error('导入失败:', error);
+          showToast('导入失败');
+        }
       }}
       // v6: 清空画布（通过 Canvas ref）
       onClearCanvas={() => {
@@ -951,6 +978,7 @@ const App: React.FC = () => {
                   {showExecutionMonitor && (
                     <div className="rounded border border-gray-200 bg-white p-4">
                       <ExecutionMonitor
+                        executionId={executionRunId || undefined}
                         workflowId={currentWorkflow?.id || ''}
                         nodes={nodes}
                         execution={currentExecution}

@@ -62,3 +62,80 @@ UA: Node.js/23
 
 --- 2025-09-20T10:39:47.604Z ---
 UA=Node.js/23
+--- 2025-09-20T14:31:39.894Z [SMOKE] ---
+A(Input→LLM→Output): PASS | out="ping"
+B(Input→CodeBlock→Output): PASS | out="len=5"
+SelfTest(wait=983ms) top5:
+  - Health: N/A
+  - Docs: N/A
+  - WS: N/A
+  - LLM: N/A
+  - CodeBlock: N/A
+ClearCanvas(wait=72ms): DONE
+Polish v6 E2E Regression Log
+Started: 2025-09-20T15:06:06.040Z
+=== Polish v6 E2E 回归摘要 ===
+时间: 2025-09-20T15:06:25.266Z
+总断言: 36 | 通过: 25 | 失败: 11 | 重试: 1
+
+[1] 启动前置与主界面就绪: PASS=1 FAIL=0
+  - PASS | 页面加载 | qaHooks=v6 | ms=0
+
+[2] 基础可用性断言: PASS=2 FAIL=0
+  - PASS | Toolbar 触达尺寸>=48 | btnTotal=20 ok=13 | ms=0
+  - PASS | 对齐/分布/RM/? 可见 | ms=0
+
+[3] 节点创建与拖拽 + 网格/吸附/参考线: PASS=2 FAIL=3
+  - FAIL | 添加两个节点 | n=1 | ms=0
+  - FAIL | 拖拽触发 snap-ring | ms=0
+  - PASS | 网格尺寸=16 | grid=16 | ms=0
+  - PASS | 网格尺寸=24 | grid=24 | ms=0
+  - FAIL | 吸附到网格 | pos=(274.00,290.00) grid=24 | ms=0
+
+[4] 多选/对齐/分布 + 撤销/重做 + Toast: PASS=1 FAIL=2
+  - FAIL | 左对齐 Toast | 吸附：开 | ms=0
+  - FAIL | 水平等分 Toast | 吸附：开 | ms=0
+  - PASS | 撤销/重做快捷键 | ms=0
+
+[5] 复制/剪切/粘贴: PASS=1 FAIL=1
+  - FAIL | 复制粘贴新增节点 | count=3 | ms=0
+  - PASS | 剪切/粘贴完成 | n=3 | ms=0
+
+[6] 右键菜单与锁定/组合/解组: PASS=3 FAIL=3
+  - PASS | 空白右键菜单项存在 | ms=0
+  - FAIL | 单节点右键项 | 新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置 | ms=0
+  - PASS | 锁定后不可拖动 | ms=0
+  - FAIL | 多选右键项 | 新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置 | ms=0
+  - FAIL | 组合后整体拖动 | ms=0
+  - PASS | 解组成功 | ms=0
+
+[7] 连接边样式（Smooth 默认 → Orthogonal → Smooth 往返）: PASS=9 FAIL=0
+  - PASS | 连接创建（默认） | ms=0
+  - PASS | 默认边样式=Smooth | edgeType=smooth len=1 | ms=0
+  - PASS | QA Hook edgeStyle=orthogonal | edgeStyle=orthogonal | ms=0
+  - PASS | 连接创建（Orthogonal） | ms=0
+  - PASS | 新边样式=Orthogonal(step) | lastEdgeType=orthogonal len=2 | ms=0
+  - PASS | QA Hook edgeStyle=smooth | edgeStyle=smooth | ms=0
+  - PASS | 连接创建（Smooth 回切） | ms=0
+  - PASS | 新边样式=Smooth(smoothstep) | lastEdgeType=smooth len=3 | ms=0
+  - PASS | 边路径存在 | path=true len=3 | ms=0
+
+[8] 导出/导入布局: PASS=2 FAIL=2
+  - PASS | 导出 JSON 存在 | nodes=3 edges=3 | ms=0
+  - FAIL | 显示清空 Toast | 边样式：平滑 | ms=5031
+  - FAIL | 清空画布后节点=0 | nodes=3 | ms=403
+  - PASS | 导入（重建）节点数 | n=5 | ms=0
+
+[9] 尺寸模式/Reduced Motion/?: PASS=4 FAIL=0
+  - PASS | 尺寸模式切换 | ms=0
+  - PASS | Reduced Motion=开 | ms=0
+  - PASS | 帮助弹窗打开 | ms=0
+  - PASS | 帮助弹窗关闭 | ms=0
+
+[10] 结果汇总与落地: PASS=0 FAIL=0
+
+最终结果: FAIL
+UA: Node.js/23
+
+--- 2025-09-20T15:06:25.266Z [REGRESSION] ---
+UA=Node.js/23

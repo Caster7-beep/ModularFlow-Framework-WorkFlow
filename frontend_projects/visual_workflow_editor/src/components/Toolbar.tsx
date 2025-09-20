@@ -236,11 +236,24 @@ const Toolbar: React.FC<ToolbarProps> = ({
         reader.onload = (e) => {
           try {
             const workflow = JSON.parse(e.target?.result as string);
-            // TODO: 验证工作流格式并加载
-            console.log('导入工作流:', workflow);
+            
+            // 验证工作流格式
+            if (!workflow || typeof workflow !== 'object') {
+              throw new Error('无效的工作流文件格式');
+            }
+            
+            // 检查必需字段
+            if (!workflow.nodes || !Array.isArray(workflow.nodes) ||
+                !workflow.edges || !Array.isArray(workflow.edges)) {
+              throw new Error('工作流文件缺少必需的节点或边数据');
+            }
+            
+            // 通过onImportLayout处理导入的数据
+            onImportLayout?.(workflow);
             message.success(t('messages.success.imported'));
           } catch (error) {
-            message.error(t('messages.error.invalidFormat'));
+            console.error('导入工作流失败:', error);
+            message.error(error instanceof Error ? error.message : t('messages.error.invalidFormat'));
           }
         };
         reader.readAsText(file);
@@ -377,9 +390,17 @@ const Toolbar: React.FC<ToolbarProps> = ({
         <Space wrap={false}>
           <Tooltip title={t('toolbar.debug')}>
             <Button
+              aria-label={t('toolbar.debug')}
               icon={<BugOutlined />}
-              type={isDebugging ? 'primary' : 'default'}
               onClick={onDebugToggle}
+              className="flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-black"
+              style={{
+                height: 48, minWidth: 48, padding: '0 16px',
+                backgroundColor: isDebugging ? '#0B0B0B' : '#FFFFFF',
+                color: isDebugging ? '#FFFFFF' : '#0B0B0B',
+                borderColor: '#0B0B0B',
+                borderRadius: '4px'
+              }}
             >
               {t('toolbar.debug')}
             </Button>
@@ -387,8 +408,17 @@ const Toolbar: React.FC<ToolbarProps> = ({
 
           <Tooltip title={t('toolbar.monitor')}>
             <Button
+              aria-label={t('toolbar.monitor')}
               icon={<MonitorOutlined />}
               onClick={onShowMonitor}
+              className="flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-black"
+              style={{
+                height: 48, minWidth: 48, padding: '0 16px',
+                backgroundColor: '#FFFFFF',
+                color: '#0B0B0B',
+                borderColor: '#0B0B0B',
+                borderRadius: '4px'
+              }}
             >
               {t('toolbar.monitor')}
             </Button>
@@ -400,10 +430,13 @@ const Toolbar: React.FC<ToolbarProps> = ({
               aria-label="切换调整尺寸模式"
               aria-pressed={resizeEnabled}
               onClick={toggleResize}
+              className="focus:outline-none focus:ring-2 focus:ring-black"
               style={{
+                height: 48, minWidth: 48, padding: '0 16px',
                 backgroundColor: resizeEnabled ? '#0B0B0B' : '#FFFFFF',
                 color: resizeEnabled ? '#FFFFFF' : '#0B0B0B',
-                borderColor: '#0B0B0B'
+                borderColor: '#0B0B0B',
+                borderRadius: '4px'
               }}
             >
               {resizeEnabled ? '尺寸:开' : '尺寸:关'}

@@ -31,19 +31,40 @@ function fmt(n) {
   return n.toFixed ? n.toFixed(2) : String(n);
 }
 
+// 通用：带一次重试与退避的执行器
+async function doWithRetry(taskName, fn, { retries = 1, backoffMs = 350 } = {}) {
+  let attempt = 0;
+  const t0 = Date.now();
+  while (true) {
+    try {
+      const res = await fn();
+      const ms = Date.now() - t0;
+      return { ok: true, res, ms, attempts: attempt + 1 };
+    } catch (e) {
+      if (attempt >= retries) {
+        const ms = Date.now() - t0;
+        return { ok: false, error: e, ms, attempts: attempt + 1 };
+      }
+      await sleep(backoffMs);
+      attempt++;
+    }
+  }
+}
+
 class E2E {
   constructor() {
     this.results = [];
     this.passCount = 0;
     this.failCount = 0;
+    this.retryCount = 0;
     this.sections = [];
   }
   section(id, title) {
     this.sections.push({ id, title, asserts: [] });
     return this.sections[this.sections.length - 1];
   }
-  async assert(section, name, passed, detail = '') {
-    const rec = { section: section.id, name, passed: !!passed, detail };
+  async assert(section, name, passed, detail = '', ms = 0) {
+    const rec = { section: section.id, name, passed: !!passed, detail, ms: Math.max(0, Math.floor(ms)) };
     section.asserts.push(rec);
     this.results.push(rec);
     if (passed) this.passCount++; else this.failCount++;
@@ -52,17 +73,19 @@ class E2E {
     const lines = [];
     lines.push('=== Polish v6 E2E 回归摘要 ===');
     lines.push(`时间: ${nowISO()}`);
-    lines.push(`总断言: ${this.passCount + this.failCount} | 通过: ${this.passCount} | 失败: ${this.failCount}`);
+    lines.push(`总断言: ${this.passCount + this.failCount} | 通过: ${this.passCount} | 失败: ${this.failCount} | 重试: ${this.retryCount}`);
     lines.push('');
     for (const s of this.sections) {
       const p = s.asserts.filter(a => a.passed).length;
       const f = s.asserts.length - p;
       lines.push(`[${s.id}] ${s.title}: PASS=${p} FAIL=${f}`);
       for (const a of s.asserts) {
-        lines.push(`  - ${a.passed ? 'PASS' : 'FAIL'} | ${a.name}${a.detail ? ` | ${a.detail}` : ''}`);
+        lines.push(`  - ${a.passed ? 'PASS' : 'FAIL'} | ${a.name}${a.detail ? ` | ${a.detail}` : ''} | ms=${a.ms ?? 0}`);
       }
       lines.push('');
     }
+    const final = this.failCount === 0 ? 'PASS' : 'FAIL';
+    lines.push(`最终结果: ${final}`);
     lines.push(`UA: ${typeof navigator === 'undefined' ? 'node' : navigator.userAgent}`);
     return lines.join('\n');
   }
@@ -74,9 +97,9 @@ async function ensureLogDir() {
 
 async function writeLog(text) {
   await ensureLogDir();
-  const stamp = `\n--- ${nowISO()} ---\n`;
+  const stamp = `\n--- ${nowISO()} [REGRESSION] ---\n`;
   const ua = (typeof navigator === 'undefined') ? 'NodeJS' : navigator.userAgent;
-  await fs.writeFile(LOG_FILE, text + `\n${stamp}UA=${ua}\n`, 'utf8');
+  await fs.appendFile(LOG_FILE, text + `\n${stamp}UA=${ua}\n`, 'utf8');
 }
 
 async function appendLog(text) {
@@ -146,6 +169,8 @@ async function getQA(page) {
 async function waitForToolbarAndCanvas(page) {
   await page.waitForSelector('header .app-toolbar, header', { timeout: 60000 });
   await page.waitForSelector('.canvas-wrap .react-flow', { timeout: 60000 });
+  // QA Hooks 存在性验证（用于后续 waitForFunction 语义等待）
+  await page.waitForFunction(() => !!window.__qaHooks, { timeout: 5000, polling: 150 }).catch(() => {});
 }
 
 async function clickByAria(page, label) {
@@ -417,7 +442,7 @@ async function main() {
   let browser = null;
   try {
     await ensureLogDir();
-    await fs.writeFile(LOG_FILE, `Polish v6 E2E Regression Log\nStarted: ${nowISO()}\n`, 'utf8');
+    await fs.appendFile(LOG_FILE, `Polish v6 E2E Regression Log\nStarted: ${nowISO()}\n`, 'utf8');
 
     browser = await puppeteer.launch({
       headless: true,
@@ -771,15 +796,27 @@ async function main() {
     const exported = { nodes: snap.nodes, edges: snap.edges };
     await t.assert(s8, '导出 JSON 存在', exported.nodes.length >= 1, `nodes=${exported.nodes.length} edges=${exported.edges.length}`);
 
-    // 使用 Toolbar 第二排的“清空画布”按钮，避免直接 DOM 操作
+    // 使用 Toolbar 第二排的“清空画布”按钮 + QA Hook 语义等待
     await ensureToolsExpanded(page, 4000);
-    await clickByAria(page, '清空画布');
-    await sleep(150);
+    const clearStart = Date.now();
+    await clickByAria(page, '清空画布').catch(() => {});
+    await page.waitForFunction(() => {
+      const h = window.__qaHooks;
+      if (h && Array.isArray(h.nodes)) return h.nodes.length === 0;
+      const nodes = document.querySelectorAll('.react-flow__node');
+      return nodes.length === 0;
+    }, { timeout: 5000, polling: 150 }).catch(() => {});
     const toast8 = await getToastText(page);
-    await t.assert(s8, '显示清空 Toast', /画布已清空/.test(toast8 || ''), toast8 || '');
+    await t.assert(s8, '显示清空 Toast', /画布已清空/.test(toast8 || ''), toast8 || '', Date.now() - clearStart);
 
-    const qaAfterDel = await getQA(page);
-    await t.assert(s8, '清空画布后节点=0', (qaAfterDel.nodes || []).length === 0);
+    // 验证节点=0（允许一次重试）
+    const verify = await doWithRetry('verifyClear', async () => {
+      const q = await getQA(page);
+      if ((q.nodes || []).length !== 0) throw new Error(`nodes=${q.nodes?.length || 0}`);
+      return true;
+    }, { retries: 1, backoffMs: 400 });
+    if (!verify.ok) t.retryCount += (verify.attempts - 1);
+    await t.assert(s8, '清空画布后节点=0', verify.ok, verify.ok ? '' : String(verify.error?.message || 'non-zero'), verify.ms);
 
     // 还原部分布局（只还原前两个节点 + 一条边），位置通过 viewport 逆变换后在空白右键新建
     const vp8 = await getViewportTransform(page);

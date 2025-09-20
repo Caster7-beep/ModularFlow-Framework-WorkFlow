@@ -290,19 +290,23 @@ export const llmApi = {
 
 // ========== WebSocket 实时通信 ==========
 export interface WebSocketMessage {
-  type: 'execution_start' | 'node_state_change' | 'data_flow' | 'execution_complete' | 'execution_failed' | 'breakpoint_hit';
+  type: 'execution_start' | 'node_state_change' | 'data_flow' | 'execution_complete' | 'execution_failed' | 'breakpoint_hit' | string;
+  // 兼容 SSoT：run_id|execution_id、ts|timestamp
+  run_id?: string;
   execution_id?: string;
   workflow_id?: string;
   node_id?: string;
   status?: string;
   result?: any;
   error?: string;
+  seq?: number | string;
+  ts?: number | string;
   flow?: {
     from_node: string;
     to_node: string;
     data: any;
     timestamp: number;
-  };
+  } | any;
   state?: any;
   timestamp?: number;
 }
@@ -367,10 +371,44 @@ class WebSocketManager {
 
         this.ws.onmessage = (event) => {
           try {
-            const message: WebSocketMessage = JSON.parse(event.data);
-            this.handleMessage(message);
+            const dataRaw: any = event.data;
+
+            // 屏蔽 ping/pong：纯文本 "ping"/"pong"
+            if (typeof dataRaw === 'string') {
+              const s = dataRaw.trim();
+              if (s === 'ping') {
+                try { this.ws?.send('pong'); } catch {}
+                return;
+              }
+              if (s === 'pong') {
+                // 不上抛
+                return;
+              }
+            }
+
+            // 解析 JSON；若为 {"type":"ping"} 或 {"type":"pong"} 则拦截（ping 需回 pong）
+            if (typeof dataRaw === 'string') {
+              try {
+                const parsed = JSON.parse(dataRaw);
+                if (parsed && typeof parsed === 'object' && (parsed.type === 'ping' || parsed.type === 'pong')) {
+                  if (parsed.type === 'ping') {
+                    try { this.ws?.send(JSON.stringify({ type: 'pong' })); } catch {}
+                  }
+                  return;
+                }
+                const message: WebSocketMessage = parsed;
+                this.handleMessage(message);
+                return;
+              } catch (e) {
+                // 非 JSON 文本，忽略
+                console.error('WebSocket消息解析失败:', e, dataRaw);
+                return;
+              }
+            }
+
+            // 其他类型（ArrayBuffer/Blob）不处理
           } catch (error) {
-            console.error('WebSocket消息解析失败:', error, event.data);
+            console.error('WebSocket消息处理异常:', error);
           }
         };
 
@@ -410,7 +448,8 @@ class WebSocketManager {
     if (!this.shouldReconnect || this.isConnecting) return;
 
     this.reconnectAttempts++;
-    const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
+    const uncapped = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
+    const delay = Math.min(uncapped, 10000); // 上限 10s
 
     console.log(`WebSocket重连尝试 ${this.reconnectAttempts}/${this.maxReconnectAttempts}，${delay}ms后重试...`);
 
@@ -460,9 +499,11 @@ class WebSocketManager {
   // 获取消息相关的主题
   private getMessageTopics(message: WebSocketMessage): string[] {
     const topics: string[] = [message.type];
+    const runId = (message as any).run_id || message.execution_id;
     if (message.workflow_id) topics.push(`workflow:${message.workflow_id}`);
     if (message.node_id) topics.push(`node:${message.node_id}`);
     if (message.execution_id) topics.push(`execution:${message.execution_id}`);
+    if (runId) topics.push(`run:${runId}`);
     return topics;
   }
 

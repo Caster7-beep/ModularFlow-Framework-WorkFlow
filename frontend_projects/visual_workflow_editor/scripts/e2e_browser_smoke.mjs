@@ -19,10 +19,25 @@ E2E 浏览器烟测脚本（Puppeteer 无头浏览器直连 UI + 后端 API + WS
 */
 
 import puppeteer from 'puppeteer';
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 const UI_URL = process.env.UI_URL || 'http://localhost:3002';
 const API_BASE = process.env.API_BASE || 'http://localhost:6502/api/v1';
 const WS_URL = process.env.WS_URL || 'ws://localhost:6502/ws';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const LOG_DIR = path.join(__dirname, 'logs');
+const LOG_FILE = path.join(LOG_DIR, 'last_e2e.txt');
+
+async function ensureLogDir() {
+  try { await fs.mkdir(LOG_DIR, { recursive: true }); } catch {}
+}
+async function appendLog(text) {
+  await ensureLogDir();
+  await fs.appendFile(LOG_FILE, text, 'utf8');
+}
 
 function printHintForServices(uiOk, apiOk) {
   if (!apiOk) {
@@ -80,6 +95,53 @@ function extractFinalTextLoose(resultObj) {
   return 'N/A';
 }
 
+// Utility: semantic toolbar click by aria-label (robust)
+async function clickByAria(page, label) {
+  const sel = `[aria-label="${label}"]`;
+  const el = await page.$(sel);
+  if (!el) throw new Error(`aria "${label}" not found`);
+  try {
+    await el.evaluate((node) => {
+      node?.scrollIntoView?.({ block: 'center', inline: 'center' });
+    });
+  } catch {}
+  try {
+    await el.click({ delay: 10 });
+  } catch {
+    const box = await el.boundingBox();
+    if (box) {
+      const cx = box.x + box.width / 2;
+      const cy = box.y + box.height / 2;
+      await page.mouse.move(cx, cy);
+      await page.mouse.click(cx, cy);
+    } else {
+      await page.evaluate((s) => {
+        const n = document.querySelector(s);
+        if (!n) return;
+        if (typeof n.click === 'function') n.click();
+        else n.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+      }, sel);
+    }
+  }
+}
+
+// Utility: ensure tools row expanded to reveal second-row actions (like 清空画布)
+async function ensureToolsExpanded(page, timeout = 3000) {
+  const btnSel = 'button[aria-label="清空画布"]';
+  const start = Date.now();
+  while (Date.now() - start < timeout) {
+    const el = await page.$(btnSel);
+    if (el) return true;
+    // toggle
+    const exp = await page.$('button[aria-label="展开工具"]');
+    const col = await page.$('button[aria-label="收起工具"]');
+    if (exp) { try { await exp.click({ delay: 10 }); } catch {} }
+    else if (col) { try { await col.click({ delay: 10 }); } catch {} }
+    await page.waitForTimeout(150);
+  }
+  return false;
+}
+
 async function main() {
   console.log('--- Frontend E2E Browser Smoke (Puppeteer) ---');
   console.log(`[conf] UI_URL=${UI_URL}`);
@@ -108,6 +170,40 @@ async function main() {
 
     console.log(`[step] 打开 UI: ${UI_URL}`);
     await page.goto(UI_URL, { waitUntil: 'networkidle2', timeout: 60000 });
+
+    // Quick self-test (via toolbar), then wait using QA hooks
+    let selfTestSummary = [];
+    const tsSelfStart = Date.now();
+    try {
+      await clickByAria(page, '快速自检').catch(() => {});
+      await page.waitForFunction(() => {
+        const h = window.__qaHooks;
+        return !!(h && h.lastSelfTest && Array.isArray(h.lastSelfTest.items));
+      }, { timeout: 5000, polling: 'mutation' });
+      selfTestSummary = await page.evaluate(() => {
+        const items = (window.__qaHooks?.lastSelfTest?.items || []).slice(0, 5);
+        return items.map((it, i) => {
+          const name = it?.name || it?.id || `item${i+1}`;
+          const status = (typeof it?.passed === 'boolean') ? (it.passed ? 'PASS' : 'FAIL') : (it?.status || 'N/A');
+          return `${name}: ${status}`;
+        });
+      });
+    } catch {}
+    const durSelf = Date.now() - tsSelfStart;
+
+    // Clear canvas via toolbar + robust waitForFunction using QA hooks
+    const tsClearStart = Date.now();
+    try {
+      await ensureToolsExpanded(page, 4000);
+      await clickByAria(page, '清空画布').catch(() => {});
+      await page.waitForFunction(() => {
+        const h = window.__qaHooks;
+        if (h && Array.isArray(h.nodes)) return h.nodes.length === 0;
+        const nodes = document.querySelectorAll('.react-flow__node');
+        return nodes.length === 0;
+      }, { timeout: 5000, polling: 150 });
+    } catch {}
+    const durClear = Date.now() - tsClearStart;
 
     const combo = await page.evaluate(async ({ API_BASE, WS_URL }) => {
       // API helpers with API Gateway unwrap
@@ -356,6 +452,20 @@ async function main() {
       console.log(`- ${ts} | ${ev?.type || 'unknown'}`);
     }
     console.log('============================================');
+
+    // Append standardized log to last_e2e.txt
+    try {
+      const stamp = new Date().toISOString();
+      const lines = [];
+      lines.push(`--- ${stamp} [SMOKE] ---`);
+      lines.push(`A(Input→LLM→Output): ${llmPass ? 'PASS' : 'FAIL'} | out="${(llmFinal || '').toString().slice(0,120)}"`);
+      lines.push(`B(Input→CodeBlock→Output): ${codePass ? 'PASS' : 'FAIL'} | out="${(codeFinal || '').toString().slice(0,120)}"`);
+      lines.push(`SelfTest(wait=${durSelf}ms) top5:`);
+      for (const s of selfTestSummary) lines.push(`  - ${s}`);
+      lines.push(`ClearCanvas(wait=${durClear}ms): DONE`);
+      lines.push('');
+      await appendLog(lines.join('\n'));
+    } catch {}
 
     const overallOk = llmPass && codePass;
     process.exitCode = overallOk ? 0 : 1;

@@ -2,6 +2,8 @@
 
 一个高度灵活、完全模块化的处理框架，其核心是 **服务驱动** 和 **配置驱动** 的架构。框架具备强大的开放性，不仅能处理文本，还能编排各种数据类型和业务逻辑的模块化工作流。系统能够自动发现并加载模块和工作流，无需复杂的设置。
 
+单一事实指南（SSoT）：[VISUAL_WORKFLOW_SINGLE_SOURCE_OF_TRUTH.md](VISUAL_WORKFLOW_SINGLE_SOURCE_OF_TRUTH.md:1)
+
 ## 🎯 核心理念
 
 - **服务发现**: 模块和功能被自动发现和加载，无需手动注册。
@@ -104,47 +106,63 @@ python runner.py --help
 
 ### VisualWorkFlow 快速开始
 
-- 后端采用独立启动脚本：[`startserver.py`](backend_projects/visual_work_flow/startserver.py:1)
+- 后端采用独立启动脚本：[startserver.py](backend_projects/visual_work_flow/startserver.py:1)
 - 端口约定：HTTP http://localhost:6502，API 前缀 /api/v1，WebSocket 路径 /ws
 
-后端启动（PowerShell 7 示范）：
+后端（VisualWorkFlow 独立后端，端口 6502，API /api/v1，WS /ws）：
 ```powershell
-# 1) 停旧实例（忽略失败）
-try {
-  $conn = Get-NetTCPConnection -LocalPort 6502 -ErrorAction Stop | Select-Object -First 1
-  if ($conn) { Stop-Process -Id $conn.OwningProcess -Force -ErrorAction SilentlyContinue }
-} catch {}
-
-# 2) 设置密钥（同一会话）
+# PowerShell 7（同一会话设置环境变量）
 $env:GEMINI_API_KEY="<你的密钥>"
+python backend_projects/visual_work_flow/startserver.py
 
-# 3) 启动后端（后台）
-python backend_projects/visual_work_flow/startserver.py --background
-
-# 4) 健康检查
-Invoke-RestMethod http://localhost:6502/api/v1/health
+# 健康检查（建议）
+curl http://localhost:6502/api/v1/health
+# OpenAPI
+# http://localhost:6502/docs
+# WS
+# ws://localhost:6502/ws
 ```
 
-前端启动：
+前端（Visual Workflow Editor，端口 3002）：
 ```bash
-cd frontend_projects/visual_workflow_editor && npm i && npm run dev
+cd frontend_projects/visual_workflow_editor
+npm ci
+npm run dev
 # 浏览器访问：http://localhost:3002
 ```
 
-一键“快速自检”：
-- 在编辑器工具栏点击“快速自检”，期望弹窗五行摘要：
-  - Frontend E2E Smoke (LLM): PASS
-  - Final Output (LLM): ping
-  - Frontend E2E Smoke (CodeBlock): PASS
-  - Final Output (CodeBlock): len=5
-  - WS Events (last 20): execution_start, execution_complete, …
+快速自检（M2-1 已实现）：
+- 打开编辑器后，点击工具栏“快速自检”，弹窗会显示 5 行摘要（Health/Docs/WS/LLM/CodeBlock）
+- 自检结果会写入 window.__qaHooks.lastSelfTest，供 E2E 读取
+
+端到端最小链路（M2-3 已实现）（简述）：
+- 在画布中构建：
+  - A：Input(value="ping") → LLM(provider=gemini, model=gemini-2.5-flash, prompt="Echo: {{input}}") → Output
+  - B：Input(value="hello") → CodeBlock(读取 inputs.value/inputs.text 输出 "len=5") → Output
+- 点击“执行”，右侧 [ExecutionMonitor.tsx](frontend_projects/visual_workflow_editor/src/components/ExecutionMonitor.tsx:1) 会只显示本次 run 事件序列；Output 显示对应文本（A 包含 “ping”，B 为 “len=5”）
+
+E2E 脚本运行指引（M3 已增强）：
+- 冒烟（Smoke）：
+  - Node 执行 [e2e_browser_smoke.mjs](frontend_projects/visual_workflow_editor/scripts/e2e_browser_smoke.mjs:1)
+  - 覆盖最小链路 A/B 与快速自检读取，日志写入 [last_e2e.txt](frontend_projects/visual_workflow_editor/scripts/logs/last_e2e.txt:1)（附 [SMOKE] 分节）
+- 回归（Regression）：
+  - Node 执行 [e2e_regression.mjs](frontend_projects/visual_workflow_editor/scripts/e2e_regression.mjs:1)
+  - 覆盖画布增删/连线/对齐/分布/边样式/上下文菜单/组合解组/清空画布等，日志写入 last_e2e.txt（附 [REGRESSION] 分节）
+- 日志样例：
+  - [SMOKE] A: PASS out="ping" / B: PASS out="len=5"
+  - [REGRESSION] 总断言: 36 | 失败: 0 | 重试: 1 | 最终: PASS
+
+重要说明：
+- 不涉及 SmartTavern 桥接与 runner.py 的耦合；可视化工作流采用独立后端 + 前端分离架构
+- WebSocket 心跳（ping/pong）已在前端层屏蔽，不影响业务事件；监控支持 run:{run_id} 订阅（M2-2）
+- 详细设计、契约与路线图以 SSoT 为准
 
 环境变量覆盖：
 - 前端：
   - VITE_API_BASE=http://localhost:6502/api/v1
   - VITE_WS_URL=ws://localhost:6502/ws
 - 后端：
-  - GEMINI_API_KEY 必须在同一 PowerShell 会话设置后再启动 [`startserver.py`](backend_projects/visual_work_flow/startserver.py:1)，变量才会被自动注入
+  - GEMINI_API_KEY 必须在同一 PowerShell 会话设置后再启动 [startserver.py](backend_projects/visual_work_flow/startserver.py:1)，变量才会被自动注入
 
 ## 📦 创建一个新模块
 

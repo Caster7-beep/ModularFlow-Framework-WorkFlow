@@ -17,6 +17,15 @@
       "port": 8080,
       "enabled": true,
       "description": "用于统一管理前后端项目、端口与生命周期的更高一级控制台"
+    },
+    {
+      "name": "visual_workflow_editor",
+      "display_name": "Visual Workflow Editor",
+      "type": "react",
+      "path": "frontend_projects/visual_workflow_editor",
+      "port": 3002,
+      "enabled": true,
+      "description": "可视化工作流编辑器，支持拖拽式节点编辑和工作流执行"
     }
   ],
   "global_config": {

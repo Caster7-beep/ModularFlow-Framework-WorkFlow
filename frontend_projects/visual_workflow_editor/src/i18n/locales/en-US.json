@@ -223,6 +223,7 @@
       "title": "Save Workflow",
       "nameLabel": "Workflow Name",
       "namePlaceholder": "Enter workflow name",
+      "nameRequired": "Workflow name is required",
       "descriptionLabel": "Description (Optional)",
       "descriptionPlaceholder": "Enter workflow description",
       "success": "Workflow saved successfully",

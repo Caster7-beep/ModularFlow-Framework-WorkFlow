@@ -99,9 +99,183 @@ const ExecutionMonitor: React.FC<ExecutionMonitorProps> = ({
   const eventBufferRef = useRef<SummaryEvent[]>([]);
   const [summaryEvents, setSummaryEvents] = useState<SummaryEvent[]>([]);
 
-  // 订阅ID，用于卸载时取消订阅；不直接关闭全局WS，避免影响其它组件
-  const subscriptionIdRef = useRef<string | null>(null);
-  const logsEndRef = useRef<HTMLDivElement | null>(null);
+    // 订阅ID，用于卸载时取消订阅；不直接关闭全局WS，避免影响其它组件
+    const subscriptionIdRef = useRef<string | null>(null);
+    const logsEndRef = useRef<HTMLDivElement | null>(null);
+  
+    // 批量渲染与去重控制
+    const BATCH_INTERVAL_MS = 80; // 50–100ms 之间，取 80ms
+    const SEEN_KEY_LIMIT = 1000;
+  
+    const msgBufferRef = useRef<any[]>([]);
+    const flushTimerRef = useRef<any | null>(null);
+    const seenKeysRef = useRef<Set<string>>(new Set());
+    const seenQueueRef = useRef<string[]>([]);
+    const fallbackWindowRef = useRef<Map<string, number>>(new Map());
+  
+    const [runStats, setRunStats] = useState<{ totalRuns: number; lastRunId: string | null; lastRunStatus: 'running' | 'completed' | 'error' | null }>({
+      totalRuns: 0, lastRunId: null, lastRunStatus: null
+    });
+  
+    const getRunId = (m: any): string | undefined => m?.run_id || m?.execution_id || m?.executionId;
+    const parseTimestampMs = (m: any): number | undefined => {
+      const ts = m?.ts ?? m?.timestamp;
+      if (typeof ts === 'number') return ts;
+      if (typeof ts === 'string') {
+        const n = Date.parse(ts);
+        if (!Number.isNaN(n)) return n;
+        const maybeNum = Number(ts);
+        if (!Number.isNaN(maybeNum)) return maybeNum;
+      }
+      return undefined;
+    };
+    const buildDedupKey = (m: any): string => {
+      const runId = getRunId(m) || '';
+      const type = m?.type || 'unknown';
+      const nodeId = m?.node_id || '';
+      const seq = m?.seq;
+      const ts = m?.ts ?? m?.timestamp;
+      const tsPart = (seq !== undefined && seq !== null) ? String(seq) : (ts !== undefined && ts !== null) ? String(ts) : '';
+      return `${runId}:${tsPart}:${type}:${nodeId}`;
+    };
+  
+    const flushBuffer = () => {
+      const buf = msgBufferRef.current;
+      if (!buf.length) return;
+      msgBufferRef.current = [];
+  
+      buf.forEach((message) => {
+        const runId = getRunId(message);
+        const type = message?.type || 'unknown';
+        const now = parseTimestampMs(message) ?? Date.now();
+  
+        // 去重主键：run_id:seq|ts:type:node_id
+        const k = buildDedupKey(message);
+        const hasStableKey = !k.includes('::') && k.split(':')[1] !== '';
+        if (!hasStableKey) {
+          // 无 seq 且无 ts：使用“100ms 时间窗 + type + run_id”兜底
+          const fwKey = `${runId || ''}:${type}`;
+          const last = fallbackWindowRef.current.get(fwKey) || 0;
+          if (now - last <= DUP_WINDOW_MS) return;
+          fallbackWindowRef.current.set(fwKey, now);
+        } else {
+          if (seenKeysRef.current.has(k)) return;
+          seenKeysRef.current.add(k);
+          seenQueueRef.current.push(k);
+          if (seenQueueRef.current.length > SEEN_KEY_LIMIT) {
+            const old = seenQueueRef.current.shift();
+            if (old) seenKeysRef.current.delete(old);
+          }
+        }
+  
+        // 事件摘要
+        addEventSummary({ t: now, type, execution_id: runId });
+  
+        switch (type) {
+          case 'execution_start': {
+            setCurrentExecutionId(runId || null);
+            setRunStats(prev => ({
+              totalRuns: prev.totalRuns + 1,
+              lastRunId: runId || null,
+              lastRunStatus: 'running'
+            }));
+            addLog('info', '工作流开始执行', 'execution');
+            break;
+          }
+          case 'node_state_change': {
+            const node_id = message?.node_id;
+            const status = message?.status || message?.state?.status;
+            const result = message?.result ?? message?.state?.result;
+            const error = message?.error ?? message?.state?.error;
+            updateNodeState(node_id, { status, result, error });
+            const node = nodes.find(n => n.id === node_id);
+            const nodeName = node?.data.label || node_id;
+  
+            if (status === 'running') {
+              addLog('info', `节点开始执行: ${nodeName}`, node_id);
+            } else if (status === 'completed') {
+              addLog('success', `节点执行完成: ${nodeName}`, node_id);
+            } else if (status === 'error') {
+              addLog('error', `节点执行失败: ${nodeName}`, node_id);
+            }
+            break;
+          }
+          case 'data_flow': {
+            const flow = message?.flow || {
+              from_node: message?.from || message?.from_node,
+              to_node: message?.to || message?.to_node,
+              data: message?.payload || message?.data,
+              timestamp: now
+            };
+            if (flow && flow.from_node && flow.to_node) {
+              const newFlow: DataFlow = {
+                id: `flow_${Date.now()}_${Math.random()}`,
+                from_node: flow.from_node,
+                to_node: flow.to_node,
+                data: flow.data,
+                timestamp: typeof flow.timestamp === 'number' ? flow.timestamp : now,
+                animated: true
+              };
+              setDataFlows(prev => {
+                const next = [...prev, newFlow];
+                return next.length > MAX_EVENT_BUFFER ? next.slice(-MAX_EVENT_BUFFER) : next;
+              });
+              setTimeout(() => {
+                setDataFlows(prev => prev.map(f =>
+                  f.id === newFlow.id ? { ...f, animated: false } : f
+                ));
+              }, 3000);
+  
+              const fromNode = nodes.find(n => n.id === newFlow.from_node);
+              const toNode = nodes.find(n => n.id === newFlow.to_node);
+              addLog('info', `数据流动: ${fromNode?.data.label} → ${toNode?.data.label}`, 'flow');
+            }
+            break;
+          }
+          case 'execution_complete': {
+            setRunStats(prev => ({
+              ...prev,
+              lastRunId: runId || prev.lastRunId,
+              lastRunStatus: 'completed'
+            }));
+            addLog('success', '工作流执行完成', 'execution');
+            break;
+          }
+          case 'execution_failed': {
+            setRunStats(prev => ({
+              ...prev,
+              lastRunId: runId || prev.lastRunId,
+              lastRunStatus: 'error'
+            }));
+            const err = message?.error;
+            if (err) {
+              addLog('error', `工作流执行失败: ${err}`, 'execution');
+            } else {
+              addLog('error', '工作流执行失败', 'execution');
+            }
+            break;
+          }
+          default:
+            break;
+        }
+      });
+    };
+  
+    const scheduleFlush = () => {
+      if (flushTimerRef.current) return;
+      flushTimerRef.current = setTimeout(() => {
+        flushTimerRef.current = null;
+        flushBuffer();
+      }, BATCH_INTERVAL_MS);
+    };
+  
+    const enqueueMessage = (m: any) => {
+      // 运行ID过滤：若 props.executionId 存在，仅缓冲匹配 run_id 的消息
+      const rid = getRunId(m);
+      if (executionId && (!rid || rid !== executionId)) return;
+      msgBufferRef.current.push(m);
+      scheduleFlush();
+    };
 
   // 初始化节点状态
   useEffect(() => {
@@ -127,8 +301,8 @@ const ExecutionMonitor: React.FC<ExecutionMonitorProps> = ({
 
   // 统一通过 services 层的 websocketApi 接入；仅在未连接时尝试连接；并基于 executionId/workflowId 订阅主题
   useEffect(() => {
-    // 计算订阅主题：优先 executionId，其次 workflowId，否则全局
-    const topics: string[] | undefined = executionId ? [`execution:${executionId}`] : (workflowId ? [`workflow:${workflowId}`] : undefined);
+    // 计算订阅主题：优先 executionId（按 run:{id} 订阅，兼容保留 execution:{id}），其次 workflowId，否则全局
+    const topics: string[] | undefined = executionId ? [`run:${executionId}`, `execution:${executionId}`] : (workflowId ? [`workflow:${workflowId}`] : undefined);
 
     let mounted = true;
 
@@ -168,88 +342,19 @@ const ExecutionMonitor: React.FC<ExecutionMonitorProps> = ({
         websocketApi.unsubscribe(subscriptionIdRef.current);
         subscriptionIdRef.current = null;
       }
+      if (flushTimerRef.current) {
+        clearTimeout(flushTimerRef.current);
+        flushTimerRef.current = null;
+      }
       // 不调用 websocketApi.disconnect()，避免影响其他使用者
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [executionId, workflowId]);
 
-  // 处理WebSocket消息（遵循 { type, execution_id, ... }）
-  const handleWebSocketMessage = (message: any) => {
-    const { type, execution_id, node_id, status, result, error, flow, state, timestamp } = message || {};
-    // 过滤：若 props.executionId 存在，仅处理匹配的 execution_id；若消息无 execution_id 字段，则视为全局事件，仅当未传 executionId 时纳入摘要
-    const now = typeof timestamp === 'number' ? timestamp : Date.now();
-    const hasExecId = typeof execution_id === 'string' && execution_id.length > 0;
-    if (executionId) {
-      if (!hasExecId || execution_id !== executionId) return;
-    }
-
-    // 事件摘要：类型 + 时间戳（隐藏敏感 payload）
-    addEventSummary({ t: now, type: type || 'unknown', execution_id });
-
-    switch (type) {
-      case 'execution_start':
-        setCurrentExecutionId(execution_id || null);
-        addLog('info', '工作流开始执行', 'execution');
-        break;
-
-      case 'node_state_change': {
-        updateNodeState(node_id, { status, result, error });
-        const node = nodes.find(n => n.id === node_id);
-        const nodeName = node?.data.label || node_id;
-
-        if (status === 'running') {
-          addLog('info', `节点开始执行: ${nodeName}`, node_id);
-        } else if (status === 'completed') {
-          addLog('success', `节点执行完成: ${nodeName}`, node_id);
-        } else if (status === 'error') {
-          addLog('error', `节点执行失败: ${nodeName}`, node_id);
-        }
-        break;
-      }
-
-      case 'data_flow':
-        if (flow) {
-          const newFlow: DataFlow = {
-            id: `flow_${Date.now()}`,
-            from_node: flow.from_node,
-            to_node: flow.to_node,
-            data: flow.data,
-            timestamp: flow.timestamp,
-            animated: true
-          };
-          setDataFlows(prev => [...prev, newFlow]);
-
-          // 3秒后移除动画效果
-          setTimeout(() => {
-            setDataFlows(prev => prev.map(f =>
-              f.id === newFlow.id ? { ...f, animated: false } : f
-            ));
-          }, 3000);
-
-          const fromNode = nodes.find(n => n.id === flow.from_node);
-          const toNode = nodes.find(n => n.id === flow.to_node);
-          addLog('info', `数据流动: ${fromNode?.data.label} → ${toNode?.data.label}`, 'flow');
-        }
-        break;
-
-      case 'execution_complete':
-        addLog('success', '工作流执行完成', 'execution');
-        break;
-
-      case 'execution_failed':
-        // 注意：此类事件也用于WS连接失败达上限的提示；连接失败的已在订阅回调前置处理
-        if (error) {
-          addLog('error', `工作流执行失败: ${error}`, 'execution');
-        } else {
-          addLog('error', '工作流执行失败', 'execution');
-        }
-        break;
-
-      default:
-        // 其他或未知类型：记录摘要即可（不展示 payload）
-        break;
-    }
-  };
+    // 处理WebSocket消息（批量缓冲 → 50–100ms 合并渲染）
+    const handleWebSocketMessage = (message: any) => {
+      enqueueMessage(message);
+    };
 
   // 事件摘要 ring buffer（最多200），去重：同一 timestamp±100ms 且 type/execution_id 相同跳过
   const addEventSummary = (evt: SummaryEvent) => {
@@ -387,6 +492,11 @@ const ExecutionMonitor: React.FC<ExecutionMonitorProps> = ({
             <span>执行监控</span>
             {connectionBadge}
             {isExecuting && <Badge status="processing" text="运行中" />}
+            {runStats.lastRunStatus && (
+              <Text type="secondary" style={{ marginLeft: 8 }}>
+                最近运行: {runStats.lastRunStatus}{runStats.lastRunId ? ` (${runStats.lastRunId})` : ''}
+              </Text>
+            )}
           </Space>
         }
         extra={

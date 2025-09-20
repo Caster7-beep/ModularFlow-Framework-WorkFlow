@@ -26,6 +26,7 @@ import MergerNode from './nodes/MergerNode';
 import type { WorkflowNode, WorkflowEdge } from '../types/workflow';
 import ContextMenu, { MenuItem } from './ContextMenu';
 import { showToast } from './Toast';
+import { workflowApi } from '../services/api';
 
 // 自定义节点类型注册
 const nodeTypes = {
@@ -102,6 +103,9 @@ export type WorkflowCanvasHandle = {
 
   // v6: 规范化清空画布
   clearCanvas: () => boolean;
+
+  // m2-3: 从画布执行（最小链路）
+  executeFromCanvas: (options?: { workflowId?: string }) => Promise<{ runId: string; result?: any }>;
 };
 
 const DEFAULT_W = 240;
@@ -359,14 +363,13 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({
     } catch {}
   }, [autoAlign]);
 
-  // 节点拖拽中：对齐参考线（±4px 容差）+ 吸附 ring 提示（近似判断）
-  const ringTimerRef = React.useRef<any>(null);
+  // 节点拖拽中：简化的对齐参考线（移除 ring 动画以提升性能）
   const handleNodeDrag = useCallback((event: React.MouseEvent, node: Node) => {
     if (!autoAlign) return;
     const wrapper = reactFlowWrapper.current;
     if (!wrapper) return;
 
-    // 预先测量中心点，并进行Δ阈值（≥2px）判定
+    // 预先测量中心点，并进行Δ阈值（≥5px）判定，减少计算频率
     const draggedEl0 = document.querySelector(`.react-flow__node[data-id="${node.id}"]`) as HTMLElement | null;
     if (!draggedEl0) {
       setGuideX(null);
@@ -377,67 +380,38 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({
     const currCx = rect0.left + rect0.width / 2;
     const currCy = rect0.top + rect0.height / 2;
     const last = lastDragPosRef.current;
-    if (last && Math.abs(currCx - last.x) < 2 && Math.abs(currCy - last.y) < 2) {
+    if (last && Math.abs(currCx - last.x) < 5 && Math.abs(currCy - last.y) < 5) {
       // 小于阈值则跳过参考线计算
       return;
     }
     lastDragPosRef.current = { x: currCx, y: currCy };
 
-    if (rafPendingRef.current) return;
-    rafPendingRef.current = true;
-    rafIdRef.current = requestAnimationFrame(() => {
-      try {
-        const wrapRect = wrapper.getBoundingClientRect();
-        // 当前被拖拽节点中心（再次测量确保与绘制时一致）
-        const draggedEl = document.querySelector(`.react-flow__node[data-id="${node.id}"]`) as HTMLElement | null;
-        if (!draggedEl) {
-          setGuideX(null);
-          setGuideY(null);
-          return;
+    // 直接计算，不使用 requestAnimationFrame 以减少延迟
+    try {
+      const wrapRect = wrapper.getBoundingClientRect();
+      const draggedRect = rect0;
+      const draggedCx = draggedRect.left + draggedRect.width / 2;
+      const draggedCy = draggedRect.top + draggedRect.height / 2;
+
+      const TOL = 8; // 增大容差，减少触发频率
+      let gx: number | null = null;
+      let gy: number | null = null;
+
+      for (const c of centersRef.current) {
+        if (c.id === node.id) continue;
+        if (gx === null && Math.abs(draggedCx - c.cx) <= TOL) {
+          gx = c.cx - wrapRect.left;
         }
-        const innerDiv = draggedEl.firstElementChild as HTMLElement | null;
-        const draggedRect = draggedEl.getBoundingClientRect();
-        const draggedCx = draggedRect.left + draggedRect.width / 2;
-        const draggedCy = draggedRect.top + draggedRect.height / 2;
-
-        const TOL = 4;
-        let gx: number | null = null;
-        let gy: number | null = null;
-
-        for (const c of centersRef.current) {
-          if (c.id === node.id) continue;
-          if (gx === null && Math.abs(draggedCx - c.cx) <= TOL) {
-            gx = c.cx - wrapRect.left;
-          }
         if (gy === null && Math.abs(draggedCy - c.cy) <= TOL) {
-            gy = c.cy - wrapRect.top;
-          }
-          if (gx !== null && gy !== null) break;
+          gy = c.cy - wrapRect.top;
         }
-
-        setGuideX((prev) => (prev === gx ? prev : gx));
-        setGuideY((prev) => (prev === gy ? prev : gy));
-
-        // 吸附提示：依据当前缩放计算像素网格步长，接近网格交点时闪烁 ring
-        try {
-          const zoom = (reactFlowInstance as any)?.getZoom?.() ?? 1;
-          const stepPx = Math.max(4, gridSize * zoom);
-          const localX = draggedCx - wrapRect.left;
-          const localY = draggedCy - wrapRect.top;
-          const nearGridX = (Math.abs(localX % stepPx) <= 1) || (Math.abs(stepPx - (localX % stepPx)) <= 1);
-          const nearGridY = (Math.abs(localY % stepPx) <= 1) || (Math.abs(stepPx - (localY % stepPx)) <= 1);
-          if ((nearGridX || nearGridY) && innerDiv) {
-            innerDiv.classList.add('snap-ring');
-            if (ringTimerRef.current) clearTimeout(ringTimerRef.current);
-            ringTimerRef.current = setTimeout(() => innerDiv.classList.remove('snap-ring'), 120);
-          }
-        } catch {}
-      } finally {
-        rafPendingRef.current = false;
-        if (rafIdRef.current !== null) rafIdRef.current = null;
+        if (gx !== null && gy !== null) break;
       }
-    });
-  }, [gridSize, reactFlowInstance, autoAlign]);
+
+      setGuideX(gx);
+      setGuideY(gy);
+    } catch {}
+  }, [autoAlign]);
 
   const handleNodeDragStop = useCallback(() => {
     // 取消未结算的 rAF
@@ -486,8 +460,8 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({
   React.useEffect(() => {
     if (reactFlowInstance && !didInitRef.current) {
       try {
-        // 更小的初始缩放
-        reactFlowInstance.setViewport({ x: 0, y: 0, zoom: 0.6 });
+        // 提高初始缩放，让节点在默认状态下更易于操作
+        reactFlowInstance.setViewport({ x: 0, y: 0, zoom: 0.85 });
         // 适度贴合画布内容，保留留白
         reactFlowInstance.fitView({ padding: 0.15 });
       } catch (e) {
@@ -514,8 +488,13 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({
     const t: 'step' | 'smoothstep' = edgeStyle === 'orthogonal' ? 'step' : 'smoothstep';
     return {
       type: t as any,
-      // 极简黑白样式；移除 linecap/linejoin 以规避 TS 类型差异
-      style: { stroke: '#0B0B0B', strokeWidth: 2 },
+      // 极简黑白样式，提高对比度符合WCAG标准
+      style: {
+        stroke: '#4b5563',
+        strokeWidth: 2,
+        strokeLinecap: 'round',
+        strokeLinejoin: 'round'
+      },
     } as any;
   }, [edgeStyle]);
 
@@ -907,6 +886,144 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({
     return true;
   }, [onNodesChange, onEdgesChange, takeSnapshot]);
 
+  // m2-3: 最小工作流定义构建（仅用于可选调试/记录）
+  const buildWorkflowDef = useCallback(() => {
+    return {
+      nodes: (nodes || []).map(n => ({
+        id: n.id,
+        type: n.type,
+        data: n.data,
+        position: n.position,
+      })),
+      edges: (edges || []).map(e => ({
+        id: e.id,
+        source: e.source,
+        target: e.target,
+        sourceHandle: e.sourceHandle,
+        targetHandle: e.targetHandle,
+      }))
+    };
+  }, [nodes, edges]);
+
+  // m2-3: 收集 Input 节点值（选中的 Input 优先，否则第一个；空则默认 "ping"）
+  const collectInputValue = useCallback((): string => {
+    try {
+      // 优先从 ReactFlow 实例读取 selection
+      const rfNodes = (reactFlowInstance?.getNodes?.() || []) as any[];
+      const selectedInput = rfNodes.find(n => (n?.type === 'input' || n?.type === 'INPUT') && n?.selected);
+      const allInputs = rfNodes.filter(n => (n?.type === 'input' || n?.type === 'INPUT'));
+      const pick: any = selectedInput || allInputs?.[0];
+      const cfg = (pick?.data?.config) || (nodes.find(nn => nn.id === pick?.id)?.data?.config);
+      let v: any = (cfg && (cfg.value ?? cfg.defaultValue)) ?? undefined;
+      if (v === undefined || v === null || (typeof v === 'string' && v.trim() === '')) {
+        v = 'ping';
+      }
+      if (typeof v === 'object') {
+        try { return JSON.stringify(v); } catch { return String(v); }
+      }
+      return String(v);
+    } catch {
+      return 'ping';
+    }
+  }, [reactFlowInstance, nodes]);
+
+  // m2-3: 统一 runId 解析（execution_id → run_id → id），缺失则本地生成
+  const getRunIdCompat = (exec: any): string => {
+    const cand = exec?.execution_id || exec?.run_id || exec?.id || exec?.executionId || exec?.runId;
+    if (cand && typeof cand === 'string' && cand.trim().length > 0) return cand;
+    // 轻量 UUID v4（无外依赖）
+    const rnd = (len = 8) => Math.random().toString(16).slice(2, 2 + len);
+    return `${Date.now().toString(16)}-${rnd(4)}-${rnd(4)}-${rnd(4)}`;
+  };
+
+  // m2-3: 从画布执行（最小更动：已有 workflowId 用之；否则最小构造 input/llm|code/output + 连接）
+  const executeFromCanvas = useCallback(async (options?: { workflowId?: string }): Promise<{ runId: string; result?: any }> => {
+    const inputVal = collectInputValue();
+    const inputs = { input: inputVal };
+    const useExistingId = options?.workflowId && String(options.workflowId).trim().length > 0 ? String(options.workflowId) : undefined;
+
+    // 1) 已有 workflowId：直接执行
+    if (useExistingId) {
+      const execRes = await workflowApi.executeWorkflow(useExistingId, inputs);
+      if (execRes.success && execRes.data) {
+        const runId = getRunIdCompat(execRes.data as any);
+        return { runId, result: (execRes.data as any) };
+      }
+      // 若执行失败，生成本地 runId 但仍返回 data/error
+      const localId = getRunIdCompat(null);
+      return { runId: localId, result: (execRes as any) };
+    }
+
+    // 2) 无 workflowId：按当前画布最小构造（仅覆盖 input → (llm|code) → output 场景）
+    // 2.1 创建临时工作流
+    const name = `CanvasRun_${Date.now()}`;
+    const createRes = await workflowApi.createWorkflow(name, 'temporary run from canvas');
+    const wfId = createRes?.data?.id;
+    if (!wfId) {
+      const localId = getRunIdCompat(null);
+      return { runId: localId, result: { error: 'createWorkflow failed' } };
+    }
+
+    // 2.2 添加节点（记录 label→新ID 映射，以便连接）
+    const idMap = new Map<string, string>(); // canvasNodeId -> backendNodeId
+    // 为了稳妥，先只处理当前需求的四类
+    const allowedTypes = new Set(['input', 'llm', 'code', 'output']);
+    for (const n of nodes) {
+      if (!allowedTypes.has(n.type)) continue;
+      const cfg = (n.data?.config) || {};
+      // 尽量传递现有 config；服务层已做 normalizeNodeConfig
+      const addRes = await workflowApi.addNode(wfId, n.type, n.position || { x: 0, y: 0 }, cfg as any);
+      let backendNodeId: string | undefined;
+      const raw = addRes?.data as any;
+      if (raw && typeof raw === 'object') {
+        // 兼容多返回：node / workflow / { id }
+        backendNodeId = raw?.id || raw?.node?.id;
+        if (!backendNodeId && raw?.nodes && Array.isArray(raw.nodes)) {
+          const byLabel = raw.nodes.find((x: any) => x?.data?.label === n.data?.label && x?.type === n.type);
+          backendNodeId = byLabel?.id;
+        }
+      }
+      if (!backendNodeId) {
+        // 回退：getWorkflow 再查找
+        const wf = await workflowApi.getWorkflow(wfId);
+        if (wf?.data?.nodes) {
+          const byLabel = (wf.data.nodes as any[]).find(x => x?.data?.label === n.data?.label && x?.type === n.type);
+          backendNodeId = byLabel?.id;
+        }
+      }
+      if (backendNodeId) {
+        idMap.set(n.id, backendNodeId);
+      }
+    }
+
+    // 2.3 连接边（最少只连 input→(llm|code)→output 的实际存在的边）
+    const connections = (edges || [])
+      .map(e => {
+        const s = idMap.get(e.source);
+        const t = idMap.get(e.target);
+        if (!s || !t) return null;
+        return { source: s, target: t, sourceHandle: e.sourceHandle, targetHandle: e.targetHandle };
+      })
+      .filter(Boolean) as Array<{ source: string; target: string; sourceHandle?: string; targetHandle?: string }>;
+
+    if (connections.length > 0) {
+      try {
+        await workflowApi.connectNodes(wfId, connections);
+      } catch {
+        // 忽略连接失败，交由后端默认路由或执行兜底
+      }
+    }
+
+    // 2.4 执行工作流（注入 inputs）
+    const execRes = await workflowApi.executeWorkflow(wfId, inputs);
+    if (execRes.success && execRes.data) {
+      const runId = getRunIdCompat(execRes.data as any);
+      return { runId, result: (execRes.data as any) };
+    }
+    const localId = getRunIdCompat(null);
+    return { runId: localId, result: (execRes as any) };
+  }, [nodes, edges, collectInputValue]);
+
   // 初始注入 snapshot 函数
   React.useEffect(() => {
     (window as any).__vw_snapshot = (l?: string) => takeSnapshot(l);
@@ -939,13 +1056,17 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({
 
     // v6
     clearCanvas,
+
+    // m2-3: 从画布执行
+    executeFromCanvas,
   }), [
     alignSelected, distributeSelected, fitViewApi,
     alignLeft, alignCenterX, alignRight, alignTop, alignCenterY, alignBottom,
     distributeH, distributeV, getSelectedWithSize,
     undo, redo, copy, cut, paste, groupSelected, ungroupSelected, toggleLockSelected,
     exportLayout, importLayout,
-    clearCanvas
+    clearCanvas,
+    executeFromCanvas
   ]);
 
   // v5: 右键菜单构建函数（在使用前声明，避免 TS 提示“在赋值前使用变量”）
@@ -1103,15 +1224,15 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({
             connectionMode={ConnectionMode.Loose}
             isValidConnection={isValidConnection}
             defaultEdgeOptions={defaultEdgeOptions}
-            connectionLineStyle={{ stroke: '#0B0B0B', strokeWidth: 2 }}
+            connectionLineStyle={{ stroke: '#4b5563', strokeWidth: 2, strokeLinecap: 'round' }}
             connectionLineType={edgeStyle === 'orthogonal' ? ConnectionLineType.Step : ConnectionLineType.SmoothStep}
             snapToGrid={snapEnabled}
             snapGrid={[gridSize, gridSize]}
             fitView
             fitViewOptions={{ padding: 0.15 }}
-            defaultViewport={{ x: 0, y: 0, zoom: 0.5 }}
-            minZoom={0.4}
-            maxZoom={1.6}
+            defaultViewport={{ x: 0, y: 0, zoom: 0.85 }}
+            minZoom={0.5}
+            maxZoom={2.0}
             nodeDragThreshold={0}
             onlyRenderVisibleElements={true}
             panOnDrag={true}
@@ -1145,7 +1266,7 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({
               pannable
               zoomable
             />
-            {showGrid && <Background variant={BackgroundVariant.Dots} gap={16} size={1.25} color="#d1d5db" />}
+            {showGrid && <Background variant={BackgroundVariant.Dots} gap={16} size={2} color="#9ca3af" />}
           </ReactFlow>
         </ReactFlowProvider>
         <ContextMenu

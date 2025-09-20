@@ -116,6 +116,36 @@
         "api_docs_url": "http://localhost:6500/docs",
         "websocket_url": "ws://localhost:6500/ws"
       }
+    },
+    {
+      "name": "VisualWorkFlow",
+      "namespace": "VisualWorkFlow",
+      "description": "可视化工作流编辑器与执行引擎",
+      "enabled": true,
+      "frontend": {
+        "type": "react",
+        "path": "frontend_projects/visual_workflow_editor",
+        "port": 3002,
+        "dev_command": "npm run dev",
+        "open_browser": true
+      },
+      "backend": {
+        "api_gateway_port": 6502,
+        "websocket_path": "/ws",
+        "start_command": "python backend_projects/visual_work_flow/startserver.py --port 6502",
+        "stop_strategy": "process_group",
+        "enabled": true
+      },
+      "ports": {
+        "frontend_dev": 3002,
+        "api_gateway": 6502,
+        "websocket": 6502
+      },
+      "health_checks": {
+        "frontend_dev_url": "http://localhost:3002",
+        "api_docs_url": "http://localhost:6502/docs",
+        "websocket_url": "ws://localhost:6502/ws"
+      }
     }
   ],
   "metadata": {

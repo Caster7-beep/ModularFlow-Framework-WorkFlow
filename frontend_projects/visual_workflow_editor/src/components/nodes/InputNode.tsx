@@ -81,9 +81,8 @@ const InputNode: React.FC<InputNodeProps> = ({ data, selected }) => {
   const savedWidth = typeof savedSize.w === 'number' ? savedSize.w : undefined;
   const savedHeight = typeof savedSize.h === 'number' ? savedSize.h : undefined;
 
-  // 1.5 倍放大：将默认卡片尺寸按新需求放大
-  // 原：min-w-[150px] max-w-[260px] p-3 → 放大为 min-w 240 / max-w 420，并维持 p-3（高度也将随内容自动扩展）
-  const sizeClass = 'min-w-[240px] max-w-[420px]';
+  // 进一步放大节点尺寸，使其在默认缩放下更易操作
+  const sizeClass = 'min-w-[280px] max-w-[480px]';
 
   return (
     <div
@@ -95,49 +94,56 @@ const InputNode: React.FC<InputNodeProps> = ({ data, selected }) => {
       {/* 极简卡片：图标 + 标题 + 一行徽标（类型）。名称会自动换行，不会溢出 */}
       <div
         ref={cardRef}
-        className={`group rounded border border-gray-200 bg-white text-black shadow-sm hover:shadow-md transition-shadow duration-200 focus-within:ring-2 focus-within:ring-black overflow-hidden ${sizeClass}`}
+        className={`group rounded border border-black bg-white text-black shadow-sm hover:shadow-md transition-shadow duration-150 focus-within:ring-2 focus-within:ring-black ${sizeClass}`}
         style={{
           // 实例化尺寸优先（每个节点独立保存；拖拽中禁用以避免抖动）
           ...(savedWidth && !isThisDragging ? { width: savedWidth } : {}),
           ...(savedHeight && !isThisDragging ? { height: savedHeight } : {}),
-          // 启用“调整尺寸模式”后可从右下角拖拽，并给出视觉提示（拖拽中禁用）
+          // 启用"调整尺寸模式"后可从右下角拖拽，并给出视觉提示（拖拽中禁用）
           ...(resizeEnabled && !isThisDragging
-            ? { resize: 'both', overflow: 'auto', cursor: 'nwse-resize', borderStyle: 'dashed', borderColor: '#d1d5db' } as React.CSSProperties
-            : { borderStyle: 'solid', borderColor: '#e5e7eb' } as React.CSSProperties),
+            ? { resize: 'both', cursor: 'nwse-resize', borderStyle: 'dashed', borderColor: '#000000' } as React.CSSProperties
+            : { borderStyle: 'solid', borderColor: '#000000' } as React.CSSProperties),
+          // 确保内容不会溢出并保持形状完整
+          overflow: 'visible',
         }}
       >
-        <div className="p-4 space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded bg-gray-100 text-black shrink-0">
-                <i data-lucide="log-in" className="w-4 h-4"></i>
+        <div className="p-4 space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              {/* 48x48px 触摸区域的图标容器 */}
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded bg-white border border-black shrink-0">
+                <i data-lucide="log-in" className="w-6 h-6"></i>
               </span>
               {/* 名称两行省略 + 抓手符号 */}
-              <div className="text-base font-semibold leading-6 min-w-0 truncate-2 break-words whitespace-normal" title={label}>
-                <span className="mr-1 text-gray-600 select-none cursor-grab active:cursor-grabbing" aria-label="drag handle" title="拖拽句柄">::</span>
+              <div className="text-lg font-semibold leading-7 min-w-0 truncate-2 break-words whitespace-normal" title={label}>
+                <span className="mr-1 text-black select-none cursor-grab active:cursor-grabbing" aria-label="drag handle" title="拖拽句柄">::</span>
                 {label}
               </div>
             </div>
-            <div className="px-2 py-0.5 rounded border border-gray-200 text-xs text-black shrink-0">
+            <div className="px-4 py-2 rounded border border-black text-sm text-black shrink-0">
               {inputType}
             </div>
           </div>
         </div>
       </div>
 
-      {/* 右侧源句柄（输出） */}
-      <div className="absolute right-[-12px] top-1/2 -translate-y-1/2">
-        <Handle
-          type="source"
-          position={Position.Right}
-          style={{
-            width: 16,
-            height: 16,
-            borderWidth: 2,
-            borderColor: '#FFFFFF',
-            background: '#0B0B0B',
-          }}
-        />
+      {/* 右侧源句柄（输出） - 确保48x48px触摸区域 */}
+      <div className="absolute right-[-24px] top-1/2 -translate-y-1/2">
+        <div className="relative w-12 h-12 flex items-center justify-center">
+          <Handle
+            type="source"
+            position={Position.Right}
+            className="rf-handle-hit"
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: '2px',
+              borderWidth: 2,
+              borderColor: '#FFFFFF',
+              background: '#000000',
+            }}
+          />
+        </div>
       </div>
     </div>
   );

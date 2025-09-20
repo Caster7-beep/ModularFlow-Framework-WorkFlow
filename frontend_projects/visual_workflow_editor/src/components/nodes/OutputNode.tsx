@@ -73,8 +73,8 @@ const OutputNode: React.FC<OutputNodeProps> = ({ data, selected }) => {
   const savedWidth = typeof savedSize.w === 'number' ? savedSize.w : undefined;
   const savedHeight = typeof savedSize.h === 'number' ? savedSize.h : undefined;
 
-  // 1.5 倍放大后的默认卡片尺寸
-  const sizeClass = 'min-w-[240px] max-w-[420px]';
+  // 进一步放大节点尺寸，使其在默认缩放下更易操作
+  const sizeClass = 'min-w-[280px] max-w-[480px]';
 
   return (
     <div
@@ -83,14 +83,15 @@ const OutputNode: React.FC<OutputNodeProps> = ({ data, selected }) => {
       className={`relative ${selected ? 'ring-1 ring-black' : ''} focus:outline-none focus-visible:ring-2 focus-visible:ring-black cursor-grab active:cursor-grabbing`}
       style={{ willChange: 'transform' }}
     >
-      {/* 左侧目标句柄（输入） */}
-      <div className="absolute left-[-12px] top-1/2 -translate-y-1/2">
+      {/* 左侧目标句柄（输入） - 增大尺寸并确保48x48px触摸区域 */}
+      <div className="absolute left-[-14px] top-1/2 -translate-y-1/2">
         <Handle
           type="target"
           position={Position.Left}
+          className="rf-handle-hit"
           style={{
-            width: 16,
-            height: 16,
+            width: 20,
+            height: 20,
             borderWidth: 2,
             borderColor: '#FFFFFF',
             background: '#0B0B0B',
@@ -101,26 +102,26 @@ const OutputNode: React.FC<OutputNodeProps> = ({ data, selected }) => {
       {/* 极简卡片：图标 + 标题 + 一行徽标（类型）。名称可换行，节点随内容伸缩 */}
       <div
         ref={cardRef}
-        className={`group rounded border border-gray-200 bg-white text-black shadow-sm hover:shadow-md transition-shadow duration-200 focus-within:ring-2 focus-within:ring-black ${sizeClass}`}
+        className={`group rounded-sm border border-gray-200 bg-white text-black shadow-sm hover:shadow-md transition-shadow duration-150 focus-within:ring-2 focus-within:ring-black ${sizeClass}`}
         style={{
           ...(savedWidth ? { width: savedWidth } : {}),
           ...(savedHeight ? { height: savedHeight } : {}),
           ...(resizeEnabled ? { resize: 'both', overflow: 'auto' } as React.CSSProperties : {}),
         }}
       >
-        <div className="p-4 space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded bg-gray-100 text-black shrink-0">
+        <div className="p-4 space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-sm bg-gray-100 text-black shrink-0">
                 <i data-lucide="log-out" className="w-4 h-4"></i>
               </span>
               {/* 名称两行省略 + 抓手符号 */}
-              <div className="text-base font-semibold leading-6 min-w-0 truncate-2 break-words whitespace-normal" title={label}>
+              <div className="text-lg font-semibold leading-7 min-w-0 truncate-2 break-words whitespace-normal" title={label}>
                 <span className="mr-1 text-gray-600 select-none cursor-grab active:cursor-grabbing" aria-label="drag handle" title="拖拽句柄">::</span>
                 {label}
               </div>
             </div>
-            <div className="px-2 py-0.5 rounded border border-gray-200 text-xs text-black shrink-0">
+            <div className="px-2 py-1 rounded-sm border border-gray-200 text-sm text-black shrink-0">
               {outputType}
             </div>
           </div>

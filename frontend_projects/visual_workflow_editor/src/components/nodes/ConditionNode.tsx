@@ -25,7 +25,7 @@ const ConditionNode: React.FC<NodeProps<ConditionNodeData>> = ({ data, selected 
     (window as any)?.lucide?.createIcons?.();
   }, []);
 
-  // 读取“调整尺寸模式”：按 R 切换（在 WorkflowCanvas.tsx 中已注入 body.dataset.resize）
+  // 读取"调整尺寸模式"：按 R 切换（在 WorkflowCanvas.tsx 中已注入 body.dataset.resize）
   const resizeEnabled = typeof document !== 'undefined' && document.body?.dataset?.resize === '1';
   // 拖拽态标记（由 WorkflowCanvas 写入），用于抑制拖拽过程中的尺寸写回与样式强制
   const isDragging = typeof document !== 'undefined' && document.body?.dataset?.dragging === '1';
@@ -76,8 +76,8 @@ const ConditionNode: React.FC<NodeProps<ConditionNodeData>> = ({ data, selected 
   const savedWidth = typeof savedSize.w === 'number' ? savedSize.w : undefined;
   const savedHeight = typeof savedSize.h === 'number' ? savedSize.h : undefined;
 
-  // 1.5 倍放大后的默认卡片尺寸
-  const sizeClass = 'min-w-[240px] max-w-[420px]';
+  // 进一步放大节点尺寸，使其在默认缩放下更易操作
+  const sizeClass = 'min-w-[280px] max-w-[480px]';
 
   return (
     <div
@@ -86,15 +86,16 @@ const ConditionNode: React.FC<NodeProps<ConditionNodeData>> = ({ data, selected 
       className={`relative ${selected ? 'ring-1 ring-black' : ''} focus:outline-none focus-visible:ring-2 focus-visible:ring-black cursor-grab active:cursor-grabbing`}
       style={{ willChange: 'transform' }}
     >
-      {/* 左侧目标句柄（输入） */}
-      <div className="absolute left-[-12px] top-1/2 -translate-y-1/2">
+      {/* 左侧目标句柄（输入） - 增大尺寸并确保48x48px触摸区域 */}
+      <div className="absolute left-[-14px] top-1/2 -translate-y-1/2">
         <Handle
           type="target"
           position={Position.Left}
           id="input"
+          className="rf-handle-hit"
           style={{
-            width: 16,
-            height: 16,
+            width: 20,
+            height: 20,
             borderWidth: 2,
             borderColor: '#FFFFFF',
             background: '#0B0B0B',
@@ -105,40 +106,41 @@ const ConditionNode: React.FC<NodeProps<ConditionNodeData>> = ({ data, selected 
       {/* 极简卡片：图标 + 标题 + 一行徽标（固定双分支 IF/ELSE）。名称可换行，节点随内容伸缩 */}
       <div
         ref={cardRef}
-        className={`group rounded border border-gray-200 bg-white text-black shadow-sm hover:shadow-md transition-shadow duration-200 focus-within:ring-2 focus-within:ring-black ${sizeClass}`}
+        className={`group rounded-sm border border-gray-200 bg-white text-black shadow-sm hover:shadow-md transition-shadow duration-150 focus-within:ring-2 focus-within:ring-black ${sizeClass}`}
         style={{
           ...(savedWidth ? { width: savedWidth } : {}),
           ...(savedHeight ? { height: savedHeight } : {}),
           ...(resizeEnabled ? { resize: 'both', overflow: 'auto' } as React.CSSProperties : {}),
         }}
       >
-        <div className="p-4 space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded bg-gray-100 text-black shrink-0">
+        <div className="p-4 space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-sm bg-gray-100 text-black shrink-0">
                 <i data-lucide="git-branch" className="w-4 h-4"></i>
               </span>
-              <div className="text-base font-semibold leading-6 min-w-0 truncate-2 break-words whitespace-normal" title={label}>
+              <div className="text-lg font-semibold leading-7 min-w-0 truncate-2 break-words whitespace-normal" title={label}>
                 <span className="mr-1 text-gray-600 select-none cursor-grab active:cursor-grabbing" aria-label="drag handle" title="拖拽句柄">::</span>
                 {label}
               </div>
             </div>
-            <div className="px-2 py-0.5 rounded border border-gray-200 text-xs text-black shrink-0" title="固定双分支">
+            <div className="px-2 py-1 rounded-sm border border-gray-200 text-sm text-black shrink-0" title="固定双分支">
               IF/ELSE
             </div>
           </div>
         </div>
       </div>
 
-      {/* 右侧源句柄（两个输出：true / false） */}
-      <div className="absolute right-[-12px] top-[40%]">
+      {/* 右侧源句柄（两个输出：true / false） - 增大尺寸并确保48x48px触摸区域 */}
+      <div className="absolute right-[-14px] top-[40%]">
         <Handle
           type="source"
           position={Position.Right}
           id="true"
+          className="rf-handle-hit"
           style={{
-            width: 16,
-            height: 16,
+            width: 20,
+            height: 20,
             borderWidth: 2,
             borderColor: '#FFFFFF',
             background: '#0B0B0B',
@@ -146,14 +148,15 @@ const ConditionNode: React.FC<NodeProps<ConditionNodeData>> = ({ data, selected 
         />
       </div>
 
-      <div className="absolute right-[-12px] top-[60%]">
+      <div className="absolute right-[-14px] top-[60%]">
         <Handle
           type="source"
           position={Position.Right}
           id="false"
+          className="rf-handle-hit"
           style={{
-            width: 16,
-            height: 16,
+            width: 20,
+            height: 20,
             borderWidth: 2,
             borderColor: '#FFFFFF',
             background: '#0B0B0B',
