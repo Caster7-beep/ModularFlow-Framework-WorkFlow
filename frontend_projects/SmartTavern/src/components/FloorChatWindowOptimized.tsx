@@ -71,6 +71,7 @@ export default function FloorChatWindowOptimized({
   const observerRef = useRef<IntersectionObserver | null>(null)
   const floorRefs = useRef<Map<number, HTMLDivElement>>(new Map())
   const scrollPositionRef = useRef<number>(0)
+  const containerRef = useRef<HTMLDivElement | null>(null)
 
   // 初始化：加载历史 + 建立 WebSocket
   // 获取应用设置
@@ -317,6 +318,27 @@ export default function FloorChatWindowOptimized({
     autoResize();
   }, [input]);
 
+  // 容器级滚轮转发：当消息面板变窄后，在两侧空白区域滚轮也可滚动消息楼层
+  useEffect(() => {
+    const container = containerRef.current
+    const messagesEl = messagesRef.current
+    if (!container || !messagesEl) return
+
+    const handleWheel = (e: WheelEvent) => {
+      const target = e.target as Node
+      // 楼层容器内部交给原生滚动；其余区域（两侧空白/输入栏等）转发到消息容器
+      if (!messagesEl.contains(target)) {
+        messagesEl.scrollTop += e.deltaY
+        e.preventDefault()
+      }
+    }
+
+    container.addEventListener('wheel', handleWheel, { passive: false })
+    return () => {
+      container.removeEventListener('wheel', handleWheel as EventListener)
+    }
+  }, []);
+
   const hasMessages = useMemo(() => (messages?.length || 0) > 0, [messages]);
 
   async function loadHistory() {
@@ -539,7 +561,7 @@ export default function FloorChatWindowOptimized({
   }
 
   return (
-    <div className="floor-chat-container" role="main" aria-label="楼层对话">
+    <div ref={containerRef} className="floor-chat-container" role="main" aria-label="楼层对话">
       {/* 右侧消息列表区域 */}
       <div className="chat-messages-panel">
         <div 

@@ -10,13 +10,13 @@
   color: var(--text);
   overflow: hidden;
 
-  /* HomePage 局部主题覆盖：仅黑白文本与中性灰度点缀 */
-  --text: #ffffff !important;
-  --muted: rgba(255, 255, 255, 0.72) !important;
-  --accent: #d3d3d3 !important; /* 中性灰作为点缀，避免蓝色 */
-  --accent-rgb: 211, 211, 211 !important;
-  --accent-secondary: #c0c0c0 !important;
-  --accent-secondary-rgb: 192, 192, 192 !important;
+  /* HomePage 局部主题覆盖：高级中性色（避免纯白/纯黑/墨蓝） */
+  --text: #F3F5F7 !important;
+  --muted: rgba(243, 245, 247, 0.72) !important;
+  --accent: #CFC7BC !important; /* 与主题系统一致 */
+  --accent-rgb: 207, 199, 188 !important;
+  --accent-secondary: #BEB5A9 !important;
+  --accent-secondary-rgb: 190, 181, 169 !important;
 
   /* 统一低圆角与玻璃边框强度 */
   --glass-border: rgba(255, 255, 255, 0.08);
@@ -68,7 +68,7 @@
   margin: 0;
   font-size: 36px;
   font-weight: 800;
-  color: #ffffff;
+  color: var(--text);
   letter-spacing: -0.5px;
   line-height: 48px;
 }
@@ -118,7 +118,7 @@
 /* 新建对话卡片 */
 .new-conversation-card {
   border: 2px dashed var(--accent);
-  background: var(--glass-bg);
+  background: transparent; /* 透明底，不预选灰色高亮 */
   justify-content: center;
   align-items: center;
   text-align: center;
@@ -126,9 +126,9 @@
 }
 
 .new-conversation-card:hover {
-  background: var(--glass-bg);
+  background: transparent; /* 悬停也保持透明，不破坏通透感 */
   border-color: var(--accent);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  box-shadow: none;
 }
 
 .new-conversation-section {
@@ -149,7 +149,7 @@
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text);
 }
 
 .new-conversation-description {
@@ -666,4 +666,19 @@
 /* OverlayScrollbar 容器样式 */
 .home-scrollbar-container {
   height: 100%;
+}
+
+/* 保持“创建新对话”卡片透明，不受通用 hover 背景影响 */
+.new-conversation-card,
+.new-conversation-card:hover {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* 只对新建卡片的内部区域禁用 hover 背景 */
+.new-conversation-card .conversation-section,
+.new-conversation-card .conversation-section:hover,
+.new-conversation-card .new-conversation-section,
+.new-conversation-card .new-conversation-section:hover {
+  background: transparent !important;
 }

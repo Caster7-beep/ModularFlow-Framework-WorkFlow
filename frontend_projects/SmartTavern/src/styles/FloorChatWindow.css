@@ -11,6 +11,7 @@
   border: 1px solid var(--glass-border);
   backdrop-filter: blur(20px) saturate(180%);
   box-shadow: var(--shadow-glass);
+  overscroll-behavior: contain; /* 防止滚动冒泡到页面，容器接管滚动 */
   overflow: hidden;
 }
 
@@ -80,11 +81,11 @@
 }
 
 .floor-message.user {
-  border-left: 4px solid #4CAF50;
+  border-left: 4px solid var(--accent);
 }
 
 .floor-message.assistant {
-  border-left: 4px solid #2196F3;
+  border-left: 4px solid var(--accent);
 }
 
 .floor-message.typing-floor {
@@ -118,8 +119,8 @@
 }
 
 .avatar-square.user {
-  background: linear-gradient(135deg, #4CAF50, #45a049);
-  color: white;
+  background: linear-gradient(135deg, var(--accent-700), var(--accent-600));
+  color: var(--text-on-accent);
 }
 
 .avatar-square.user::before {
@@ -127,8 +128,8 @@
 }
 
 .avatar-square.assistant {
-  background: linear-gradient(135deg, #2196F3, #1976d2);
-  color: white;
+  background: linear-gradient(135deg, var(--accent-700), var(--accent-600));
+  color: var(--text-on-accent);
 }
 
 .avatar-square.assistant::before {
@@ -283,7 +284,7 @@
 .floor-input:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 2px rgba(207, 199, 188, 0.15);
 }
 
 .floor-input-actions {
