@@ -46,9 +46,9 @@
   letter-spacing: .2px; 
 }
 
-.header-subtitle {
-  color: #ffffff;
-  font-size: 12px;
+.header-subtitle { 
+  color: var(--muted); 
+  font-size: 12px; 
 }
 
 /* Enhanced header effects */
