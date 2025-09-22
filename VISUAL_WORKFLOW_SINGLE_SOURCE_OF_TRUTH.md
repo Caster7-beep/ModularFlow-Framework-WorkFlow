@@ -262,3 +262,86 @@ interface Connection {
 ---
 
 （完）
+---
+## 10. 与当前实现一致的补充说明（最小必要修订）
+
+说明：本节为增量更正与补充，以当前代码实现为准，提供快速上手、路由与回退、UI IA、稳定性修复、E2E 与质量闸的必要信息。全部文件与函数引用均为可点击锚点。
+
+1) 快速上手与环境变量
+- 后端：端口 6502、API 前缀 /api/v1、WS /ws；独立启动脚本与健康检查见 [startserver.py](backend_projects/visual_work_flow/startserver.py:1)
+- 前端：Vite dev 端口 3002；环境变量 VITE_API_BASE、VITE_WS_URL；可选 vite preview（3010），参见 [vite.config.ts](frontend_projects/visual_workflow_editor/vite.config.ts:1)
+- 快速自检入口：编辑器右上角工具栏“更多⋯”抽屉内；点击“快速自检”弹出五行摘要（Health/Docs/WS/LLM/CodeBlock）；实现参考：
+  - 自检工具：[selfTest.ts](frontend_projects/visual_workflow_editor/src/utils/selfTest.ts:1)
+  - 工具栏入口：[Toolbar.tsx](frontend_projects/visual_workflow_editor/src/components/Toolbar.tsx:1)
+- 自检结果会写入 window.__qaHooks.lastSelfTest（供 E2E 读取），详见 [selfTest.ts](frontend_projects/visual_workflow_editor/src/utils/selfTest.ts:404)
+
+2) 路由与一次性回退机制
+- 当前后端公开的是“旧短路由”，包括：/visual_workflow/create|get|update|delete|execute|list|get_templates|get_execution_state
+- 文档保留“新命名”示例，但明确：前端服务层在 404/405 时会自动回退一次至旧路由（仅一次），实现位于：
+  - 服务层入口与方法清单：[api.ts](frontend_projects/visual_workflow_editor/src/services/api.ts:1)
+  - 一次性回退函数：[requestWithFallback()](frontend_projects/visual_workflow_editor/src/services/api.ts:51)
+- 受影响 API（示例）：list_workflows、get_workflow、create_workflow、update_workflow、delete_workflow、execute_workflow、get_workflow_templates；get_execution_state 无需回退
+- 执行结果映射兜底：当后端仅返回 raw.result 时，[mapToWorkflowExecution()](frontend_projects/visual_workflow_editor/src/services/api.ts:108) 会镜像至 results，并在 DEV 打印警告
+
+3) UI IA 与可达性要点（右上角工具栏）
+- 顶部主操作：执行、监控、上报、更多（抽屉）
+- “更多”抽屉包含：对齐/分布、边样式切换（Smooth/Orthogonal）、Reduced Motion、快捷键帮助、自检、网格显隐与吸附、清空画布、语言/主题
+- 数据选择器与可达性约定沿用 data-qa 与 ARIA；参考实现：
+  - 工具栏与抽屉：[Toolbar.tsx](frontend_projects/visual_workflow_editor/src/components/Toolbar.tsx:1)
+  - 样式与高度变量定义：[App.css](frontend_projects/visual_workflow_editor/src/App.css:1)
+
+4) 画布与节点交互稳定性修复摘要
+- React Flow 父容器尺寸修复（Error#004 消除）：显式提供父链路稳定宽高，引用：
+  - 容器与类名：[WorkflowCanvas.tsx](frontend_projects/visual_workflow_editor/src/components/WorkflowCanvas.tsx:1199)
+  - 全局高度与变量：[App.css](frontend_projects/visual_workflow_editor/src/App.css:1)
+  - 主布局防塌陷：[App.tsx](frontend_projects/visual_workflow_editor/src/App.tsx:953)
+- AntD useForm 绑定修复（Modal forceRender + destroyOnClose=false）：
+  - 保存弹窗位置：[Toolbar.tsx](frontend_projects/visual_workflow_editor/src/components/Toolbar.tsx:738)
+
+5) E2E 与日志（事实为准）
+- 冒烟脚本与回归脚本入口、日志与语义：
+  - SMOKE：[e2e_browser_smoke.mjs](frontend_projects/visual_workflow_editor/scripts/e2e_browser_smoke.mjs:1)
+  - 回归：[e2e_regression.mjs](frontend_projects/visual_workflow_editor/scripts/e2e_regression.mjs:1)
+  - 日志位置：[last_e2e.txt](frontend_projects/visual_workflow_editor/scripts/logs/last_e2e.txt:1)
+- 第三轮稳健化策略（简述）：选择器多候选（data-qa/ARIA/文本）、Drawer-aware 点击、两段 rAF 稳定、指数退避重试、[FALLBACK] 日志捕获
+- 本轮结果说明（以日志事实为准，不夸大）：
+  - SMOKE：A/B PASS（输出示例：A=ping，B=len=5）
+  - REGRESSION：最新两次摘要统计显示失败>2，未达收敛；据 [last_e2e.txt](frontend_projects/visual_workflow_editor/scripts/logs/last_e2e.txt:1) 记录，持续存在“对齐/分布 Toast 未命中、边路径等待不稳定、清空画布 Toast 未出现”等；判定未达收敛。后续“脚本层再小幅稳健化”将另行推进（不影响本次文档修订范围）
+
+6) 质量闸（类型与构建）
+- TypeScript 严格检查（noEmit）与 Vite 构建通过；配置锚点：
+  - tsconfig：[tsconfig.json](frontend_projects/visual_workflow_editor/tsconfig.json:1)（"strict": true, "noEmit": true）
+  - Vite：[vite.config.ts](frontend_projects/visual_workflow_editor/vite.config.ts:1)（dev 端口 3002，WS/HTTP 代理）
+- 产物大小与警告：>500k chunk 警示为非阻断提示（预算提示），不影响构建成功
+
+提示：
+- 环境变量覆盖（前端）：VITE_API_BASE=http://localhost:6502/api/v1，VITE_WS_URL=ws://localhost:6502/ws
+- 环境变量覆盖（后端）：GEMINI_API_KEY 必须在同一 PowerShell 会话设置后再启动 [startserver.py](backend_projects/visual_work_flow/startserver.py:1)，变量才会自动注入
+
+注意：
+- 文档保留“新命名”API示例以对齐未来契约，同时明确当前前端服务层的 404/405 一次性回退行为，避免读者误判为双路并存。
+## 11. 下一阶段 TODO
+
+- [ ] 补齐 UI 入口（服务层调用）：列表/详情/更新/删除/模板/执行状态
+  - 说明：在“加载工作流”弹窗调用 getWorkflows 与 getWorkflow；在详情视图提供“重命名/保存”(updateWorkflow) 与“删除工作流”(deleteWorkflow)；NodePanel 初始化 getNodeTemplates；执行后轮询 getExecutionStatus
+  - 参考：[api.ts](frontend_projects/visual_workflow_editor/src/services/api.ts:1)
+- [ ] Network 全 200 复检（UI 驱动，记录 primary→fallback）
+  - 说明：通过 UI 触发 list/get/create/update/delete/execute/get_execution_state/get_workflow_templates，保留 HAR/截图，Console 捕获 “Fallback route engaged …”
+  - 参考：[requestWithFallback()](frontend_projects/visual_workflow_editor/src/services/api.ts:51)
+- [ ] E2E 第四次回归收敛（目标≤2）
+  - 说明：基于第三轮稳健化（多候选、Drawer-aware、rAF、指数退避、[FALLBACK] 捕获）继续小幅加强，完成双跑统计、产出 [REG-STATS]
+  - 参考：[e2e_regression.mjs](frontend_projects/visual_workflow_editor/scripts/e2e_regression.mjs:1)
+- [ ] Dev 控制台 Error 清理
+  - 说明：复核各 Modal/Form 实例绑定与弹层容器（useForm 未挂载等），保持 0 Error
+  - 参考：[Toolbar.tsx](frontend_projects/visual_workflow_editor/src/components/Toolbar.tsx:1)
+- [ ] UI/UX 手动核对（关键路径）
+  - 说明：抽屉 IA、对齐/分布、边样式切换（Smooth/Orthogonal）、AA、尺寸模式、网格显隐、清空画布、右键菜单、组合/解组、撤销重做、复制粘贴
+  - 参考：[WorkflowCanvas.tsx](frontend_projects/visual_workflow_editor/src/components/WorkflowCanvas.tsx:1), [ContextMenu.tsx](frontend_projects/visual_workflow_editor/src/components/ContextMenu.tsx:1)
+- [ ] errorService 上报地址对齐（建议项）
+  - 说明：统一上报基址到 VITE_API_BASE 或在网关侧增加 /errors/report 代理，避免 3002 端口 404
+  - 参考：[errorService.ts](frontend_projects/visual_workflow_editor/src/services/errorService.ts:1)
+- [ ] 构建体积优化（建议项）
+  - 说明：按需拆分大依赖与路由动态加载、rollup manualChunks 拆包；当前 >500k chunk 为警示非阻断
+  - 参考：[vite.config.ts](frontend_projects/visual_workflow_editor/vite.config.ts:1)
+- [ ] 文档持续对齐
+  - 说明：UI 入口补齐与回归收敛完成后，更新 SSoT/README 的快速上手、路由示例与 E2E 结果
