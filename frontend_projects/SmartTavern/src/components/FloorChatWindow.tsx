@@ -43,6 +43,8 @@ export default function FloorChatWindow({
   const messagesRef = useRef<HTMLDivElement | null>(null)
   const inputRef = useRef<HTMLTextAreaElement | null>(null)
   const wsRef = useRef<ReconnectableWS | null>(null)
+  // 容器级滚轮转发：在容器任意位置滚轮可滚动楼层消息
+  const containerRef = useRef<HTMLDivElement | null>(null)
 
   // 初始化：加载历史 + 建立 WebSocket
   useEffect(() => {
@@ -148,6 +150,29 @@ export default function FloorChatWindow({
   useEffect(() => {
     autoResize()
   }, [input])
+
+  // 在容器任意位置滚轮 => 滚动楼层消息（防止只能在中间区域滚动）
+  useEffect(() => {
+    const container = containerRef.current
+    const messagesEl = messagesRef.current
+    if (!container || !messagesEl) return
+
+    const handleWheel = (e: WheelEvent) => {
+      // 如果当前事件目标已经在楼层滚动容器内，则交给原生滚动
+      const target = e.target as Node
+      if (messagesEl.contains(target)) {
+        return
+      }
+      // 在容器其他区域滚轮时，转发到楼层消息容器
+      messagesEl.scrollTop += e.deltaY
+      e.preventDefault()
+    }
+
+    container.addEventListener('wheel', handleWheel, { passive: false })
+    return () => {
+      container.removeEventListener('wheel', handleWheel as EventListener)
+    }
+  }, [])
 
   const hasMessages = useMemo(() => (messages?.length || 0) > 0, [messages])
 
@@ -350,7 +375,7 @@ export default function FloorChatWindow({
   }
 
   return (
-    <div className="floor-chat-container" role="main" aria-label="楼层对话">
+    <div ref={containerRef} className="floor-chat-container" role="main" aria-label="楼层对话">
       {/* 右侧消息列表区域 */}
       <div className="chat-messages-panel">
         <div className="floor-messages" ref={messagesRef}>

@@ -1,14 +1,14 @@
 :root {
   /* Core Palette */
-  --bg: #282c34;
-  --panel: rgba(58, 63, 75, 0.8);
-  --panel-solid: #3a3f4b;
-  --text: #e2e8f0;
-  --muted: #94a3b8;
-  --accent: #D3D3D3;
-  --accent-600: #C0C0C0;
-  --accent-700: #A9A9A9;
-  --text-on-accent: #333333;
+  --bg: #1B1D1F;
+  --panel: rgba(32, 34, 37, 0.80);
+  --panel-solid: #2A2D31;
+  --text: #F3F5F7;
+  --muted: #ADB3BA;
+  --accent: #CFC7BC;        /* Greige, subtle warm accent */
+  --accent-600: #BEB5A9;
+  --accent-700: #AAA092;
+  --text-on-accent: #1A1C1E;
 
   /* Semantic Colors */
   --success: #10b981;
@@ -24,42 +24,55 @@
   --shadow-light: 0 4px 12px rgba(0, 0, 0, 0.15);
 
   /* Glass & Gradients */
-  --glass-bg: rgba(40, 44, 52, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --bg-gradient-start: #2c3038;
-  --bg-gradient-end: #21252b;
-  --header-bg: rgba(40, 44, 52, 0.6);
+  --glass-bg: rgba(27, 29, 31, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --bg-gradient-start: #1C1E21;
+  --bg-gradient-end: #141618;
+  --header-bg: rgba(22, 24, 26, 0.60);
   
   /* Component Specific */
-  --assistant-bubble-bg: rgba(58, 63, 75, 0.8);
+  --assistant-bubble-bg: rgba(36, 38, 42, 0.85);
   --user-bubble-bg: var(--accent);
-  --section-bg: rgba(40, 44, 52, 0.5);
-  --select-bg: rgba(40, 44, 52, 0.8);
-  --select-hover-bg: rgba(40, 44, 52, 0.9);
-  --disabled: #8b949e;
-  --disabled-bg: #6c757d;
-  --disabled-text: #cccccc;
+  --section-bg: rgba(27, 29, 31, 0.50);
+  --select-bg: rgba(27, 29, 31, 0.85);
+  --select-hover-bg: rgba(27, 29, 31, 0.92);
+  --disabled: #8B9198;
+  --disabled-bg: #6E747A;
+  --disabled-text: #D2D6DA;
 
   /* Code & Markdown */
-  --code-inline-bg: rgba(148, 163, 184, 0.12);
-  --pre-bg: #21252b;
-  --pre-border: #282c34;
+  --code-inline-bg: rgba(174, 181, 189, 0.12);
+  --pre-bg: #181A1C;
+  --pre-border: #232629;
   
   /* Scrollbar */
-  --scrollbar-track-bg: rgba(40, 44, 52, 0.3);
-  --scrollbar-thumb-start: #6c757d;
-  --scrollbar-thumb-end: #495057;
-  --scrollbar-thumb-hover-start: #868e96;
-  --scrollbar-thumb-hover-end: #5c636a;
+  --scrollbar-track-bg: rgba(27, 29, 31, 0.32);
+  --scrollbar-thumb-start: #6E747A;
+  --scrollbar-thumb-end: #4B5055;
+  --scrollbar-thumb-hover-start: #868C92;
+  --scrollbar-thumb-hover-end: #5A6066;
 
   /* Utilities */
-  --white: #ffffff;
-  --black: #000000;
+  --white: #F7F8FA;
+  --black: #111315;
   --transparent: transparent;
-  --white-t-10: rgba(255, 255, 255, 0.1);
-  --white-t-15: rgba(255, 255, 255, 0.15);
-  --white-t-20: rgba(255, 255, 255, 0.2);
-  --white-t-30: rgba(255, 255, 255, 0.3);
+  --white-t-10: rgba(247, 248, 250, 0.10);
+  --white-t-15: rgba(247, 248, 250, 0.15);
+  --white-t-20: rgba(247, 248, 250, 0.20);
+  --white-t-30: rgba(247, 248, 250, 0.30);
+
+  /* Additional surface/brand tokens for consistency */
+  --brand-gradient-start: #CFC7BC;   /* warm greige gradient, avoids blue */
+  --brand-gradient-end: #BEB5A9;
+  --hover-bg: rgba(243, 245, 247, 0.03);
+  --accent-hover: #BEB5A9;
+  --black-transparent-1: rgba(17, 19, 21, 0.25);
+  --system-message-bg-end: rgba(243, 245, 247, 0.04);
+  --code-bg: #1A1C1F;
+
+  /* Print helpers */
+  --print-bubble-border: #C4C8CC;
+  --print-user-bubble-bg: #ECEFF1;
 
   /* Syntax Highlighting */
   --hljs-keyword: #c678dd;
@@ -72,43 +85,46 @@
   --hljs-title: #e5c07b;
 
   /* Sidebar & Drawer */
-  --sidebar-button-active-bg: rgba(211, 211, 211, 0.2);
-  --sidebar-button-bg: rgba(40, 44, 52, 0.6);
-  --sidebar-button-hover-bg: rgba(211, 211, 211, 0.1);
-  --sidebar-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
-  --backdrop-bg: rgba(0, 0, 0, 0.3);
-  --drawer-close-hover-bg: rgba(107, 114, 126, 0.1);
-  --drawer-placeholder-bg: rgba(40, 44, 52, 0.3);
-  --scrollbar-thumb-color: rgba(211, 211, 211, 0.6);
-  --scrollbar-thumb-hover-color: rgba(211, 211, 211, 0.8);
-  --scrollbar-thumb-active-color: rgba(211, 211, 211, 1);
+  --sidebar-button-active-bg: rgba(207, 199, 188, 0.20);
+  --sidebar-button-bg: rgba(27, 29, 31, 0.60);
+  --sidebar-button-hover-bg: rgba(207, 199, 188, 0.10);
+  --sidebar-nav-bg: rgba(27, 29, 31, 0.60);
+  --sidebar-nav-active-bg: rgba(207, 199, 188, 0.20);
+  --sidebar-nav-hover-bg: rgba(207, 199, 188, 0.12);
+  --sidebar-shadow: 2px 0 8px rgba(0, 0, 0, 0.10);
+  --backdrop-bg: rgba(0, 0, 0, 0.30);
+  --drawer-close-hover-bg: rgba(107, 114, 126, 0.10);
+  --drawer-placeholder-bg: rgba(27, 29, 31, 0.30);
+  --scrollbar-thumb-color: rgba(207, 199, 188, 0.60);
+  --scrollbar-thumb-hover-color: rgba(207, 199, 188, 0.80);
+  --scrollbar-thumb-active-color: rgba(207, 199, 188, 1);
   --scrollbar-track-color: rgba(255, 255, 255, 0.05);
 
   /* Character & Preset Panels */
   --character-card-bg: var(--drawer-placeholder-bg);
-  --character-card-active-hover-bg: rgba(211, 211, 211, 0.2);
-  --character-card-active-bg: rgba(211, 211, 211, 0.15);
-  --character-card-hover-bg: rgba(211, 211, 211, 0.08);
-  --character-card-inactive-bg: rgba(40, 44, 52, 0.4);
-  --character-card-active-border: rgba(211, 211, 211, 0.5);
-  --character-avatar-bg: rgba(40, 44, 52, 0.8);
-  --character-tag-bg: rgba(211, 211, 211, 0.1);
+  --character-card-active-hover-bg: rgba(207, 199, 188, 0.20);
+  --character-card-active-bg: rgba(207, 199, 188, 0.15);
+  --character-card-hover-bg: rgba(207, 199, 188, 0.08);
+  --character-card-inactive-bg: rgba(27, 29, 31, 0.40);
+  --character-card-active-border: rgba(207, 199, 188, 0.50);
+  --character-avatar-bg: rgba(27, 29, 31, 0.80);
+  --character-tag-bg: rgba(207, 199, 188, 0.10);
   --character-tag-text: var(--accent);
-  --character-card-expanded-bg: rgba(40, 44, 52, 0.5);
-  --character-input-bg: rgba(40, 44, 52, 0.8);
-  --character-message-bg: rgba(255, 255, 255, 0.05);
-  --character-date-bg: rgba(255, 255, 255, 0.03);
-  --preset-item-enabled-bg: rgba(16, 185, 129, 0.1);
-  --preset-item-disabled-bg: rgba(107, 114, 126, 0.1);
-  --preset-item-hover-bg: rgba(211, 211, 211, 0.05);
-  --preset-tag-bg: rgba(211, 211, 211, 0.2);
+  --character-card-expanded-bg: rgba(27, 29, 31, 0.50);
+  --character-input-bg: rgba(27, 29, 31, 0.80);
+  --character-message-bg: rgba(247, 248, 250, 0.05);
+  --character-date-bg: rgba(247, 248, 250, 0.03);
+  --preset-item-enabled-bg: rgba(16, 185, 129, 0.10);
+  --preset-item-disabled-bg: rgba(107, 114, 126, 0.10);
+  --preset-item-hover-bg: rgba(207, 199, 188, 0.05);
+  --preset-tag-bg: rgba(207, 199, 188, 0.20);
   --preset-toggle-dot-bg: var(--white);
-  --preset-expanded-bg: rgba(40, 44, 52, 0.5);
-  --modal-backdrop-bg: rgba(0, 0, 0, 0.5);
-  --modal-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  --modal-delete-selected-bg: rgba(239, 68, 68, 0.1);
-  --visibility-info-bg: rgba(211, 211, 211, 0.1);
-  --visibility-info-border: rgba(211, 211, 211, 0.2);
+  --preset-expanded-bg: rgba(27, 29, 31, 0.50);
+  --modal-backdrop-bg: rgba(0, 0, 0, 0.50);
+  --modal-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.10), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --modal-delete-selected-bg: rgba(239, 68, 68, 0.10);
+  --visibility-info-bg: rgba(207, 199, 188, 0.10);
+  --visibility-info-border: rgba(207, 199, 188, 0.20);
 
   /* 应用设置变量 */
   --message-panel-width: 100%; /* 消息面板宽度 */

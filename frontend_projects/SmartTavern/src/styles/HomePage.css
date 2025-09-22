@@ -9,6 +9,17 @@
   background: var(--bg);
   color: var(--text);
   overflow: hidden;
+
+  /* HomePage 局部主题覆盖：高级中性色（避免纯白/纯黑/墨蓝） */
+  --text: #F3F5F7 !important;
+  --muted: rgba(243, 245, 247, 0.72) !important;
+  --accent: #CFC7BC !important; /* 与主题系统一致 */
+  --accent-rgb: 207, 199, 188 !important;
+  --accent-secondary: #BEB5A9 !important;
+  --accent-secondary-rgb: 190, 181, 169 !important;
+
+  /* 统一低圆角与玻璃边框强度 */
+  --glass-border: rgba(255, 255, 255, 0.08);
 }
 
 /* 加载状态 */
@@ -55,14 +66,11 @@
 
 .home-header h1 {
   margin: 0;
-  font-size: 42px;
+  font-size: 36px;
   font-weight: 800;
-  background: linear-gradient(135deg, var(--accent), var(--accent-secondary, #667eea));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-shadow: 0 2px 10px rgba(var(--accent-rgb, 100, 149, 237), 0.3);
-  letter-spacing: -1px;
+  color: var(--text);
+  letter-spacing: -0.5px;
+  line-height: 48px;
 }
 
 /* 内容区域 */
@@ -76,7 +84,7 @@
 .conversations-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-  gap: 20px;
+  gap: 24px;
   padding: 0;
   width: 100%;
 }
@@ -85,12 +93,12 @@
 .conversation-with-character-card {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
-  border-radius: 16px;
+  border-radius: 4px;
   overflow: hidden;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
-  backdrop-filter: blur(20px) saturate(180%);
-  box-shadow: var(--shadow-glass);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  backdrop-filter: blur(16px) saturate(160%);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-direction: column;
   min-height: 240px;
@@ -98,7 +106,7 @@
 
 .conversation-with-character-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
   border-color: var(--accent);
 }
 
@@ -110,10 +118,7 @@
 /* 新建对话卡片 */
 .new-conversation-card {
   border: 2px dashed var(--accent);
-  background: linear-gradient(135deg, 
-    rgba(var(--accent-rgb, 100, 149, 237), 0.05),
-    rgba(var(--accent-secondary-rgb, 102, 126, 234), 0.05)
-  );
+  background: transparent; /* 透明底，不预选灰色高亮 */
   justify-content: center;
   align-items: center;
   text-align: center;
@@ -121,18 +126,16 @@
 }
 
 .new-conversation-card:hover {
-  background: linear-gradient(135deg, 
-    rgba(var(--accent-rgb, 100, 149, 237), 0.1),
-    rgba(var(--accent-secondary-rgb, 102, 126, 234), 0.1)
-  );
-  border-color: var(--accent-secondary, #667eea);
+  background: transparent; /* 悬停也保持透明，不破坏通透感 */
+  border-color: var(--accent);
+  box-shadow: none;
 }
 
 .new-conversation-section {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   padding: 32px;
 }
 
@@ -144,14 +147,14 @@
 
 .conversation-title {
   margin: 0;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--text);
 }
 
 .new-conversation-description {
   margin: 0;
-  font-size: 14px;
+  font-size: 16px;
   color: var(--muted);
   text-align: center;
   line-height: 1.5;
@@ -159,12 +162,12 @@
 
 /* 对话信息区域 */
 .conversation-section {
-  padding: 20px;
+  padding: 16px;
   border-bottom: 1px solid var(--border);
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
@@ -176,17 +179,17 @@
 .conversation-header {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 
 .conversation-icon {
-  font-size: 20px;
+  font-size: 16px;
   opacity: 0.8;
 }
 
 .conversation-title {
   margin: 0;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--text);
   flex: 1;
@@ -195,12 +198,12 @@
 .conversation-meta {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
 }
 
 .message-count {
   margin: 0;
-  font-size: 14px;
+  font-size: 12px;
   color: var(--muted);
   font-weight: 500;
 }
@@ -214,7 +217,7 @@
 
 /* 角色卡信息区域 */
 .character-section {
-  padding: 16px 20px;
+  padding: 16px;
   background: rgba(var(--accent-rgb, 100, 149, 237), 0.02);
 }
 
@@ -227,7 +230,7 @@
 .character-avatar-small {
   width: 48px;
   height: 48px;
-  border-radius: 12px;
+  border-radius: 4px;
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -255,7 +258,7 @@
 
 .character-name {
   margin: 0 0 4px 0;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--text);
 }
@@ -293,7 +296,7 @@
 
 .no-character-text {
   margin: 0;
-  font-size: 14px;
+  font-size: 12px;
   color: var(--muted);
 }
 
@@ -341,19 +344,19 @@
   justify-content: center;
   z-index: 1000;
   backdrop-filter: blur(4px);
-  padding: 20px;
+  padding: 24px;
 }
 
 .character-selector-modal {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
-  border-radius: 20px;
+  border-radius: 4px;
   width: 100%;
   max-width: 900px;
   max-height: 90vh;
   overflow: hidden;
-  backdrop-filter: blur(20px) saturate(180%);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(12px) saturate(160%);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
 }
 
 .character-selector-header {
@@ -379,7 +382,7 @@
   cursor: pointer;
   font-size: 20px;
   padding: 8px;
-  border-radius: 6px;
+  border-radius: 4px;
   transition: all 0.2s ease;
   line-height: 1;
 }
@@ -408,25 +411,25 @@
   font-size: 16px;
   font-weight: 600;
   color: var(--text);
-  padding-left: 4px;
+  padding-left: 8px;
 }
 
 .character-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 12px;
+  gap: 16px;
 }
 
 .character-option {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   padding: 16px;
   background: var(--glass-bg);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 4px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
   position: relative;
 }
 
@@ -450,7 +453,7 @@
   height: 24px;
   background: var(--accent);
   color: white;
-  border-radius: 50%;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -481,10 +484,10 @@
 
 .conversation-name-input {
   width: 100%;
-  padding: 14px 16px;
+  padding: 16px;
   background: var(--glass-bg);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 4px;
   color: var(--text);
   font-size: 16px;
   font-family: inherit;
@@ -507,7 +510,7 @@
   padding: 24px 32px;
   border-top: 1px solid var(--border);
   display: flex;
-  gap: 12px;
+  gap: 16px;
   justify-content: flex-end;
   background: rgba(var(--accent-rgb, 100, 149, 237), 0.02);
 }
@@ -522,7 +525,7 @@
 /* 响应式设计 */
 @media (max-width: 768px) {
   .home-header {
-    padding: 24px 20px 16px;
+    padding: 24px 16px 16px;
   }
   
   .home-header h1 {
@@ -572,7 +575,7 @@
   }
   
   .character-option {
-    padding: 12px;
+    padding: 16px;
   }
   
   .character-avatar-small {
@@ -663,4 +666,19 @@
 /* OverlayScrollbar 容器样式 */
 .home-scrollbar-container {
   height: 100%;
+}
+
+/* 保持“创建新对话”卡片透明，不受通用 hover 背景影响 */
+.new-conversation-card,
+.new-conversation-card:hover {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* 只对新建卡片的内部区域禁用 hover 背景 */
+.new-conversation-card .conversation-section,
+.new-conversation-card .conversation-section:hover,
+.new-conversation-card .new-conversation-section,
+.new-conversation-card .new-conversation-section:hover {
+  background: transparent !important;
 }
