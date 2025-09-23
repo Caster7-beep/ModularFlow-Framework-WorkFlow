@@ -1,0 +1,71 @@
+{
+  "meta": {
+    "stamp": "2025-09-23T11:27:06.596Z",
+    "UI_URL": "http://localhost:3002",
+    "API_BASE": "http://localhost:6502/api/v1",
+    "note": "UI-context in-page fetch; primary→fallback only on 404/405. Console warnings captured for potential \"Fallback route engaged ...\" emitted by services if UI triggers it."
+  },
+  "evidence": {
+    "screenshot": "scripts/logs/network_200_20250923_192706.png",
+    "json": "scripts/logs/network_200_20250923_192706.json"
+  },
+  "consoleWarnings": [],
+  "apis": [
+    {
+      "api": "create_workflow",
+      "primaryUrl": "/visual_workflow/create_workflow",
+      "fallbackUrl": "/visual_workflow/create",
+      "usedFallback": true,
+      "statusPrimary": 404,
+      "statusFinal": 200,
+      "ok": true,
+      "urlUsed": "/visual_workflow/create",
+      "requestBody": "{\"name\":\"vw_e2e_network_1758626829636\",\"description\":\"network 200 probe\"}",
+      "responseSummary": "{\"success\":true,\"data\":{\"workflow_id\":\"85d1e656-52d6-4977-8c3d-b67b875b9b2a\",\"success\":true,\"message\":\"工作流创建成功\"},\"function\":\"visual_workflow.create\"}"
+    },
+    {
+      "api": "list_workflows",
+      "primaryUrl": "/visual_workflow/list_workflows",
+      "fallbackUrl": "/visual_workflow/list",
+      "usedFallback": true,
+      "statusPrimary": 404,
+      "statusFinal": 200,
+      "ok": true,
+      "urlUsed": "/visual_workflow/list",
+      "requestBody": null,
+      "responseSummary": "{\"success\":true,\"data\":{\"workflows\":[{\"id\":\"791de0c6-c7bd-4961-bbf4-73b81a985d47\",\"name\":\"SelfTest-LLM\",\"description\":\"Quick smoke for LLM node\",\"version\":\"1.0.0\",\"created_at\":1758502882.34049,\"updated_at\":1758502882.34049,\"node_count\":0,\"edge_count\":0},{\"id\":\"c0b90905-0069-400a-80df-bbe7de92a057\",\" ..."
+    },
+    {
+      "api": "get_workflow",
+      "note": "no workflowId"
+    },
+    {
+      "api": "update_workflow",
+      "note": "no workflowId"
+    },
+    {
+      "api": "get_workflow_templates",
+      "primaryUrl": "/visual_workflow/get_workflow_templates",
+      "fallbackUrl": "/visual_workflow/get_templates",
+      "usedFallback": true,
+      "statusPrimary": 404,
+      "statusFinal": 200,
+      "ok": true,
+      "urlUsed": "/visual_workflow/get_templates",
+      "requestBody": null,
+      "responseSummary": "{\"success\":true,\"data\":{\"templates\":[{\"id\":\"text_processing\",\"name\":\"文本处理工作流\",\"description\":\"基础的文本处理工作流，包含输入、LLM处理和输出\",\"category\":\"文本处理\",\"nodes\":[{\"type\":\"input\",\"name\":\"文本输入\",\"position\":{\"x\":100,\"y\":100},\"data\":{\"default_value\":\"请输入要处理的文本\"}},{\"type\":\"llm_call\",\"name\":\"LLM处理\",\"position\":{\"x\":300,\"y\" ..."
+    },
+    {
+      "api": "execute_workflow",
+      "note": "no workflowId"
+    },
+    {
+      "api": "get_execution_state",
+      "note": "no executionId"
+    },
+    {
+      "api": "delete_workflow",
+      "note": "no workflowId"
+    }
+  ]
+}

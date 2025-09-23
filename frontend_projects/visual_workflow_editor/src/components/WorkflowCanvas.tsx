@@ -154,6 +154,29 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({
   // 粘贴锚点（世界坐标，优先将粘贴内容放到此位置附近）
   const pasteAnchorRef = React.useRef<{ x: number; y: number } | null>(null);
 
+  // A) 左键点击画布空白处关闭右键菜单（捕获阶段，最小侵入）
+  const handleBlankMouseDownCapture = React.useCallback((e: React.MouseEvent) => {
+    // 仅处理左键
+    // @ts-ignore
+    const btn = (e as any).button;
+    if (btn !== 0) return;
+    if (!menuOpen) return;
+
+    const t = e.target as Element | null;
+    if (!t) return;
+
+    // 菜单内部点击不关闭
+    if (t.closest('[data-qa="context-menu"]')) return;
+
+    // 节点/边/把手区域点击不视为空白（避免误关闭）
+    if (t.closest('.react-flow__node') || t.closest('.react-flow__edge') || t.closest('.react-flow__handle')) {
+      return;
+    }
+
+    // 其余情况视为空白区域，关闭菜单
+    setMenuOpen(false);
+  }, [menuOpen]);
+
   // 处理节点变化（占位：此处保留日志便于调试）
   const handleNodesChange = useCallback((changes: any) => {
     const updated = applyNodeChanges(changes, nodes as unknown as Node[]);
@@ -1199,9 +1222,11 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({
     <div className="canvas-wrap relative w-full bg-white rounded shadow-sm">
       <div
         ref={reactFlowWrapper}
-        className="w-full h-full"
+        className="w-full h-full rf-host"
         onDrop={handleDrop}
         onDragOver={handleDragOver}
+        // A) 捕获阶段拦截左键点击空白以关闭右键菜单
+        onMouseDownCapture={handleBlankMouseDownCapture}
       >
         <ReactFlowProvider>
           <ReactFlow
@@ -1235,7 +1260,8 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({
             maxZoom={2.0}
             nodeDragThreshold={0}
             onlyRenderVisibleElements={true}
-            panOnDrag={true}
+            // B) Rubberband selection：启用内建 selectionOnDrag，同时避免左键拖动画布导致无法框选
+            panOnDrag={false}
             zoomOnScroll={true}
             attributionPosition="bottom-left"
             onNodeDragStart={handleNodeDragStart}

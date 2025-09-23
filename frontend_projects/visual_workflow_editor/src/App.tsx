@@ -950,7 +950,7 @@ const App: React.FC = () => {
               </div>
             )}
 
-            <div className="flex gap-4 p-4 overflow-hidden">
+            <div className="flex-1 min-h-0 flex gap-4 p-4 overflow-hidden">
               <aside className="hidden md:flex shrink-0 w-[280px] lg:w-[320px]">
                 <div className="node-panel w-full">
                   <NodePanel onAddNode={handleAddNode} />

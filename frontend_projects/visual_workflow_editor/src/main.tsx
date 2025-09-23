@@ -6,6 +6,7 @@ import enUS from 'antd/locale/en_US'
 import App from './App'
 import './i18n' // 初始化i18n
 import 'antd/dist/reset.css'
+import { mountHooks } from './utils/qaCoop'
 
 // 根据当前语言设置Antd的locale
 const getAntdLocale = () => {
@@ -58,6 +59,9 @@ const getAntdLocale = () => {
     }
   } catch {}
 })();
+
+// Human–LLM QA Coop: 挂载 window.__qaHooks 的 uiIssues & 方法（不覆盖已有字段）
+try { mountHooks(); } catch {}
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

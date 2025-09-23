@@ -250,6 +250,20 @@ interface Connection {
 - 执行监控统一接入 /ws；ShortcutsModal、Toast；状态持久化（vw_*）
 - E2E 冒烟 + 回归脚本；日志落地 last_e2e.txt
 
+- 前端阶段性变更（2025-09-22）
+  - 取消导览/快速入门入口：导览组件保留但不渲染 UI 与副作用，见 [UserGuide.tsx](frontend_projects/visual_workflow_editor/src/components/UserGuide.tsx:11)
+  - “上报”入口默认隐藏（功能保留）：以特性开关 VITE_FEATURE_QA_REPORT 控制渲染，按钮条件渲染见 [Toolbar.tsx](frontend_projects/visual_workflow_editor/src/components/Toolbar.tsx:454)
+  - 新增“凭证管理”与本地存储（vw_api_providers_v1）：入口按钮见 [Toolbar.tsx](frontend_projects/visual_workflow_editor/src/components/Toolbar.tsx:547)，组件与挂载见 [CredentialManager.tsx](frontend_projects/visual_workflow_editor/src/components/CredentialManager.tsx:1)、[Toolbar.tsx](frontend_projects/visual_workflow_editor/src/components/Toolbar.tsx:869)，存储键与实现见 [credentials.ts](frontend_projects/visual_workflow_editor/src/utils/credentials.ts:33)
+  - Modal 生命周期修复：destroyOnClose→destroyOnHidden，见 [Toolbar.tsx](frontend_projects/visual_workflow_editor/src/components/Toolbar.tsx:763)
+  - “更多⋯”按钮可达性增强：aria-label/role/aria-expanded/aria-controls 与 ≥48×48 触达，见 [Toolbar.tsx](frontend_projects/visual_workflow_editor/src/components/Toolbar.tsx:475)
+  - Drawer 可见性标记与 rootClassName（便于 E2E 探测）：marker 与 className 见 [Toolbar.tsx](frontend_projects/visual_workflow_editor/src/components/Toolbar.tsx:499)、[Toolbar.tsx](frontend_projects/visual_workflow_editor/src/components/Toolbar.tsx:511)
+  - E2E 冒烟增强：加入 Hydration 守护、选择器诊断、自检与“凭证入口+Modal”检查、去 page.waitForTimeout 兼容写法，见 [e2e_browser_smoke.mjs](frontend_projects/visual_workflow_editor/scripts/e2e_browser_smoke.mjs:213)、[e2e_browser_smoke.mjs](frontend_projects/visual_workflow_editor/scripts/e2e_browser_smoke.mjs:221)、[e2e_browser_smoke.mjs](frontend_projects/visual_workflow_editor/scripts/e2e_browser_smoke.mjs:270)、[e2e_browser_smoke.mjs](frontend_projects/visual_workflow_editor/scripts/e2e_browser_smoke.mjs:381)
+  - 新增 E2E 会话参数：UI_URL 可加 e2eOpenDrawer=1 以初始展开 Drawer（仅测试会话），逻辑见 [Toolbar.tsx](frontend_projects/visual_workflow_editor/src/components/Toolbar.tsx:186)。该模式下 SMOKE 自检 items.length=5，且 LLM/CodeBlock 冒烟均 PASS
+  - i18n 文案补齐：新增 toolbar.credentials 与 credentials.* 等键，见 [zh-CN.json](frontend_projects/visual_workflow_editor/src/i18n/locales/zh-CN.json:1)、[en-US.json](frontend_projects/visual_workflow_editor/src/i18n/locales/en-US.json:1)
+  - 活动提供商字段调整为 active_group_id（一次性迁移 legacy active_provider，详见 [loadCredentials() 迁移](frontend_projects/visual_workflow_editor/src/utils/credentials.ts:216) 与 [setActiveGroup()](frontend_projects/visual_workflow_editor/src/utils/credentials.ts:425)）
+  - 分组支持显示名称 name，展示优先使用 name（编辑入口见 [groupName 输入](frontend_projects/visual_workflow_editor/src/components/CredentialManager.tsx:334)）
+  - openai-compatible base_url 自动补全 /v1 与去尾斜杠规范化（实现见 [sanitizeGroup()](frontend_projects/visual_workflow_editor/src/utils/credentials.ts:148) 与 [loadCredentials()](frontend_projects/visual_workflow_editor/src/utils/credentials.ts:248)）
+
 ---
 
 ## 9. 附录：规范与约定
@@ -320,6 +334,58 @@ interface Connection {
 
 注意：
 - 文档保留“新命名”API示例以对齐未来契约，同时明确当前前端服务层的 404/405 一次性回退行为，避免读者误判为双路并存。
+### 10.1 前端改动对齐（本次前端调整，不改后端契约）
+
+本小节将“已落地”的前端改动纳入 SSoT，作为单一事实来源，确保与当前实现一致。仅涉及前端 UI/开关/本地存储与文案键补充，不修改后端契约或路由策略。
+
+1) 取消“功能导览/快速入门”入口与相关机制
+- 现状：用户导览组件保留占位但不再渲染任何 UI，也不执行副作用（无本地存储、无自动启动）。
+- 依据实现：[UserGuide.tsx](frontend_projects/visual_workflow_editor/src/components/UserGuide.tsx:11) 返回 null。
+
+2) “上报”按钮默认隐藏，保留功能，由特性开关控制
+- 特性开关：VITE_FEATURE_QA_REPORT（未显式开启即隐藏上报入口与 Modal）。
+- 入口与渲染受控：
+  - 工具栏入口与按钮显隐：[Toolbar.tsx](frontend_projects/visual_workflow_editor/src/components/Toolbar.tsx:1)，具体按钮块条件渲染位置：[Toolbar.tsx](frontend_projects/visual_workflow_editor/src/components/Toolbar.tsx:454)
+  - 上报面板组件（功能保留）：[QAReporter.tsx](frontend_projects/visual_workflow_editor/src/components/QAReporter.tsx:1)
+
+3) 新增“凭证管理”功能（直连/反代/自定义端点，跨 provider）
+- 入口位置与挂载
+  - 入口按钮：顶栏“更多”抽屉内“系统设置”分组中，按钮定义：[Toolbar.tsx](frontend_projects/visual_workflow_editor/src/components/Toolbar.tsx:547)
+  - 组件挂载（抽屉外的根组件尾部）：[Toolbar.tsx](frontend_projects/visual_workflow_editor/src/components/Toolbar.tsx:870)（<CredentialManager open=... />）
+  - 凭证面板组件本体：[CredentialManager.tsx](frontend_projects/visual_workflow_editor/src/components/CredentialManager.tsx:1)
+- 本地持久化与键名
+  - 本地存储键：vw_api_providers_v1（版本化）
+  - 锚点与实现：[credentials.ts](frontend_projects/visual_workflow_editor/src/utils/credentials.ts:33)
+- 前端存储 Schema（与后端 APIConfiguration 字段对齐）
+  - 组结构字段：provider/base_url/models/enabled/timeout/connect_timeout/enable_logging/keys[]/active_group_id/version='v1'（兼容 legacy active_provider→active_group_id 一次性迁移）
+  - 前端定义：
+    - 组模型接口与字段：[credentials.ts](frontend_projects/visual_workflow_editor/src/utils/credentials.ts:14)
+    - Store 版本与 active_group_id（含一次性迁移说明）：[credentials.ts](frontend_projects/visual_workflow_editor/src/utils/credentials.ts:28)
+  - 后端 APIConfiguration 对齐来源：[llm_api_manager.py](modules/llm_api_module/llm_api_manager.py:49)
+  - 桥接模块（前端概念到后端调用的衔接参考）：[llm_bridge_module.py](modules/SmartTavern/llm_bridge_module/llm_bridge_module.py:22)
+- 模式与折叠区（UI 行为）
+  - 模式：direct/proxy/custom（仅 custom 强制要求 base_url；proxy 推荐配置 base_url）
+  - proxy（官方渠道）显示“使用官方代理”折叠区；custom 模式直接展示 base_url 输入
+  - aistudio 差异说明：见面板内“AI Studio 说明”文案键；实现参考 [CredentialManager.tsx](frontend_projects/visual_workflow_editor/src/components/CredentialManager.tsx:1)
+- Provider 范围与分组命名
+  - 支持 openai/anthropic(claude)/aistudio(openai-compatible)/openai-compatible
+  - 分组命名策略：直连=“{provider}-直连”，反代=“{provider}-反代-{baseUrl简称}”，自定义=“{provider}-自定义-{baseUrl简称}”
+  - 参考默认组构造与 baseURL 规范化：[credentials.ts](frontend_projects/visual_workflow_editor/src/utils/credentials.ts:239)
+
+4) 质量与可用性修复（与现实现一致）
+- Modal 生命周期与表单绑定
+  - 将 destroyOnClose 替换为 destroyOnHidden，避免 AntD Form 解绑导致的 useForm 状态丢失问题；位置：[Toolbar.tsx](frontend_projects/visual_workflow_editor/src/components/Toolbar.tsx:763)
+- “更多⋯”按钮可达性与语义化
+  - 增加 aria-label/role/aria-expanded/aria-controls；按钮区域尺寸≥48×48；位置：[Toolbar.tsx](frontend_projects/visual_workflow_editor/src/components/Toolbar.tsx:475)
+- 重复添加密钥提示（保存拦截）
+  - 若当前分组中已存在该密钥，则提示 t('credentials.keyExists') 并阻断保存提示链；位置：[CredentialManager.tsx](frontend_projects/visual_workflow_editor/src/components/CredentialManager.tsx:127)
+
+5) i18n 文案键补充范围（多语言文件位置）
+- 中文键文件：[zh-CN.json](frontend_projects/visual_workflow_editor/src/i18n/locales/zh-CN.json:1)
+- 英文键文件：[en-US.json](frontend_projects/visual_workflow_editor/src/i18n/locales/en-US.json:1)
+- 本次新增/使用的关键命名空间与键：
+  - toolbar.credentials、credentials.*（含 mode、baseURL、keys、import/export、aistudioNote、keyExists 等）
+  - qa.*（如 reportIssue/reportShort 等，仍受开关控制入口显隐）
 ## 11. 下一阶段 TODO
 
 - [ ] 补齐 UI 入口（服务层调用）：列表/详情/更新/删除/模板/执行状态
@@ -345,3 +411,52 @@ interface Connection {
   - 参考：[vite.config.ts](frontend_projects/visual_workflow_editor/vite.config.ts:1)
 - [ ] 文档持续对齐
   - 说明：UI 入口补齐与回归收敛完成后，更新 SSoT/README 的快速上手、路由示例与 E2E 结果
+---
+## 12. 阶段性验收（2025-09-23）
+
+本轮聚焦“凭证面板”稳定性与可用性（下拉不可点击、遮罩/层级冲突、分组新增不可用），并完成 E2E 无参数稳定化与 Network 200 复检。结果已通过阶段性验收。
+
+一) 前端交互与可用性
+- Drawer→Modal 遮罩与层级冲突修复：
+  - 入口在打开“凭证”前先关闭 Drawer 并短延时再开启 Modal：[Toolbar.tsx](frontend_projects/visual_workflow_editor/src/components/Toolbar.tsx:564)
+  - Modal 层级与容器明确，覆盖 Drawer：[CredentialManager.tsx](frontend_projects/visual_workflow_editor/src/components/CredentialManager.tsx:217)
+  - Select 下拉挂载至 Modal 容器并提升层级：
+    - 容器函数：[popupInModal()](frontend_projects/visual_workflow_editor/src/components/CredentialManager.tsx:43)
+    - ActiveGroup 下拉：[active-group-select](frontend_projects/visual_workflow_editor/src/components/CredentialManager.tsx:264)
+    - Provider 下拉：[creds-provider-select](frontend_projects/visual_workflow_editor/src/components/CredentialManager.tsx:350)
+    - Mode 下拉：[creds-mode-select](frontend_projects/visual_workflow_editor/src/components/CredentialManager.tsx:363)
+- 新增分组（Add Group）可用性修复：
+  - 唯一分组 ID 工具：[generateGroupId()](frontend_projects/visual_workflow_editor/src/utils/credentials.ts:12)
+  - 字段级合并与 keys 去重：[upsertGroup()](frontend_projects/visual_workflow_editor/src/utils/credentials.ts:332)
+  - 活动分组改为按 groupId 持久化：[setActiveGroup()](frontend_projects/visual_workflow_editor/src/utils/credentials.ts:425)，一次性迁移逻辑：[loadCredentials() 迁移](frontend_projects/visual_workflow_editor/src/utils/credentials.ts:216)
+  - base_url 校验放宽（编辑期可空）、openai-compatible 自动补 /v1：[sanitizeGroup()](frontend_projects/visual_workflow_editor/src/utils/credentials.ts:146)
+
+二) E2E 无参数稳定化（去除对 e2eOpenDrawer=1 依赖）
+- 统一抽屉开启与稳定等待（多策略点击 + 两段 rAF）：
+  - [openMoreDrawerReliably()](frontend_projects/visual_workflow_editor/scripts/e2e_browser_smoke.mjs:173)
+  - 回归脚本同源实现：[openMoreDrawerReliably()](frontend_projects/visual_workflow_editor/scripts/e2e_regression.mjs:233)
+- 凭证下拉展开与容器/z-index 断言：
+  - Provider 下拉断言：[e2e_browser_smoke.mjs](frontend_projects/visual_workflow_editor/scripts/e2e_browser_smoke.mjs:749)
+  - Mode 下拉断言：[e2e_browser_smoke.mjs](frontend_projects/visual_workflow_editor/scripts/e2e_browser_smoke.mjs:770)
+- 新增分组断言与日志：
+  - [CREDS] AddGroup：见 [e2e_browser_smoke.mjs](frontend_projects/visual_workflow_editor/scripts/e2e_browser_smoke.mjs:1)
+- 运行结果（无参数场景）：
+  - [DRAWER] Open: PASS
+  - [CREDS] ActiveGroupSelect: PASS / ProviderSelectDropdown: PASS / ModeSelectDropdown: PASS / AddGroup: PASS
+  - 自检五行与最小链路：LLM=“ping”、CodeBlock=“len=5”，均 PASS
+  - 日志文件：[last_e2e.txt](frontend_projects/visual_workflow_editor/scripts/logs/last_e2e.txt:1)
+
+三) Network 200 复检（UI 驱动 + in-page 探针）
+- 覆盖路由：list/get/create/update/delete/execute/get_workflow_templates/get_execution_state
+- 结果：HTTP 全 200；7/8 命中一次性回退（primary→fallback），get_execution_state 未回退但 200
+- 证据：
+  - [network_200_20250923_193322.json](frontend_projects/visual_workflow_editor/scripts/logs/network_200_20250923_193322.json:1)
+  - [network_200_20250923_193322.png](frontend_projects/visual_workflow_editor/scripts/logs/network_200_20250923_193322.png:1)
+  - [network_200_20250923_192706.json](frontend_projects/visual_workflow_editor/scripts/logs/network_200_20250923_192706.json:1)
+  - [network_200_20250923_192706.png](frontend_projects/visual_workflow_editor/scripts/logs/network_200_20250923_192706.png:1)
+
+四) 已知事项与后续计划
+- 回归（Regression）失败数仍高于“≤2”目标；保持既有稳健化策略（data-qa 首选、两段 rAF、指数退避），逐步收敛，范围不扩张；参见：
+  - [e2e_regression.mjs](frontend_projects/visual_workflow_editor/scripts/e2e_regression.mjs:1)
+
+---

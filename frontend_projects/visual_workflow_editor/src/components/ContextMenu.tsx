@@ -128,6 +128,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({ open, x, y, items, onClose, a
       role="menu"
       aria-label={ariaLabel}
       aria-modal="true"
+      data-qa="context-menu"
       onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
       className="fixed z-[1300] bg-white text-black rounded border border-gray-200 shadow-md min-w-[200px] max-w-[280px] focus:outline-none"
       style={{ left: pos.left, top: pos.top }}

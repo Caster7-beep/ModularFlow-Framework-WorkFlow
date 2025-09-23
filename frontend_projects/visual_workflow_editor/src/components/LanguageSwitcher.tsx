@@ -1,12 +1,12 @@
-import React from 'react';
-import { Select, Button, Dropdown, Space, Typography } from 'antd';
+import React, { useMemo, useRef, useState } from 'react';
+import { Select, Button, Dropdown, Space, Typography, Tooltip } from 'antd';
 import { GlobalOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { 
-  supportedLanguages, 
-  changeLanguage, 
+import {
+  supportedLanguages,
+  changeLanguage,
   getCurrentLanguage,
-  type SupportedLanguage 
+  type SupportedLanguage
 } from '../i18n';
 
 const { Text } = Typography;
@@ -17,6 +17,12 @@ interface LanguageSwitcherProps {
   showFlag?: boolean;
   showText?: boolean;
   placement?: 'topLeft' | 'topCenter' | 'topRight' | 'bottomLeft' | 'bottomCenter' | 'bottomRight';
+  // 新增：工具栏抽屉内的统一触发样式
+  variant?: 'toolbarItem';
+  // 选择器与可达性
+  'data-qa'?: string;
+  'aria-label'?: string;
+  className?: string;
 }
 
 export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
@@ -24,17 +30,35 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
   size = 'middle',
   showFlag = true,
   showText = true,
-  placement = 'bottomLeft'
+  placement = 'bottomLeft',
+  variant,
+  'data-qa': dataQa,
+  'aria-label': ariaLabel,
+  className
 }) => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const currentLanguage = getCurrentLanguage();
+
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const [open, setOpen] = useState(false);
+
+  const popupContainer = useMemo(() => {
+    return () => {
+      if (typeof document !== 'undefined') {
+        const el = document.getElementById('toolbar-more-drawer');
+        if (el) return el;
+      }
+      return document.body;
+    };
+  }, []);
+
+  const overlayStyle = { zIndex: 1499, pointerEvents: 'auto' as const };
 
   // 处理语言切换
   const handleLanguageChange = async (language: SupportedLanguage) => {
     try {
       await changeLanguage(language);
-      // 可以在这里添加成功提示
-      console.log(`Language switched to ${language}`);
+      // 语言切换后保持弹层开/关逻辑由 antd 控制，关闭后恢复焦点
     } catch (error) {
       console.error('Failed to change language:', error);
     }
@@ -65,6 +89,58 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
     name: value.name
   }));
 
+  // toolbarItem 变体：渲染统一的“图标+短字”按钮触发 + Dropdown 菜单
+  if (variant === 'toolbarItem') {
+    const currentLangInfo = getSafeLanguageInfo(currentLanguage);
+    return (
+      <Dropdown
+        menu={{
+          items: languageOptions.map(option => ({
+            key: option.key,
+            label: option.label,
+            onClick: () => handleLanguageChange(option.value)
+          })),
+          selectedKeys: [currentLanguage]
+        }}
+        placement="bottomRight"
+        trigger={['click']}
+        getPopupContainer={popupContainer}
+        overlayStyle={overlayStyle}
+        open={open}
+        onOpenChange={(v) => {
+          setOpen(v);
+          if (!v) {
+            // 关闭后恢复焦点到触发按钮
+            setTimeout(() => triggerRef.current?.focus(), 0);
+          }
+        }}
+      >
+        <Tooltip title={t('toolbar.language')}>
+          <Button
+            ref={triggerRef}
+            aria-label={ariaLabel || t('toolbar.language')}
+            data-qa={dataQa}
+            className={`flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-black ${className || ''}`}
+            style={{
+              height: 48,
+              minWidth: 48,
+              padding: '0 16px',
+              backgroundColor: '#FFFFFF',
+              color: '#0B0B0B',
+              borderColor: '#0B0B0B',
+              borderRadius: '2px'
+            }}
+          >
+            <Space size="small">
+              <GlobalOutlined />
+              <span>{t('toolbar.language')}</span>
+            </Space>
+          </Button>
+        </Tooltip>
+      </Dropdown>
+    );
+  }
+
   // Select 模式
   if (mode === 'select') {
     return (
@@ -78,6 +154,8 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
           label: option.label
         }))}
         suffixIcon={<GlobalOutlined />}
+        getPopupContainer={popupContainer}
+        dropdownStyle={overlayStyle}
       />
     );
   }
@@ -85,7 +163,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
   // Button 模式
   if (mode === 'button') {
     const currentLangInfo = getSafeLanguageInfo(currentLanguage);
-    
+
     return (
       <Dropdown
         menu={{
@@ -98,6 +176,8 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
         }}
         placement={placement}
         trigger={['click']}
+        getPopupContainer={popupContainer}
+        overlayStyle={overlayStyle}
       >
         <Button size={size}>
           <Space size="small">
@@ -112,7 +192,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
 
   // Dropdown 模式（默认）
   const currentLangInfo = getSafeLanguageInfo(currentLanguage);
-  
+
   return (
     <Dropdown
       menu={{
@@ -125,6 +205,8 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
       }}
       placement={placement}
       trigger={['click']}
+      getPopupContainer={popupContainer}
+      overlayStyle={overlayStyle}
     >
       <Button type="text" size={size}>
         <Space size="small">

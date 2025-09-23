@@ -88,17 +88,22 @@ const InputNode: React.FC<InputNodeProps> = ({ data, selected }) => {
     <div
       tabIndex={0}
       aria-label={`输入 节点: ${label}`}
-      className={`relative ${selected ? 'ring-1 ring-black' : ''} focus:outline-none focus-visible:ring-2 focus-visible:ring-black cursor-grab active:cursor-grabbing`}
-      style={{ willChange: 'transform' }}
+      data-qa="node-input"
+      data-node-type="input"
+      className={`relative inline-block ${selected ? 'ring-1 ring-black' : ''} focus:outline-none focus-visible:ring-2 focus-visible:ring-black cursor-grab active:cursor-grabbing`}
+      style={{ willChange: 'transform', height: 'auto', width: 'auto', aspectRatio: 'auto' }}
     >
       {/* 极简卡片：图标 + 标题 + 一行徽标（类型）。名称会自动换行，不会溢出 */}
       <div
         ref={cardRef}
-        className={`group rounded border border-black bg-white text-black shadow-sm hover:shadow-md transition-shadow duration-150 focus-within:ring-2 focus-within:ring-black ${sizeClass}`}
+        className={`group inline-block rounded-sm border border-black bg-white text-black shadow-sm hover:shadow-md transition-shadow duration-150 focus-within:ring-2 focus-within:ring-black ${sizeClass}`}
         style={{
           // 实例化尺寸优先（每个节点独立保存；拖拽中禁用以避免抖动）
           ...(savedWidth && !isThisDragging ? { width: savedWidth } : {}),
-          ...(savedHeight && !isThisDragging ? { height: savedHeight } : {}),
+          // 高度仅在调整尺寸模式下固定，常态下由内容自适应，避免节点变成正方形
+          ...(savedHeight && resizeEnabled && !isThisDragging ? { height: savedHeight } : {}),
+          // 解除任何外部 aspect-ratio 影响，避免被拉成正方形
+          aspectRatio: 'auto',
           // 启用"调整尺寸模式"后可从右下角拖拽，并给出视觉提示（拖拽中禁用）
           ...(resizeEnabled && !isThisDragging
             ? { resize: 'both', cursor: 'nwse-resize', borderStyle: 'dashed', borderColor: '#000000' } as React.CSSProperties
@@ -131,6 +136,11 @@ const InputNode: React.FC<InputNodeProps> = ({ data, selected }) => {
       <div className="absolute right-[-24px] top-1/2 -translate-y-1/2">
         <div className="relative w-12 h-12 flex items-center justify-center">
           <Handle
+            id="out"
+            data-qa="handle-source"
+            data-handle-id="out"
+            data-handle-type="source"
+            data-handle-position="right"
             type="source"
             position={Position.Right}
             className="rf-handle-hit"

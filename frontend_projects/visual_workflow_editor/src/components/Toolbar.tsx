@@ -8,7 +8,8 @@ import {
   Select,
   message,
   Tooltip,
-  Divider
+  Divider,
+  Drawer
 } from 'antd';
 import {
   SaveOutlined,
@@ -28,6 +29,9 @@ import LanguageSwitcher from './LanguageSwitcher';
 import type { Workflow } from '../types/workflow';
 import { runQuickSelfTest } from '../utils/selfTest';
 import { showToast } from './Toast';
+import QAReporter from './QAReporter';
+import CredentialManager from './CredentialManager';
+const FEATURE_QA_REPORT = Boolean((import.meta as any)?.env?.VITE_FEATURE_QA_REPORT);
 
 interface ToolbarProps {
   onSave: (name: string, description?: string) => Promise<void>;
@@ -137,13 +141,27 @@ const Toolbar: React.FC<ToolbarProps> = ({
   const [selfTestVisible, setSelfTestVisible] = useState(false);
   const [selfTestLoading, setSelfTestLoading] = useState(false);
   const [selfTestSummary, setSelfTestSummary] = useState<string>('');
+  // QA Reporter 面板可见性
+  const [qaVisible, setQaVisible] = useState(false);
+  // 凭证管理面板可见性
+  const [credVisible, setCredVisible] = useState(false);
   // 折叠工具区（将 fitView 以右、执行按钮以左的区块折叠到第二排）
   const [toolsExpanded, setToolsExpanded] = useState(false);
-  // 通知 App 调整 --toolbar-height（56px/112px）
+  // 通知 App 调整 --toolbar-height（56px/112px）+ ESC 关闭抽屉
   useEffect(() => {
     try {
       onToolsExpandedChange?.(toolsExpanded);
     } catch {}
+    if (!toolsExpanded) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setToolsExpanded(false);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+    };
   }, [toolsExpanded, onToolsExpandedChange]);
 
   // 调整尺寸模式状态（与全局 body.dataset.resize 同步）
@@ -165,6 +183,18 @@ const Toolbar: React.FC<ToolbarProps> = ({
   useEffect(() => {
     (window as any)?.lucide?.createIcons?.();
   }, []);
+  const moreDrawerId = 'toolbar-more-drawer';
+
+  // E2E: 如果 URL 查询包含 e2eOpenDrawer=1，则初始自动展开 Drawer（仅影响当前会话）
+  useEffect(() => {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      if (sp.get('e2eOpenDrawer') === '1') {
+        setToolsExpanded(true);
+      }
+    } catch {}
+  }, []);
+
   const toggleResize = () => {
     if (typeof document === 'undefined') return;
     const enabled = document.body.dataset.resize === '1';
@@ -312,7 +342,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
               icon={<PlusOutlined />}
               onClick={handleNew}
               className="flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-black"
-              style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '4px' }}
+              style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '2px' }}
             />
           </Tooltip>
           
@@ -323,7 +353,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
               onClick={() => setSaveModalVisible(true)}
               data-tour="save-button"
               className="flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-black"
-              style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '4px' }}
+              style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '2px' }}
             />
           </Tooltip>
           
@@ -333,7 +363,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
               icon={<FolderOpenOutlined />}
               onClick={() => setLoadModalVisible(true)}
               className="flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-black"
-              style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '4px' }}
+              style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '2px' }}
             />
           </Tooltip>
           
@@ -345,7 +375,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
               icon={<UploadOutlined />}
               onClick={handleImport}
               className="flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-black"
-              style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '4px' }}
+              style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '2px' }}
             />
           </Tooltip>
           
@@ -356,7 +386,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
               onClick={handleExport}
               disabled={!currentWorkflow}
               className="flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-black"
-              style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '4px' }}
+              style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '2px' }}
             />
           </Tooltip>
 
@@ -365,14 +395,14 @@ const Toolbar: React.FC<ToolbarProps> = ({
             <Button
               aria-label="打开节点面板"
               onClick={() => onToggleLeftPanel?.()}
-              style={{ backgroundColor: '#0B0B0B', color: '#FFFFFF', borderColor: '#0B0B0B', borderRadius: '4px' }}
+              style={{ backgroundColor: '#0B0B0B', color: '#FFFFFF', borderColor: '#0B0B0B', borderRadius: '2px' }}
             >
               节点
             </Button>
             <Button
               aria-label="打开属性面板"
               onClick={() => onToggleRightPanel?.()}
-              style={{ backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '4px' }}
+              style={{ backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '2px' }}
             >
               属性
             </Button>
@@ -388,27 +418,33 @@ const Toolbar: React.FC<ToolbarProps> = ({
 
       <div>
         <Space wrap={false}>
-          <Tooltip title={t('toolbar.debug')}>
+          {/* 执行 Execute（强调态） */}
+          <Tooltip title={t('toolbar.execute')}>
             <Button
-              aria-label={t('toolbar.debug')}
-              icon={<BugOutlined />}
-              onClick={onDebugToggle}
+              aria-label={t('toolbar.execute')}
+              data-tour="execute-button"
+              data-qa="btn-execute"
+              icon={<PlayCircleOutlined />}
+              loading={isExecuting}
+              onClick={onExecute}
               className="flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-black"
               style={{
                 height: 48, minWidth: 48, padding: '0 16px',
-                backgroundColor: isDebugging ? '#0B0B0B' : '#FFFFFF',
-                color: isDebugging ? '#FFFFFF' : '#0B0B0B',
+                backgroundColor: '#0B0B0B',
+                color: '#FFFFFF',
                 borderColor: '#0B0B0B',
-                borderRadius: '4px'
+                borderRadius: '2px'
               }}
             >
-              {t('toolbar.debug')}
+              {t('common.execute')}
             </Button>
           </Tooltip>
 
+          {/* 监控 Monitor */}
           <Tooltip title={t('toolbar.monitor')}>
             <Button
               aria-label={t('toolbar.monitor')}
+              data-qa="btn-monitor"
               icon={<MonitorOutlined />}
               onClick={onShowMonitor}
               className="flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-black"
@@ -417,152 +453,127 @@ const Toolbar: React.FC<ToolbarProps> = ({
                 backgroundColor: '#FFFFFF',
                 color: '#0B0B0B',
                 borderColor: '#0B0B0B',
-                borderRadius: '4px'
+                borderRadius: '2px'
               }}
             >
-              {t('toolbar.monitor')}
+              {/* 短字：监控 */}
+              {t('toolbar.monitorShort', '监控')}
             </Button>
           </Tooltip>
 
-          {/* 调整尺寸模式切换（与 R 键同步） */}
-          <Tooltip title="调整尺寸模式 (R)">
+          {/* 上报 Report（短字“上报”，tooltip 全称“问题上报”） */}
+          {FEATURE_QA_REPORT && (
+            <Tooltip title={t('qa.reportIssue', '问题上报')}>
+              <Button
+                aria-label={t('qa.reportIssue', '问题上报')}
+                data-qa="btn-report"
+                onClick={() => setQaVisible(true)}
+                className="flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-black"
+                style={{
+                  height: 48, minWidth: 48, padding: '0 16px',
+                  backgroundColor: '#FFFFFF',
+                  color: '#0B0B0B',
+                  borderColor: '#0B0B0B',
+                  borderRadius: '2px'
+                }}
+              >
+                {t('qa.reportShort', '上报')}
+              </Button>
+            </Tooltip>
+          )}
+
+          {/* ⋯ 更多（打开右侧抽屉） */}
+          <Tooltip title={t('toolbar.more', '更多')}>
             <Button
-              aria-label="切换调整尺寸模式"
-              aria-pressed={resizeEnabled}
-              onClick={toggleResize}
-              className="focus:outline-none focus:ring-2 focus:ring-black"
+              aria-label="More"
+              data-qa="btn-more"
+              role="button"
+              aria-expanded={toolsExpanded}
+              aria-controls={moreDrawerId}
+              onClick={() => setToolsExpanded(v => !v)}
+              className="flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-black"
               style={{
                 height: 48, minWidth: 48, padding: '0 16px',
-                backgroundColor: resizeEnabled ? '#0B0B0B' : '#FFFFFF',
-                color: resizeEnabled ? '#FFFFFF' : '#0B0B0B',
+                backgroundColor: '#FFFFFF',
+                color: '#0B0B0B',
                 borderColor: '#0B0B0B',
-                borderRadius: '4px'
+                borderRadius: '2px',
+                fontWeight: 700
               }}
+              title={t('toolbar.more', '更多')}
             >
-              {resizeEnabled ? '尺寸:开' : '尺寸:关'}
+              ⋯
             </Button>
           </Tooltip>
-
-          {/* 画布控制：网格吸附、网格尺寸、fitView */}
-          <Tooltip title="网格吸附">
-            <Button
-              aria-label="切换网格吸附"
-              aria-pressed={snapEnabled}
-              onClick={onToggleSnap}
-              className="focus:outline-none focus:ring-2 focus:ring-black"
-              style={{
-                height: 48, width: 48, padding: 0,
-                backgroundColor: snapEnabled ? '#0B0B0B' : '#FFFFFF',
-                color: snapEnabled ? '#FFFFFF' : '#0B0B0B',
-                borderColor: '#0B0B0B',
-                borderRadius: '4px'
-              }}
-            >
-              <i data-lucide="grid-2x2" className="w-5 h-5"></i>
-            </Button>
-          </Tooltip>
-
-          {/* 网格显隐：当 showGrid=false 时，用极简 ring 边框做提示 */}
-          <Tooltip title="切换网格显示">
-            <Button
-              aria-label="切换网格显示"
-              aria-pressed={showGrid}
-              onClick={onToggleShowGrid}
-              className={`focus:outline-none focus:ring-2 focus:ring-black ${!showGrid ? 'ring-1 ring-black/40' : ''}`}
-              style={{
-                height: 48, width: 48, padding: 0,
-                backgroundColor: showGrid ? '#0B0B0B' : '#FFFFFF',
-                color: showGrid ? '#FFFFFF' : '#0B0B0B',
-                borderColor: '#0B0B0B',
-                borderRadius: '4px'
-              }}
-            >
-              <i data-lucide="grid" className="w-5 h-5"></i>
-            </Button>
-          </Tooltip>
-
-          <Tooltip title="网格尺寸 8/16/24">
-            <Button
-              aria-label={`切换网格尺寸，当前=${gridSize}`}
-              onClick={onGridSizeCycle}
-              className="focus:outline-none focus:ring-2 focus:ring-black"
-              style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '4px', fontWeight: 600 }}
-            >
-              {gridSize}
-            </Button>
-          </Tooltip>
-
-          <Tooltip title="重置视图 (fitView)">
-            <Button
-              aria-label="重置视图"
-              onClick={onFitView}
-              className="focus:outline-none focus:ring-2 focus:ring-black"
-              style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '4px' }}
-            >
-              <i data-lucide="maximize" className="w-5 h-5"></i>
-            </Button>
-          </Tooltip>
-
-          {/* 折叠触发：展开/收起 中间工具区（对齐/分布/RM/?） */}
-          <Button
-            aria-label={toolsExpanded ? '收起工具' : '展开工具'}
-            onClick={() => setToolsExpanded((v) => !v)}
-            className="focus:outline-none focus:ring-2 focus:ring-black"
-            style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '4px' }}
-            title={toolsExpanded ? '收起工具' : '展开工具'}
-          >
-            ⋯
-          </Button>
-
-
-          <Tooltip title={t('toolbar.execute')}>
-            <Button
-              aria-label="执行工作流"
-              icon={<PlayCircleOutlined />}
-              loading={isExecuting}
-              onClick={onExecute}
-              data-tour="execute-button"
-              className="focus:outline-none focus:ring-2 focus:ring-black"
-              style={{ minHeight: 48, backgroundColor: '#0B0B0B', color: '#FFFFFF', borderColor: '#0B0B0B', borderRadius: '4px' }}
-            />
-          </Tooltip>
-          
-          <Tooltip title={t('toolbar.reset')}>
-            <Button
-              aria-label={t('toolbar.reset')}
-              icon={<ReloadOutlined />}
-              onClick={onReset}
-              className="focus:outline-none focus:ring-2 focus:ring-black"
-              style={{ minHeight: 48, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '4px' }}
-            />
-          </Tooltip>
-
-          <Tooltip title="快速自检">
-            <Button
-              aria-label="快速自检"
-              icon={<ExperimentOutlined />}
-              loading={selfTestLoading}
-              onClick={handleSelfTest}
-              className="focus:outline-none focus:ring-2 focus:ring-black"
-              style={{ minHeight: 48, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '4px' }}
-            />
-          </Tooltip>
-
-          <Divider type="vertical" />
-
-          <div data-tour="language-button">
-            <LanguageSwitcher mode="dropdown" size="middle" />
-          </div>
-
-          <div data-tour="theme-button">
-            <ThemeController type="popover" />
-          </div>
         </Space>
       </div>
 
-      {/* 折叠工具区：第二排 */}
-      {toolsExpanded && (
-        <div className="w-full bg-white border-b border-gray-200 px-4 py-2">
+      {/* Drawer 可见性标记（供 E2E 探测），不影响布局 */}
+      <div id="toolbar-more-drawer" data-qa="drawer-marker" style={{ display: toolsExpanded ? 'block' : 'none', width: 1, height: 1, position: 'absolute', top: -9999, left: -9999 }} />
+      {/* 右侧抽屉（替代“第二排”） */}
+      <Drawer
+        title={t('toolbar.more', '更多')}
+        placement="right"
+        zIndex={1500}
+        open={toolsExpanded}
+        onClose={() => setToolsExpanded(false)}
+        maskClosable={true}
+        keyboard={true}
+        styles={{ wrapper: { width: 360 }, body: { padding: 16 } }}
+        aria-label={t('toolbar.more', '更多')}
+        id={moreDrawerId}
+        rootClassName="vw-more-drawer"
+      >
+        <div className="flex flex-col gap-3">
+          {/* 快速自检按钮（抽屉顶部） */}
+          <div className="flex items-center justify-start">
+            <Tooltip title={t('toolbar.selfTest')}>
+              <Button
+                aria-label={t('toolbar.selfTest')}
+                data-qa="btn-selftest"
+                onClick={handleSelfTest}
+                loading={selfTestLoading}
+                className="flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-black"
+                style={{ height: 48, minWidth: 48, padding: '0 16px', backgroundColor: '#0B0B0B', color: '#FFFFFF', borderColor: '#0B0B0B', borderRadius: '2px', fontWeight: 700 }}
+              >
+                <ExperimentOutlined />&nbsp;{t('toolbar.selfTest')}
+              </Button>
+            </Tooltip>
+          </div>
+
+          {/* 系统设置分组：语言/主题/凭证（按钮触发 + 弹层，统一规范样式） */}
+          <div className="flex flex-col gap-2" role="group" aria-label={t('toolbar.systemSettings', '系统设置')}>
+            <div style={{ fontWeight: 700, fontSize: 14, color: '#0B0B0B' }}>
+              {t('toolbar.systemSettings', '系统设置')}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <LanguageSwitcher
+                variant="toolbarItem"
+                data-qa="btn-language"
+                aria-label={t('toolbar.language')}
+              />
+              <ThemeController
+                variant="toolbarItem"
+                data-qa="btn-theme"
+                aria-label={t('toolbar.theme')}
+              />
+              {/* 新增：凭证按钮 */}
+              <Button
+                aria-label={t('toolbar.credentials')}
+                data-qa="btn-credentials"
+                onClick={() => { setToolsExpanded(false); setTimeout(() => setCredVisible(true), 200); }}
+                className="flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-black"
+                style={{ height: 48, minWidth: 48, padding: '0 16px', backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '2px', fontWeight: 700 }}
+                title={t('toolbar.credentials')}
+              >
+                {t('toolbar.credentials')}
+              </Button>
+            </div>
+          </div>
+ 
+          <Divider />
+
+          {/* 原“第二排”内容保留功能与语义 */}
           <div className="flex flex-wrap items-center gap-2">
             {/* 清空画布 */}
             <Tooltip title="清空画布">
@@ -571,7 +582,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
                 aria-pressed={false}
                 onClick={() => onClearCanvas?.()}
                 className="focus:outline-none focus:ring-2 focus:ring-black"
-                style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '4px', fontWeight: 600 }}
+                style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '2px', fontWeight: 600 }}
                 title="清空画布"
               >
                 Clear
@@ -586,7 +597,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
               disabled={selectedCount < 2}
               onClick={onAlignLeft}
               className="focus:outline-none focus:ring-2 focus:ring-black"
-              style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '4px' }}
+              style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '2px' }}
             >
               {'\u27F8'}
             </Button>
@@ -597,7 +608,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
               disabled={selectedCount < 2}
               onClick={onAlignCenterX}
               className="focus:outline-none focus:ring-2 focus:ring-black"
-              style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '4px' }}
+              style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '2px' }}
             >
               {'\u2194'}
             </Button>
@@ -608,7 +619,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
               disabled={selectedCount < 2}
               onClick={onAlignRight}
               className="focus:outline-none focus:ring-2 focus:ring-black"
-              style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '4px' }}
+              style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '2px' }}
             >
               {'\u27F9'}
             </Button>
@@ -621,7 +632,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
               disabled={selectedCount < 2}
               onClick={onAlignTop}
               className="focus:outline-none focus:ring-2 focus:ring-black"
-              style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '4px' }}
+              style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '2px' }}
             >
               {'\u27F0'}
             </Button>
@@ -632,7 +643,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
               disabled={selectedCount < 2}
               onClick={onAlignCenterY}
               className="focus:outline-none focus:ring-2 focus:ring-black"
-              style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '4px' }}
+              style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '2px' }}
             >
               {'\u2195'}
             </Button>
@@ -643,7 +654,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
               disabled={selectedCount < 2}
               onClick={onAlignBottom}
               className="focus:outline-none focus:ring-2 focus:ring-black"
-              style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '4px' }}
+              style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '2px' }}
             >
               {'\u27F1'}
             </Button>
@@ -656,7 +667,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
               disabled={selectedCount < 3}
               onClick={onDistributeH}
               className="focus:outline-none focus:ring-2 focus:ring-black"
-              style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '4px' }}
+              style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '2px' }}
             >
               <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 16, lineHeight: '1' }}>H</span>
             </Button>
@@ -667,7 +678,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
               disabled={selectedCount < 3}
               onClick={onDistributeV}
               className="focus:outline-none focus:ring-2 focus:ring-black"
-              style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '4px' }}
+              style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '2px' }}
             >
               <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 16, lineHeight: '1' }}>V</span>
             </Button>
@@ -684,7 +695,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
                   backgroundColor: edgeStyle === 'smooth' ? '#0B0B0B' : '#FFFFFF',
                   color: edgeStyle === 'smooth' ? '#FFFFFF' : '#0B0B0B',
                   borderColor: '#0B0B0B',
-                  borderRadius: '4px',
+                  borderRadius: '2px',
                   fontWeight: 700
                 }}
                 title="边样式：平滑（Smooth）"
@@ -703,7 +714,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
                   backgroundColor: edgeStyle === 'orthogonal' ? '#0B0B0B' : '#FFFFFF',
                   color: edgeStyle === 'orthogonal' ? '#FFFFFF' : '#0B0B0B',
                   borderColor: '#0B0B0B',
-                  borderRadius: '4px',
+                  borderRadius: '2px',
                   fontWeight: 700
                 }}
                 title="边样式：直角（Orthogonal）"
@@ -718,7 +729,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
               aria-pressed={reducedMotion}
               onClick={onToggleReducedMotion}
               className="focus:outline-none focus:ring-2 focus:ring-black"
-              style={{ height: 48, width: 48, padding: 0, backgroundColor: reducedMotion ? '#0B0B0B' : '#FFFFFF', color: reducedMotion ? '#FFFFFF' : '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '4px' }}
+              style={{ height: 48, width: 48, padding: 0, backgroundColor: reducedMotion ? '#0B0B0B' : '#FFFFFF', color: reducedMotion ? '#FFFFFF' : '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '2px' }}
             >
               RM
             </Button>
@@ -735,7 +746,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
                   backgroundColor: autoAlign ? '#0B0B0B' : '#FFFFFF',
                   color: autoAlign ? '#FFFFFF' : '#0B0B0B',
                   borderColor: '#0B0B0B',
-                  borderRadius: '4px',
+                  borderRadius: '2px',
                   fontWeight: 700
                 }}
               >
@@ -748,23 +759,25 @@ const Toolbar: React.FC<ToolbarProps> = ({
               aria-label="打开快捷键帮助"
               onClick={onToggleHelp}
               className="focus:outline-none focus:ring-2 focus:ring-black"
-              style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '4px' }}
+              style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '2px' }}
             >
               ?
             </Button>
           </div>
         </div>
-      )}
+      </Drawer>
       {/* 保存工作流模态框 */}
       <Modal
-        title={t('workflow.save.title')}
+        title={<span id="save-modal-title">{t('workflow.save.title')}</span>}
         open={saveModalVisible}
         onOk={handleSave}
         onCancel={() => setSaveModalVisible(false)}
         okText={t('common.save')}
         cancelText={t('common.cancel')}
+        forceRender
+        aria-labelledby="save-modal-title"
       >
-        <Form form={saveForm} layout="vertical">
+        <Form form={saveForm} layout="vertical" preserve={false}>
           <Form.Item
             name="name"
             label={t('workflow.save.nameLabel')}
@@ -852,6 +865,22 @@ const Toolbar: React.FC<ToolbarProps> = ({
 {selfTestSummary}
         </pre>
       </Modal>
+
+      {/* QA Reporter 面板 */}
+      {FEATURE_QA_REPORT && (
+        <Modal
+          title={t('qa.reportIssue', 'Report UI Issue')}
+          open={qaVisible}
+          onCancel={() => setQaVisible(false)}
+          footer={null}
+          width={720}
+        >
+          <QAReporter onSubmitted={() => setQaVisible(false)} />
+        </Modal>
+      )}
+
+      {/* 凭证管理面板（遵循 UI 规范：CredentialManager 内部使用 AntD Modal，触发按钮位于“系统设置”分组） */}
+      <CredentialManager open={credVisible} onClose={() => setCredVisible(false)} />
     </div>
   );
 };

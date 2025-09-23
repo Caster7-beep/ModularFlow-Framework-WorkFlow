@@ -1,3 +1,11 @@
+html, body, #root {
+  height: 100%;
+}
+
+:root {
+  --toolbar-height: 56px;
+}
+
 .app {
   height: 100vh;
   overflow: hidden;
@@ -47,6 +55,13 @@
   width: 100%;
 }
 
+/* 显式 React Flow 父容器尺寸以避免 Error#004 */
+.rf-host {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
 /* React Flow 根容器 */
 .canvas-root {
   height: 100% !important;
@@ -60,15 +75,28 @@
   border: 2px solid #e5e7eb;
   background: #fff;
   transition: all 0.15s ease; /* 减少动画时长提升性能 */
+  /* 关键：容器不限定固定宽高，由子内容自适应（避免被测量为正方形） */
+  width: auto !important;
+  height: auto !important;
 }
 
-.react-flow__node:hover {
+/* 防止节点内部卡片被错误拉成正方形（统一解除任何隐式 aspect-ratio 或固定高） */
+.react-flow__node > div {
+  display: inline-block;        /* 由内容决定高度 */
+  height: auto !important;      /* 高度自适应内容 */
+  width: fit-content;           /* 宽度由内容/Min/Max 控制，更贴近内容 */
+  max-width: 100%;              /* 不超出画布测量容器 */
+  aspect-ratio: auto !important;/* 取消固定宽高比 */
+}
+
+/* 将 hover 效果应用到“内部卡片”而非外层容器，避免出现正方形阴影 */
+.react-flow__node:hover > div {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-  border-color: #0B0B0B; /* 使用黑色替代蓝色 */
+  /* 内部卡片的边框在各 Node 组件中自行设为黑色（如 border-black） */
 }
 
-.react-flow__node.selected {
-  border-color: #0B0B0B; /* 黑色边框 */
+/* 选中态同样仅作用于内部卡片，外层容器保持透明以消除正方形 */
+.react-flow__node.selected > div {
   box-shadow: 0 0 0 2px rgba(11, 11, 11, 0.15); /* 黑色阴影 */
 }
 

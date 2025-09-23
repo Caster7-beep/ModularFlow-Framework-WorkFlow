@@ -1,0 +1,62 @@
+{
+  "id": "nw-proof",
+  "name": "nw-proof",
+  "description": "Proof import for connection persistence (input → code → output)",
+  "createdAt": "2025-09-22T00:00:00.000Z",
+  "updatedAt": "2025-09-22T00:00:00.000Z",
+  "nodes": [
+    {
+      "id": "n_input",
+      "type": "input",
+      "position": { "x": 100, "y": 100 },
+      "data": {
+        "label": "输入节点",
+        "config": {
+          "inputType": "text",
+          "defaultValue": "abcde",
+          "placeholder": ""
+        }
+      }
+    },
+    {
+      "id": "n_code",
+      "type": "code",
+      "position": { "x": 320, "y": 100 },
+      "data": {
+        "label": "代码块节点",
+        "config": {
+          "language": "python",
+          "code": "text = inputs.get('input') or inputs.get('text') or 'abcde'\\noutput = {'text': f'len={len(str(text))}', 'signal': 1}"
+        }
+      }
+    },
+    {
+      "id": "n_output",
+      "type": "output",
+      "position": { "x": 540, "y": 100 },
+      "data": {
+        "label": "输出节点",
+        "config": {
+          "outputType": "text",
+          "format": "plain"
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "n_input",
+      "target": "n_code",
+      "sourceHandle": "output",
+      "targetHandle": "input"
+    },
+    {
+      "id": "e2",
+      "source": "n_code",
+      "target": "n_output",
+      "sourceHandle": "output",
+      "targetHandle": "input"
+    }
+  ]
+}

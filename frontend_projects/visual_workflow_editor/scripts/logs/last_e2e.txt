@@ -139,3 +139,1289 @@ UA: Node.js/23
 
 --- 2025-09-20T15:06:25.266Z [REGRESSION] ---
 UA=Node.js/23
+--- 2025-09-22T00:48:08.507Z [SMOKE] ---
+A(Input→LLM→Output): FAIL | out="ERROR: API key not valid. Please pass a valid API key."
+B(Input→CodeBlock→Output): PASS | out="len=5"
+SelfTest(wait=967ms) top5:
+  - Health: N/A
+  - Docs: N/A
+  - WS: N/A
+  - LLM: N/A
+  - CodeBlock: N/A
+ClearCanvas(wait=67ms): DONE
+--- 2025-09-22T00:55:09.764Z [SMOKE] ---
+A(Input→LLM→Output): FAIL | out="ERROR: Gemini 未配置有效密钥或基础URL。请设置环境变量：GEMINI_API_KEY, GEMINI_BASE_URL(可选)"
+B(Input→CodeBlock→Output): PASS | out="len=5"
+SelfTest(wait=985ms) top5:
+  - Health: N/A
+  - Docs: N/A
+  - WS: N/A
+  - LLM: N/A
+  - CodeBlock: N/A
+ClearCanvas(wait=90ms): DONE
+--- 2025-09-22T01:01:24.877Z [SMOKE] ---
+A(Input→LLM→Output): PASS | out="ping"
+B(Input→CodeBlock→Output): PASS | out="len=5"
+SelfTest(wait=983ms) top5:
+  - Health: N/A
+  - Docs: N/A
+  - WS: N/A
+  - LLM: N/A
+  - CodeBlock: N/A
+ClearCanvas(wait=72ms): DONE
+Polish v6 E2E Regression Log
+Started: 2025-09-22T01:03:18.975Z
+=== Polish v6 E2E 回归摘要 ===
+时间: 2025-09-22T01:03:37.671Z
+总断言: 36 | 通过: 25 | 失败: 11 | 重试: 1
+
+[1] 启动前置与主界面就绪: PASS=1 FAIL=0
+  - PASS | 页面加载 | qaHooks=v6 | ms=0
+
+[2] 基础可用性断言: PASS=2 FAIL=0
+  - PASS | Toolbar 触达尺寸>=48 | btnTotal=20 ok=13 | ms=0
+  - PASS | 对齐/分布/RM/? 可见 | ms=0
+
+[3] 节点创建与拖拽 + 网格/吸附/参考线: PASS=2 FAIL=3
+  - FAIL | 添加两个节点 | n=1 | ms=0
+  - FAIL | 拖拽触发 snap-ring | ms=0
+  - PASS | 网格尺寸=16 | grid=16 | ms=0
+  - PASS | 网格尺寸=24 | grid=24 | ms=0
+  - FAIL | 吸附到网格 | pos=(394.50,266.50) grid=24 | ms=0
+
+[4] 多选/对齐/分布 + 撤销/重做 + Toast: PASS=1 FAIL=2
+  - FAIL | 左对齐 Toast | 吸附：开 | ms=0
+  - FAIL | 水平等分 Toast | 吸附：开 | ms=0
+  - PASS | 撤销/重做快捷键 | ms=0
+
+[5] 复制/剪切/粘贴: PASS=2 FAIL=0
+  - PASS | 复制粘贴新增节点 | count=4 | ms=0
+  - PASS | 剪切/粘贴完成 | n=4 | ms=0
+
+[6] 右键菜单与锁定/组合/解组: PASS=3 FAIL=3
+  - PASS | 空白右键菜单项存在 | ms=0
+  - FAIL | 单节点右键项 | 新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置 | ms=0
+  - PASS | 锁定后不可拖动 | ms=0
+  - FAIL | 多选右键项 | 新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置 | ms=0
+  - FAIL | 组合后整体拖动 | ms=0
+  - PASS | 解组成功 | ms=0
+
+[7] 连接边样式（Smooth 默认 → Orthogonal → Smooth 往返）: PASS=8 FAIL=1
+  - PASS | 连接创建（默认） | ms=0
+  - PASS | 默认边样式=Smooth | edgeType=smooth len=0 | ms=0
+  - PASS | QA Hook edgeStyle=orthogonal | edgeStyle=orthogonal | ms=0
+  - PASS | 连接创建（Orthogonal） | ms=0
+  - PASS | 新边样式=Orthogonal(step) | lastEdgeType=smooth len=0 | ms=0
+  - PASS | QA Hook edgeStyle=smooth | edgeStyle=smooth | ms=0
+  - PASS | 连接创建（Smooth 回切） | ms=0
+  - PASS | 新边样式=Smooth(smoothstep) | lastEdgeType=orthogonal len=0 | ms=0
+  - FAIL | 边路径存在 | path=false len=0 | ms=0
+
+[8] 导出/导入布局: PASS=2 FAIL=2
+  - PASS | 导出 JSON 存在 | nodes=4 edges=0 | ms=0
+  - FAIL | 显示清空 Toast | 边样式：平滑 | ms=5028
+  - FAIL | 清空画布后节点=0 | nodes=4 | ms=415
+  - PASS | 导入（重建）节点数 | n=6 | ms=0
+
+[9] 尺寸模式/Reduced Motion/?: PASS=4 FAIL=0
+  - PASS | 尺寸模式切换 | ms=0
+  - PASS | Reduced Motion=开 | ms=0
+  - PASS | 帮助弹窗打开 | ms=0
+  - PASS | 帮助弹窗关闭 | ms=0
+
+[10] 结果汇总与落地: PASS=0 FAIL=0
+
+最终结果: FAIL
+UA: Node.js/23
+
+--- 2025-09-22T01:03:37.672Z [REGRESSION] ---
+UA=Node.js/23
+Polish v6 E2E Regression Log
+Started: 2025-09-22T01:07:19.360Z
+[REG-WAIT] waitForQAHooksReady ok=true ms=1
+[REG-WAIT] waitForStableCanvas ok=true frames=4/4 ms=303
+[REG-WAIT] waitForStableCanvas ok=true frames=4/4 ms=264
+[REG-WAIT] waitSnapEnabled ok=false ms=2004
+[REG-WAIT] waitForStableCanvas ok=true frames=4/4 ms=260
+[REG-WAIT] waitForToast /对齐|左对齐/ ok=false ms=2003
+[REG-WAIT] waitForToast /对齐|左对齐/ ok=false ms=2005
+[REG-WAIT] waitForToast /等间距|等分|水平等分/ ok=false ms=2212
+[REG-WAIT] waitForToast /等间距|等分|水平等分/ ok=false ms=2211
+[REG-WAIT] waitForMenu mode=single ok=true ms=1
+[REG-WAIT] waitForMenu mode=single ok=true ms=1
+[REG-WAIT] waitForMenu mode=multi ok=true ms=3
+[REG-WAIT] waitForStableCanvas ok=true frames=4/4 ms=259
+[REG-WAIT] waitEdgePathNonEmpty ok=false ms=1508
+[REG-WAIT] waitEdgePathNonEmpty ok=false ms=1500
+[REG-WAIT] waitEdgePathNonEmpty ok=false ms=1505
+[REG-WAIT] waitEdgePathNonEmpty ok=false ms=1504
+[REG-WAIT] waitEdgePathNonEmpty ok=false ms=1607
+[REG-WAIT] waitEdgePathNonEmpty ok=false ms=1608
+[REG-WAIT] waitForToast /清空|已清空/ ok=false ms=2201
+[REG-WAIT] waitForToast /清空|已清空/ ok=false ms=2202
+=== Polish v6 E2E 回归摘要 ===
+时间: 2025-09-22T01:08:02.439Z
+总断言: 36 | 通过: 21 | 失败: 15 | 重试: 8
+
+[1] 启动前置与主界面就绪: PASS=1 FAIL=0
+  - PASS | 页面加载 | qaHooks=v6 | ms=0
+
+[2] 基础可用性断言: PASS=2 FAIL=0
+  - PASS | Toolbar 触达尺寸>=48 | btnTotal=20 ok=13 | ms=0
+  - PASS | 对齐/分布/RM/? 可见 | ms=0
+
+[3] 节点创建与拖拽 + 网格/吸附/参考线: PASS=3 FAIL=2
+  - PASS | 添加两个节点 | n=2 | ms=0
+  - FAIL | 拖拽触发 snap-ring | ms=0
+  - PASS | 网格尺寸=16 | grid=16 | ms=0
+  - PASS | 网格尺寸=24 | grid=24 | ms=0
+  - FAIL | 吸附到网格 | pos=(203.50,395.50) grid=24 | ms=0
+
+[4] 多选/对齐/分布 + 撤销/重做 + Toast: PASS=1 FAIL=2
+  - FAIL | 左对齐 Toast | 吸附：开 | ms=0
+  - FAIL | 水平等分 Toast | 吸附：开 | ms=0
+  - PASS | 撤销/重做快捷键 | ms=0
+
+[5] 复制/剪切/粘贴: PASS=2 FAIL=0
+  - PASS | 复制粘贴新增节点 | count=4 | ms=0
+  - PASS | 剪切/粘贴完成 | n=4 | ms=0
+
+[6] 右键菜单与锁定/组合/解组: PASS=3 FAIL=3
+  - PASS | 空白右键菜单项存在 | ms=0
+  - FAIL | 单节点右键项 | 新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置 | ms=0
+  - PASS | 锁定后不可拖动 | ms=0
+  - FAIL | 多选右键项 | 新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置 | ms=0
+  - FAIL | 组合后整体拖动 | ms=0
+  - PASS | 解组成功 | ms=0
+
+[7] 连接边样式（Smooth 默认 → Orthogonal → Smooth 往返）: PASS=3 FAIL=6
+  - FAIL | 连接创建（默认） | ms=0
+  - PASS | 默认边样式=Smooth | edgeType=smooth len=0 | ms=0
+  - PASS | QA Hook edgeStyle=orthogonal | edgeStyle=orthogonal | ms=0
+  - FAIL | 连接创建（Orthogonal） | ms=0
+  - PASS | 新边样式=Orthogonal(step) | lastEdgeType=smooth len=0 | ms=0
+  - FAIL | QA Hook edgeStyle=smooth | edgeStyle=orthogonal | ms=0
+  - FAIL | 连接创建（Smooth 回切） | ms=0
+  - FAIL | 新边样式=Smooth(smoothstep) | lastEdgeType=orthogonal len=0 | ms=0
+  - FAIL | 边路径存在 | ok=false len=0 | ms=0
+
+[8] 导出/导入布局: PASS=2 FAIL=2
+  - PASS | 导出 JSON 存在 | nodes=4 edges=0 | ms=0
+  - FAIL | 显示清空 Toast | 边样式：直角 | ms=9611
+  - FAIL | 清空画布后节点=0 | nodes=4 | ms=403
+  - PASS | 导入（重建）节点数 | n=6 | ms=0
+
+[9] 尺寸模式/Reduced Motion/?: PASS=4 FAIL=0
+  - PASS | 尺寸模式切换 | ms=0
+  - PASS | Reduced Motion=开 | ms=0
+  - PASS | 帮助弹窗打开 | ms=0
+  - PASS | 帮助弹窗关闭 | ms=0
+
+[10] 结果汇总与落地: PASS=0 FAIL=0
+
+最终结果: FAIL
+UA: Node.js/23
+
+--- 2025-09-22T01:08:02.440Z [REGRESSION] ---
+UA=Node.js/23
+Polish v6 E2E Regression Log
+Started: 2025-09-22T01:14:10.723Z
+[REG-WAIT] waitForQAHooksReady ok=true ms=1
+[REG-WAIT2] force ReducedMotion via __qaHooks
+[REG-WAIT] waitForStableCanvas ok=true frames=4/4 ms=279
+[REG-WAIT] waitForStableCanvas ok=true frames=4/4 ms=261
+[REG-WAIT] waitSnapEnabled ok=false ms=4004
+[REG-WAIT] waitForStableCanvas ok=true frames=4/4 ms=259
+[REG-WAIT2] rafNoop done
+[REG-WAIT] waitForToast /对齐|左对齐|右对齐|顶部对齐|底部对齐|水平等分|水平均分|垂直等分|垂直均分|等间距/i ok=false ms=4012
+[REG-WAIT2] waitForToast-precheck done
+[REG-WAIT2] rafNoop done
+[REG-WAIT] waitForToast /对齐|左对齐|右对齐|顶部对齐|底部对齐|水平等分|水平均分|垂直等分|垂直均分|等间距/i ok=false ms=4013
+[REG-WAIT2] waitForToast-precheck done
+[REG-WAIT2] rafNoop done
+[REG-WAIT] waitForToast /对齐|左对齐|右对齐|顶部对齐|底部对齐|水平等分|水平均分|垂直等分|垂直均分|等间距/i ok=false ms=4000
+[REG-WAIT2] waitForToast-precheck done
+[REG-WAIT2] rafNoop done
+[REG-WAIT] waitForToast /对齐|左对齐|右对齐|顶部对齐|底部对齐|水平等分|水平均分|垂直等分|垂直均分|等间距/i ok=false ms=4004
+[REG-WAIT2] waitForToast-precheck done
+[REG-WAIT2] rafNoop done
+[REG-WAIT] waitForToast /对齐|左对齐|右对齐|顶部对齐|底部对齐|水平等分|水平均分|垂直等分|垂直均分|等间距/i ok=false ms=4003
+[REG-WAIT2] waitForToast-precheck done
+[REG-WAIT2] rafNoop done
+[REG-WAIT] waitForToast /对齐|左对齐|右对齐|顶部对齐|底部对齐|水平等分|水平均分|垂直等分|垂直均分|等间距/i ok=false ms=4011
+[REG-WAIT2] waitForToast-precheck done
+[REG-WAIT] waitForMenu mode=single ok=true ms=6
+[REG-WAIT] waitForMenu mode=single ok=true ms=1
+[REG-WAIT] waitForMenu mode=multi ok=true ms=3
+[REG-WAIT] waitForStableCanvas ok=true frames=4/4 ms=247
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3014
+[REG-WAIT2] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3001
+[REG-WAIT2] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3003
+[REG-WAIT2] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3013
+[REG-WAIT2] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3014
+[REG-WAIT2] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3009
+[REG-WAIT2] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3011
+[REG-WAIT2] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3010
+[REG-WAIT2] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3001
+[REG-WAIT2] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT2] rafNoop done
+[REG-WAIT] waitForToast /清空|已清空|清空完成/i ok=false ms=5006
+[REG-WAIT2] waitForToast-precheck done
+[REG-WAIT2] rafNoop done
+[REG-WAIT] waitForToast /清空|已清空|清空完成/i ok=false ms=5008
+[REG-WAIT2] waitForToast-precheck done
+[REG-WAIT2] rafNoop done
+[REG-WAIT] waitForToast /清空|已清空|清空完成/i ok=false ms=5014
+[REG-WAIT2] waitForToast-precheck done
+[REG-WAIT2] clear-toast disappear checked
+=== Polish v6 E2E 回归摘要 ===
+时间: 2025-09-22T01:15:41.085Z
+总断言: 36 | 通过: 26 | 失败: 10 | 重试: 13
+
+[1] 启动前置与主界面就绪: PASS=1 FAIL=0
+  - PASS | 页面加载 | qaHooks=v6 | ms=0
+
+[2] 基础可用性断言: PASS=2 FAIL=0
+  - PASS | Toolbar 触达尺寸>=48 | btnTotal=20 ok=13 | ms=0
+  - PASS | 对齐/分布/RM/? 可见 | ms=0
+
+[3] 节点创建与拖拽 + 网格/吸附/参考线: PASS=3 FAIL=2
+  - PASS | 添加两个节点 | n=2 | ms=0
+  - FAIL | 拖拽触发 snap-ring | ms=0
+  - PASS | 网格尺寸=16 | grid=16 | ms=0
+  - PASS | 网格尺寸=24 | grid=24 | ms=0
+  - FAIL | 吸附到网格 | pos=(293.00,298.14) grid=24 | ms=0
+
+[4] 多选/对齐/分布 + 撤销/重做 + Toast: PASS=1 FAIL=2
+  - FAIL | 左对齐 Toast | 吸附：开 | ms=0
+  - FAIL | 水平等分 Toast | 吸附：开 | ms=0
+  - PASS | 撤销/重做快捷键 | ms=0
+
+[5] 复制/剪切/粘贴: PASS=2 FAIL=0
+  - PASS | 复制粘贴新增节点 | count=4 | ms=0
+  - PASS | 剪切/粘贴完成 | n=4 | ms=0
+
+[6] 右键菜单与锁定/组合/解组: PASS=3 FAIL=3
+  - PASS | 空白右键菜单项存在 | ms=0
+  - FAIL | 单节点右键项 | 新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置 | ms=0
+  - PASS | 锁定后不可拖动 | ms=0
+  - FAIL | 多选右键项 | 新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置 | ms=0
+  - FAIL | 组合后整体拖动 | ΔA=23.60 ΔB=0.00 | ms=0
+  - PASS | 解组成功 | ms=0
+
+[7] 连接边样式（Smooth 默认 → Orthogonal → Smooth 往返）: PASS=8 FAIL=1
+  - PASS | 连接创建（默认） | ms=0
+  - PASS | 默认边样式=Smooth | edgeType=smooth len=0 | ms=0
+  - PASS | QA Hook edgeStyle=orthogonal | edgeStyle=orthogonal | ms=0
+  - PASS | 连接创建（Orthogonal） | ms=0
+  - PASS | 新边样式=Orthogonal(step) | lastEdgeType=smooth len=0 | ms=0
+  - PASS | QA Hook edgeStyle=smooth | edgeStyle=smooth | ms=0
+  - PASS | 连接创建（Smooth 回切） | ms=0
+  - PASS | 新边样式=Smooth(smoothstep) | lastEdgeType=orthogonal len=0 | ms=0
+  - FAIL | 边路径存在 | ok=false len=0 | ms=0
+
+[8] 导出/导入布局: PASS=2 FAIL=2
+  - PASS | 导出 JSON 存在 | nodes=4 edges=0 | ms=0
+  - FAIL | 显示清空 Toast | 边样式：平滑 | ms=15860
+  - FAIL | 清空画布后节点=0 | non-zero | ms=0
+  - PASS | 导入（重建）节点数 | n=6 | ms=0
+
+[9] 尺寸模式/Reduced Motion/?: PASS=4 FAIL=0
+  - PASS | 尺寸模式切换 | ms=0
+  - PASS | Reduced Motion=开 | ms=0
+  - PASS | 帮助弹窗打开 | ms=0
+  - PASS | 帮助弹窗关闭 | ms=0
+
+[10] 结果汇总与落地: PASS=0 FAIL=0
+
+最终结果: FAIL
+UA: Node.js/23
+
+--- 2025-09-22T01:15:41.086Z [REGRESSION] ---
+UA=Node.js/23
+Polish v6 E2E Regression Log
+Started: 2025-09-22T01:20:38.450Z
+[REG-WAIT] waitForQAHooksReady ok=true ms=1
+[REG-WAIT2] force ReducedMotion via __qaHooks
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=261
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=249
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitSnapEnabled ok=false ms=4512
+[REG-DBG] snap=0 grid=24
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=262
+[REG-DBG] grid=24 pos=(220,388) nearest=(216,384) err=(4,4)
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForToast /对齐|左对齐|右对齐|顶部对齐|底部对齐|等分|均分|等间距|水平等分|水平均分|垂直等分|垂直均分/i ok=false ms=4006
+[REG-DBG] toastText=吸附：开
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForToast /对齐|左对齐|右对齐|顶部对齐|底部对齐|等分|均分|等间距|水平等分|水平均分|垂直等分|垂直均分/i ok=false ms=4013
+[REG-DBG] toastText=吸附：开
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForToast /对齐|左对齐|右对齐|顶部对齐|底部对齐|等分|均分|等间距|水平等分|水平均分|垂直等分|垂直均分/i ok=false ms=4003
+[REG-DBG] toastText=吸附：开
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForToast /对齐|左对齐|右对齐|顶部对齐|底部对齐|等分|均分|等间距|水平等分|水平均分|垂直等分|垂直均分/i ok=false ms=4008
+[REG-DBG] toastText=吸附：开
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForToast /对齐|左对齐|右对齐|顶部对齐|底部对齐|等分|均分|等间距|水平等分|水平均分|垂直等分|垂直均分/i ok=false ms=4001
+[REG-DBG] toastText=吸附：开
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForToast /对齐|左对齐|右对齐|顶部对齐|底部对齐|等分|均分|等间距|水平等分|水平均分|垂直等分|垂直均分/i ok=false ms=4012
+[REG-DBG] toastText=吸附：开
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForMenu mode=single ok=true ms=2
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForMenu mode=single ok=true ms=1
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-WAIT3] rafNoop n=2
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-WAIT3] rafNoop n=2
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-WAIT3] rafNoop n=2
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForMenu mode=multi ok=true ms=2
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-WAIT3] rafNoop n=2
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-WAIT3] rafNoop n=2
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=249
+[REG-DBG] groupMove dx=0.00 dy=0.00 threshold=16
+[REG-WAIT3] rafNoop n=2
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-WAIT3] rafNoop n=2
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-WAIT3] rafNoop n=2
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3013
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3011
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3005
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3014
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3002
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=2999
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3005
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3008
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3013
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForToast /清空|已清空|清空完成|画布已清空/i ok=false ms=5001
+[REG-DBG] toastText=边样式：直角
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForToast /清空|已清空|清空完成|画布已清空/i ok=false ms=5011
+[REG-DBG] toastText=边样式：直角
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForToast /清空|已清空|清空完成|画布已清空/i ok=false ms=5006
+[REG-DBG] toastText=边样式：直角
+[REG-DBG] nodes(before→after)=4→4
+[REG-WAIT2] clear-toast disappear checked
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] rafNoop n=2
+=== Polish v6 E2E 回归摘要 ===
+时间: 2025-09-22T01:22:19.242Z
+总断言: 36 | 通过: 22 | 失败: 14 | 重试: 15
+
+[1] 启动前置与主界面就绪: PASS=1 FAIL=0
+  - PASS | 页面加载 | qaHooks=v6 | ms=0
+
+[2] 基础可用性断言: PASS=2 FAIL=0
+  - PASS | Toolbar 触达尺寸>=48 | btnTotal=20 ok=13 | ms=0
+  - PASS | 对齐/分布/RM/? 可见 | ms=0
+
+[3] 节点创建与拖拽 + 网格/吸附/参考线: PASS=4 FAIL=1
+  - PASS | 添加两个节点 | n=2 | ms=0
+  - FAIL | 拖拽触发 snap-ring | ms=0
+  - PASS | 网格尺寸=16 | grid=16 | ms=0
+  - PASS | 网格尺寸=24 | grid=24 | ms=0
+  - PASS | 吸附到网格 | grid=24 | ms=0
+
+[4] 多选/对齐/分布 + 撤销/重做 + Toast: PASS=1 FAIL=2
+  - FAIL | 左对齐 Toast | 吸附：开 | ms=0
+  - FAIL | 水平等分 Toast | 吸附：开 | ms=0
+  - PASS | 撤销/重做快捷键 | ms=0
+
+[5] 复制/剪切/粘贴: PASS=2 FAIL=0
+  - PASS | 复制粘贴新增节点 | count=4 | ms=0
+  - PASS | 剪切/粘贴完成 | n=4 | ms=0
+
+[6] 右键菜单与锁定/组合/解组: PASS=3 FAIL=3
+  - PASS | 空白右键菜单项存在 | ms=0
+  - FAIL | 单节点右键项 | 新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置 | ms=0
+  - PASS | 锁定后不可拖动 | ms=0
+  - FAIL | 多选右键项 | 新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置 | ms=0
+  - FAIL | 组合后整体拖动 | ΔA=0.00 ΔB=0.00 | ms=0
+  - PASS | 解组成功 | ms=0
+
+[7] 连接边样式（Smooth 默认 → Orthogonal → Smooth 往返）: PASS=3 FAIL=6
+  - FAIL | 连接创建（默认） | ms=0
+  - PASS | 默认边样式=Smooth | edgeType=smooth len=0 | ms=0
+  - PASS | QA Hook edgeStyle=orthogonal | edgeStyle=orthogonal | ms=0
+  - FAIL | 连接创建（Orthogonal） | ms=0
+  - PASS | 新边样式=Orthogonal(step) | lastEdgeType=smooth len=0 | ms=0
+  - FAIL | QA Hook edgeStyle=smooth | edgeStyle=orthogonal | ms=0
+  - FAIL | 连接创建（Smooth 回切） | ms=0
+  - FAIL | 新边样式=Smooth(smoothstep) | lastEdgeType=orthogonal len=0 | ms=0
+  - FAIL | 边路径存在 | ok=false len=0 | ms=0
+
+[8] 导出/导入布局: PASS=2 FAIL=2
+  - PASS | 导出 JSON 存在 | nodes=4 edges=0 | ms=0
+  - FAIL | 显示清空 Toast | 边样式：直角 | ms=16188
+  - FAIL | 清空画布后节点=0 | non-zero | ms=0
+  - PASS | 导入（重建）节点数 | n=6 | ms=0
+
+[9] 尺寸模式/Reduced Motion/?: PASS=4 FAIL=0
+  - PASS | 尺寸模式切换 | ms=0
+  - PASS | Reduced Motion=开 | ms=0
+  - PASS | 帮助弹窗打开 | ms=0
+  - PASS | 帮助弹窗关闭 | ms=0
+
+[10] 结果汇总与落地: PASS=0 FAIL=0
+
+最终结果: FAIL
+UA: Node.js/23
+
+--- 2025-09-22T01:22:19.242Z [REGRESSION] ---
+UA=Node.js/23
+--- 2025-09-22T03:02:41.584Z [SMOKE] ---
+A(Input→LLM→Output): PASS | out="ping"
+B(Input→CodeBlock→Output): PASS | out="len=5"
+SelfTest(wait=5045ms) top5:
+ClearCanvas(wait=3ms): DONE
+--- 2025-09-22T05:28:44.238Z [SMOKE] ---
+A(Input→LLM→Output): PASS | out="ping"
+B(Input→CodeBlock→Output): PASS | out="len=5"
+[SELFTEST] lastSelfTest.items.length=0
+[SELFTEST] E: WS Events captured: 4
+SelfTest(wait=6071ms)
+ClearCanvas(wait=4ms): DONE
+Polish v6 E2E Regression Log
+Started: 2025-09-22T05:28:58.476Z
+[REG-WAIT] waitForQAHooksReady ok=true ms=1
+[REG-WAIT2] force ReducedMotion via __qaHooks
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=277
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=263
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] rafNoop n=2
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+
+2025-09-22T05:30:05.387Z ERROR: [E2E ERROR] Waiting for selector `[aria-label="切换网格吸附"]` failed
+TimeoutError: Waiting for selector `[aria-label="切换网格吸附"]` failed
+    at CSSQueryHandler.waitFor (file:///E:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/common/QueryHandler.js:211:46)
+    at async CdpFrame.waitForSelector (file:///E:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/api/Frame.js:545:21)
+    at async CdpPage.waitForSelector (file:///E:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/api/Page.js:1378:20)
+    at async clickByAria (file:///E:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/scripts/e2e_regression.mjs:668:14)
+    at async main (file:///E:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/scripts/e2e_regression.mjs:1118:7)
+--- 2025-09-22T05:34:43.897Z [SMOKE] ---
+A(Input→LLM→Output): PASS | out="ping"
+B(Input→CodeBlock→Output): PASS | out="len=5"
+[SELFTEST] lastSelfTest.items.length=0
+[SELFTEST] E: WS Events captured: 4
+SelfTest(wait=6048ms)
+ClearCanvas(wait=3ms): DONE
+Polish v6 E2E Regression Log
+Started: 2025-09-22T11:00:52.453Z
+[REG-WAIT] waitForQAHooksReady ok=true ms=1
+[REG-WAIT2] force ReducedMotion via __qaHooks
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=295
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=277
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] rafNoop n=2
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+
+2025-09-22T11:01:59.802Z ERROR: [E2E ERROR] Waiting for selector `[aria-label="切换网格吸附"]` failed
+TimeoutError: Waiting for selector `[aria-label="切换网格吸附"]` failed
+    at CSSQueryHandler.waitFor (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/common/QueryHandler.js:211:46)
+    at async CdpFrame.waitForSelector (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/api/Frame.js:545:21)
+    at async CdpPage.waitForSelector (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/api/Page.js:1378:20)
+    at async clickByAria (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/scripts/e2e_regression.mjs:668:14)
+    at async main (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/scripts/e2e_regression.mjs:1118:7)
+Polish v6 E2E Regression Log
+Started: 2025-09-22T11:02:42.713Z
+[REG-WAIT] waitForQAHooksReady ok=true ms=2
+[REG-WAIT2] force ReducedMotion via __qaHooks
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=280
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=247
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] rafNoop n=2
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+
+2025-09-22T11:03:49.524Z ERROR: [E2E ERROR] Waiting for selector `[aria-label="切换网格吸附"]` failed
+TimeoutError: Waiting for selector `[aria-label="切换网格吸附"]` failed
+    at CSSQueryHandler.waitFor (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/common/QueryHandler.js:211:46)
+    at async CdpFrame.waitForSelector (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/api/Frame.js:545:21)
+    at async CdpPage.waitForSelector (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/api/Page.js:1378:20)
+    at async clickByAria (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/scripts/e2e_regression.mjs:668:14)
+    at async main (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/scripts/e2e_regression.mjs:1118:7)
+--- 2025-09-22T11:17:13.581Z [SMOKE] ---
+A(Input→LLM→Output): PASS | out="ping"
+B(Input→CodeBlock→Output): PASS | out="len=5"
+[SELFTEST] lastSelfTest.items.length=0
+[SELFTEST] E: WS Events captured: 4
+SelfTest(wait=6115ms)
+ClearCanvas(wait=4ms): DONE
+Polish v6 E2E Regression Log
+Started: 2025-09-22T11:17:54.948Z
+[REG-WAIT] waitForQAHooksReady ok=true ms=1
+[REG-WAIT2] force ReducedMotion via __qaHooks
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=277
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=246
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] rafNoop n=2
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitSnapEnabled ok=true ms=2
+[REG-DBG] snap=1 grid=8
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=247
+[REG-DBG] grid=8 pos=(360,296) nearest=(360,296) err=(0,0)
+
+2025-09-22T11:21:34.446Z ERROR: [E2E ERROR] Input.dispatchMouseEvent timed out. Increase the 'protocolTimeout' setting in launch/connect calls for a higher timeout if needed.
+ProtocolError: Input.dispatchMouseEvent timed out. Increase the 'protocolTimeout' setting in launch/connect calls for a higher timeout if needed.
+    at <instance_members_initializer> (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/common/CallbackRegistry.js:98:14)
+    at new Callback (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/common/CallbackRegistry.js:102:16)
+    at CallbackRegistry.create (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/common/CallbackRegistry.js:21:26)
+    at Connection._rawSend (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Connection.js:95:26)
+    at CdpCDPSession.send (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/CdpSession.js:70:33)
+    at file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Input.js:322:33
+    at #withTransaction (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Input.js:235:19)
+    at CdpMouse.up (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Input.js:317:36)
+    at CdpMouse.click (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Input.js:351:27)
+    at main (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/scripts/e2e_regression.mjs:1305:26)
+Polish v6 E2E Regression Log
+Started: 2025-09-22T11:22:32.588Z
+[REG-WAIT] waitForQAHooksReady ok=true ms=1
+[REG-WAIT2] force ReducedMotion via __qaHooks
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=290
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=248
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] rafNoop n=2
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitSnapEnabled ok=true ms=2
+[REG-DBG] snap=1 grid=8
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=262
+[REG-DBG] grid=8 pos=(240,360) nearest=(240,360) err=(0,0)
+
+2025-09-22T11:26:12.140Z ERROR: [E2E ERROR] Input.dispatchMouseEvent timed out. Increase the 'protocolTimeout' setting in launch/connect calls for a higher timeout if needed.
+ProtocolError: Input.dispatchMouseEvent timed out. Increase the 'protocolTimeout' setting in launch/connect calls for a higher timeout if needed.
+    at <instance_members_initializer> (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/common/CallbackRegistry.js:98:14)
+    at new Callback (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/common/CallbackRegistry.js:102:16)
+    at CallbackRegistry.create (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/common/CallbackRegistry.js:21:26)
+    at Connection._rawSend (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Connection.js:95:26)
+    at CdpCDPSession.send (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/CdpSession.js:70:33)
+    at file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Input.js:322:33
+    at #withTransaction (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Input.js:235:19)
+    at CdpMouse.up (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Input.js:317:36)
+    at CdpMouse.click (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Input.js:351:27)
+    at main (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/scripts/e2e_regression.mjs:1305:26)
+Polish v6 E2E Regression Log
+Started: 2025-09-22T11:29:18.963Z
+[REG-WAIT] waitForQAHooksReady ok=true ms=1
+[REG-WAIT2] force ReducedMotion via __qaHooks
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=280
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=247
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] rafNoop n=2
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitSnapEnabled ok=true ms=2
+[REG-DBG] snap=1 grid=8
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=245
+[REG-DBG] grid=8 pos=(344,352) nearest=(344,352) err=(0,0)
+
+2025-09-22T11:32:58.394Z ERROR: [E2E ERROR] Input.dispatchMouseEvent timed out. Increase the 'protocolTimeout' setting in launch/connect calls for a higher timeout if needed.
+ProtocolError: Input.dispatchMouseEvent timed out. Increase the 'protocolTimeout' setting in launch/connect calls for a higher timeout if needed.
+    at <instance_members_initializer> (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/common/CallbackRegistry.js:98:14)
+    at new Callback (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/common/CallbackRegistry.js:102:16)
+    at CallbackRegistry.create (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/common/CallbackRegistry.js:21:26)
+    at Connection._rawSend (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Connection.js:95:26)
+    at CdpCDPSession.send (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/CdpSession.js:70:33)
+    at file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Input.js:322:33
+    at #withTransaction (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Input.js:235:19)
+    at CdpMouse.up (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Input.js:317:36)
+    at CdpMouse.click (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Input.js:351:27)
+    at main (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/scripts/e2e_regression.mjs:1305:26)
+Polish v6 E2E Regression Log
+Started: 2025-09-22T11:33:46.147Z
+[REG-WAIT] waitForQAHooksReady ok=true ms=2
+[REG-WAIT2] force ReducedMotion via __qaHooks
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=281
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=262
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] rafNoop n=2
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitSnapEnabled ok=true ms=3
+[REG-DBG] snap=1 grid=8
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=265
+[REG-DBG] grid=8 pos=(288,232) nearest=(288,232) err=(0,0)
+
+2025-09-22T11:37:25.631Z ERROR: [E2E ERROR] Input.dispatchMouseEvent timed out. Increase the 'protocolTimeout' setting in launch/connect calls for a higher timeout if needed.
+ProtocolError: Input.dispatchMouseEvent timed out. Increase the 'protocolTimeout' setting in launch/connect calls for a higher timeout if needed.
+    at <instance_members_initializer> (file:///E:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/common/CallbackRegistry.js:98:14)
+    at new Callback (file:///E:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/common/CallbackRegistry.js:102:16)
+    at CallbackRegistry.create (file:///E:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/common/CallbackRegistry.js:21:26)
+    at Connection._rawSend (file:///E:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Connection.js:95:26)
+    at CdpCDPSession.send (file:///E:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/CdpSession.js:70:33)
+    at file:///E:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Input.js:322:33
+    at #withTransaction (file:///E:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Input.js:235:19)
+    at CdpMouse.up (file:///E:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Input.js:317:36)
+    at CdpMouse.click (file:///E:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Input.js:351:27)
+    at main (file:///E:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/scripts/e2e_regression.mjs:1305:26)
+Polish v6 E2E Regression Log
+Started: 2025-09-22T11:37:44.799Z
+[REG-WAIT] waitForQAHooksReady ok=true ms=2
+[REG-WAIT2] force ReducedMotion via __qaHooks
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=293
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=247
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] rafNoop n=2
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitSnapEnabled ok=true ms=2
+[REG-DBG] snap=1 grid=8
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=262
+[REG-DBG] grid=8 pos=(368,296) nearest=(368,296) err=(0,0)
+
+2025-09-22T11:41:24.212Z ERROR: [E2E ERROR] Input.dispatchMouseEvent timed out. Increase the 'protocolTimeout' setting in launch/connect calls for a higher timeout if needed.
+ProtocolError: Input.dispatchMouseEvent timed out. Increase the 'protocolTimeout' setting in launch/connect calls for a higher timeout if needed.
+    at <instance_members_initializer> (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/common/CallbackRegistry.js:98:14)
+    at new Callback (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/common/CallbackRegistry.js:102:16)
+    at CallbackRegistry.create (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/common/CallbackRegistry.js:21:26)
+    at Connection._rawSend (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Connection.js:95:26)
+    at CdpCDPSession.send (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/CdpSession.js:70:33)
+    at file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Input.js:322:33
+    at #withTransaction (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Input.js:235:19)
+    at CdpMouse.up (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Input.js:317:36)
+    at CdpMouse.click (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Input.js:351:27)
+    at main (file:///e:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/scripts/e2e_regression.mjs:1305:26)
+Polish v6 E2E Regression Log
+Started: 2025-09-22T11:46:49.890Z
+[REG-WAIT] waitForQAHooksReady ok=true ms=1
+[REG-WAIT2] force ReducedMotion via __qaHooks
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=262
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=248
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] rafNoop n=2
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitSnapEnabled ok=true ms=2
+[REG-DBG] snap=1 grid=8
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=248
+[REG-DBG] grid=8 pos=(392,176) nearest=(392,176) err=(0,0)
+
+2025-09-22T11:50:29.138Z ERROR: [E2E ERROR] Input.dispatchMouseEvent timed out. Increase the 'protocolTimeout' setting in launch/connect calls for a higher timeout if needed.
+ProtocolError: Input.dispatchMouseEvent timed out. Increase the 'protocolTimeout' setting in launch/connect calls for a higher timeout if needed.
+    at <instance_members_initializer> (file:///E:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/common/CallbackRegistry.js:98:14)
+    at new Callback (file:///E:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/common/CallbackRegistry.js:102:16)
+    at CallbackRegistry.create (file:///E:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/common/CallbackRegistry.js:21:26)
+    at Connection._rawSend (file:///E:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Connection.js:95:26)
+    at CdpCDPSession.send (file:///E:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/CdpSession.js:70:33)
+    at file:///E:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Input.js:322:33
+    at #withTransaction (file:///E:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Input.js:235:19)
+    at CdpMouse.up (file:///E:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Input.js:317:36)
+    at CdpMouse.click (file:///E:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Input.js:351:27)
+    at main (file:///E:/SillyTavern250716/ModularFlow-Framework-WorkFlow/frontend_projects/visual_workflow_editor/scripts/e2e_regression.mjs:1305:26)
+--- 2025-09-22T12:08:37.621Z [SMOKE] ---
+A(Input→LLM→Output): PASS | out="ping"
+B(Input→CodeBlock→Output): PASS | out="len=5"
+[SELFTEST] lastSelfTest.items.length=0
+[SELFTEST] E: WS Events captured: 4
+SelfTest(wait=6062ms)
+ClearCanvas(wait=6ms): DONE
+Polish v6 E2E Regression Log
+Started: 2025-09-22T21:40:53.720Z
+[REG-WAIT] waitForQAHooksReady ok=true ms=1
+[REG-WAIT2] force ReducedMotion via __qaHooks
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=277
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=247
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitSnapEnabled ok=true ms=2
+[REG-DBG] snap=1 grid=8
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=247
+[REG-DBG] grid=8 pos=(376,160) nearest=(376,160) err=(0,0)
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForToast /对齐|左对齐|右对齐|顶部对齐|底部对齐|等分|均分|等间距|水平等分|水平均分|垂直等分|垂直均分/i ok=false ms=4014
+[REG-DBG] toastText=连接状态：空闲
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForToast /对齐|左对齐|右对齐|顶部对齐|底部对齐|等分|均分|等间距|水平等分|水平均分|垂直等分|垂直均分/i ok=false ms=4011
+[REG-DBG] toastText=连接状态：空闲
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForToast /对齐|左对齐|右对齐|顶部对齐|底部对齐|等分|均分|等间距|水平等分|水平均分|垂直等分|垂直均分/i ok=false ms=4006
+[REG-DBG] toastText=连接状态：空闲
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForToast /对齐|左对齐|右对齐|顶部对齐|底部对齐|等分|均分|等间距|水平等分|水平均分|垂直等分|垂直均分/i ok=false ms=4005
+[REG-DBG] toastText=连接状态：空闲
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForToast /对齐|左对齐|右对齐|顶部对齐|底部对齐|等分|均分|等间距|水平等分|水平均分|垂直等分|垂直均分/i ok=false ms=4003
+[REG-DBG] toastText=连接状态：空闲
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForToast /对齐|左对齐|右对齐|顶部对齐|底部对齐|等分|均分|等间距|水平等分|水平均分|垂直等分|垂直均分/i ok=false ms=4008
+[REG-DBG] toastText=连接状态：空闲
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForMenu mode=single ok=true ms=2
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForMenu mode=single ok=true ms=2
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-WAIT3] rafNoop n=2
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-WAIT3] rafNoop n=2
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-WAIT3] rafNoop n=2
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForMenu mode=multi ok=true ms=1
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-WAIT3] rafNoop n=2
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-WAIT3] rafNoop n=2
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=249
+[REG-DBG] groupMove dx=0.00 dy=17.89 threshold=16
+[REG-WAIT3] rafNoop n=2
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-WAIT3] rafNoop n=2
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-WAIT3] rafNoop n=2
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-DBG] menuItems=[重命名|复制|剪切|删除|锁定]
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3005
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3007
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3014
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3001
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3011
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3001
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3015
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3003
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3007
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3001
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3011
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3004
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForToast /清空|已清空|清空完成|画布已清空/i ok=false ms=5009
+[REG-DBG] toastText=已粘贴 2 个节点
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForToast /清空|已清空|清空完成|画布已清空/i ok=false ms=5004
+[REG-DBG] toastText=已粘贴 2 个节点
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForToast /清空|已清空|清空完成|画布已清空/i ok=false ms=5003
+[REG-DBG] toastText=已粘贴 2 个节点
+[REG-DBG] nodes(before→after)=5→5
+[REG-WAIT2] clear-toast disappear checked
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] rafNoop n=2
+[REG-STATS]
+asserts=36 fails=15 retries=21
+drawer.ops=0 drawer.avg_ms=0
+ALIGN: 失败
+DISTRIB: 失败
+EDGE_STYLE: 首次通过
+AA: 失败
+GRID: 重试通过
+CLEAR: 失败
+=== Polish v6 E2E 回归摘要 ===
+时间: 2025-09-22T21:45:15.948Z
+总断言: 36 | 通过: 21 | 失败: 15 | 重试: 21
+
+[1] 启动前置与主界面就绪: PASS=1 FAIL=0
+  - PASS | 页面加载 | qaHooks=v6 | ms=0
+
+[2] 基础可用性断言: PASS=1 FAIL=1
+  - PASS | Toolbar 触达尺寸>=48 | btnTotal=10 ok=8 | ms=0
+  - FAIL | 对齐/分布/RM/? 可见 | ms=0
+
+[3] 节点创建与拖拽 + 网格/吸附/参考线: PASS=2 FAIL=3
+  - PASS | 添加两个节点 | n=2 | ms=0
+  - FAIL | 拖拽触发 snap-ring | ms=0
+  - FAIL | 网格尺寸=16 | grid=8 | ms=0
+  - FAIL | 网格尺寸=24 | grid=8 | ms=0
+  - PASS | 吸附到网格 | grid=8 | ms=0
+
+[4] 多选/对齐/分布 + 撤销/重做 + Toast: PASS=1 FAIL=2
+  - FAIL | 左对齐 Toast | ms=0
+  - FAIL | 水平等分 Toast | ms=0
+  - PASS | 撤销/重做快捷键 | ms=0
+
+[5] 复制/剪切/粘贴: PASS=2 FAIL=0
+  - PASS | 复制粘贴新增节点 | count=4 | ms=0
+  - PASS | 剪切/粘贴完成 | n=4 | ms=0
+
+[6] 右键菜单与锁定/组合/解组: PASS=3 FAIL=3
+  - PASS | 空白右键菜单项存在 | ms=0
+  - FAIL | 单节点右键项 | 新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置 | ms=0
+  - PASS | 锁定后不可拖动 | ms=0
+  - FAIL | 多选右键项 | 新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置 | ms=0
+  - FAIL | 组合后整体拖动 | ΔA=0.00 ΔB=17.89 | ms=0
+  - PASS | 解组成功 | ms=0
+
+[7] 连接边样式（Smooth 默认 → Orthogonal → Smooth 往返）: PASS=6 FAIL=3
+  - PASS | 连接创建（默认） | ms=0
+  - PASS | 默认边样式=Smooth | edgeType=smooth len=0 | ms=0
+  - FAIL | QA Hook edgeStyle=orthogonal | edgeStyle=smooth | ms=0
+  - PASS | 连接创建（Orthogonal） | ms=0
+  - FAIL | 新边样式=Orthogonal(step) | lastEdgeType=smooth len=0 | ms=0
+  - PASS | QA Hook edgeStyle=smooth | edgeStyle=smooth | ms=0
+  - PASS | 连接创建（Smooth 回切） | ms=0
+  - PASS | 新边样式=Smooth(smoothstep) | lastEdgeType=orthogonal len=0 | ms=0
+  - FAIL | 边路径存在 | ok=false len=0 | ms=0
+
+[8] 导出/导入布局: PASS=2 FAIL=2
+  - PASS | 导出 JSON 存在 | nodes=5 edges=0 | ms=0
+  - FAIL | 显示清空 Toast | 已粘贴 2 个节点 | ms=26403
+  - FAIL | 清空画布后节点=0 | non-zero | ms=0
+  - PASS | 导入（重建）节点数 | n=7 | ms=0
+
+[9] 尺寸模式/Reduced Motion/?: PASS=3 FAIL=1
+  - PASS | 尺寸模式切换 | ms=0
+  - FAIL | Reduced Motion=开 | ms=0
+  - PASS | 帮助弹窗打开 | ms=0
+  - PASS | 帮助弹窗关闭 | ms=0
+
+[10] 结果汇总与落地: PASS=0 FAIL=0
+
+最终结果: FAIL
+UA: Node.js/23
+
+--- 2025-09-22T21:45:15.949Z [REGRESSION] ---
+UA=Node.js/23
+--- 2025-09-22T22:05:25.809Z [SMOKE] ---
+A(Input→LLM→Output): PASS | out="ping"
+B(Input→CodeBlock→Output): PASS | out="len=5"
+[SELFTEST] lastSelfTest.items.length=0
+[SELFTEST] E: WS Events captured: 4
+[CREDS] Drawer+Modal: N/A
+SelfTest(wait=6033ms)
+Creds(wait=6007ms)
+ClearCanvas(wait=3ms): DONE
+--- 2025-09-22T22:06:59.246Z [SMOKE] ---
+A(Input→LLM→Output): PASS | out="ping"
+B(Input→CodeBlock→Output): PASS | out="len=5"
+[SELFTEST] lastSelfTest.items.length=0
+[SELFTEST] E: WS Events captured: 4
+[CREDS] Drawer+Modal: N/A
+SelfTest(wait=6051ms)
+Creds(wait=6010ms)
+ClearCanvas(wait=3ms): DONE
+--- 2025-09-22T22:08:09.443Z [SMOKE] ---
+A(Input→LLM→Output): PASS | out="ping"
+B(Input→CodeBlock→Output): PASS | out="len=5"
+[SELFTEST] lastSelfTest.items.length=0
+[SELFTEST] E: WS Events captured: 4
+[CREDS] Drawer+Modal: N/A
+SelfTest(wait=12039ms)
+Creds(wait=12002ms)
+ClearCanvas(wait=4ms): DONE
+--- 2025-09-22T22:14:30.552Z [SMOKE] ---
+A(Input→LLM→Output): PASS | out="ping"
+B(Input→CodeBlock→Output): PASS | out="len=5"
+[SELFTEST] lastSelfTest.items.length=0
+[SELFTEST] E: WS Events captured: 4
+[CREDS] Drawer+Modal: N/A
+SelfTest(wait=34ms)
+Creds(wait=20010ms)
+ClearCanvas(wait=3ms): DONE
+--- 2025-09-22T22:17:46.750Z [SMOKE] ---
+A(Input→LLM→Output): PASS | out="ping"
+B(Input→CodeBlock→Output): PASS | out="len=5"
+[SELFTEST] lastSelfTest.items.length=0
+[SELFTEST] E: WS Events captured: 4
+[CREDS] Drawer+Modal: N/A
+SelfTest(wait=20308ms)
+Creds(wait=20010ms)
+ClearCanvas(wait=4044ms): DONE
+--- 2025-09-22T22:20:09.515Z [SMOKE] ---
+A(Input→LLM→Output): PASS | out="ping"
+B(Input→CodeBlock→Output): PASS | out="len=5"
+[SELFTEST] lastSelfTest.items.length=0
+[SELFTEST] E: WS Events captured: 4
+[CREDS] Drawer+Modal: N/A
+SelfTest(wait=20308ms)
+Creds(wait=2ms)
+ClearCanvas(wait=4042ms): DONE
+--- 2025-09-22T22:23:19.349Z [SMOKE] ---
+A(Input→LLM→Output): PASS | out="ping"
+B(Input→CodeBlock→Output): PASS | out="len=5"
+[SELFTEST] lastSelfTest.items.length=0
+[SELFTEST] E: WS Events captured: 4
+[CREDS] Drawer+Modal: N/A
+SelfTest(wait=20321ms)
+Creds(wait=2ms)
+ClearCanvas(wait=4056ms): DONE
+--- 2025-09-22T22:26:29.969Z [SMOKE] ---
+A(Input→LLM→Output): PASS | out="ping"
+B(Input→CodeBlock→Output): PASS | out="len=5"
+[SELFTEST] lastSelfTest.items.length=0
+[SELFTEST] E: WS Events captured: 4
+[CREDS] Drawer+Modal: N/A
+SelfTest(wait=3515ms)
+Creds(wait=1ms)
+ClearCanvas(wait=4052ms): DONE
+--- 2025-09-22T22:27:52.200Z [SMOKE] ---
+A(Input→LLM→Output): PASS | out="ping"
+B(Input→CodeBlock→Output): PASS | out="len=5"
+[SELFTEST] lastSelfTest.items.length=5
+[SELFTEST] Health: PASS
+[SELFTEST] Docs: FAIL
+[SELFTEST] WS: PASS
+[SELFTEST] LLM: FAIL
+[SELFTEST] CodeBlock: FAIL
+[SELFTEST] E: WS Events captured: 4
+[CREDS] Drawer+Modal: N/A
+SelfTest(wait=1993ms)
+Creds(wait=447ms)
+ClearCanvas(wait=71ms): DONE
+--- 2025-09-23T10:19:41.441Z [SMOKE] ---
+A(Input→LLM→Output): PASS | out="ping"
+B(Input→CodeBlock→Output): PASS | out="len=5"
+[DRAWER] Open: FAIL
+[SELFTEST] lastSelfTest.items.length=0
+[SELFTEST] E: WS Events captured: 4
+[CREDS] Drawer+Modal: N/A
+[CREDS] ActiveGroupSelect: N/A
+SelfTest(wait=7762ms)
+Creds(wait=7808ms)
+ClearCanvas(wait=4052ms): DONE
+--- 2025-09-23T10:51:06.054Z [SMOKE] ---
+A(Input→LLM→Output): PASS | out="ping"
+B(Input→CodeBlock→Output): PASS | out="len=5"
+[DRAWER] Open: PASS
+[SELFTEST] lastSelfTest.items.length=0
+[SELFTEST] E: WS Events captured: 4
+[CREDS] Drawer+Modal: N/A
+[CREDS] ActiveGroupSelect: PASS
+SelfTest(wait=13804ms)
+Creds(wait=447ms)
+ClearCanvas(wait=83ms): DONE
+Polish v6 E2E Regression Log
+Started: 2025-09-23T10:51:51.958Z
+[CREDS] ActiveGroupSelect: N/A
+[REG-WAIT] waitForQAHooksReady ok=true ms=1
+[REG-WAIT2] force ReducedMotion via __qaHooks
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=250
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=249
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitSnapEnabled ok=true ms=1
+[REG-DBG] snap=1 grid=8
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=249
+[REG-DBG] grid=8 pos=(432,400) nearest=(432,400) err=(0,0)
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForToast /对齐|左对齐|右对齐|顶部对齐|底部对齐|等分|均分|等间距|水平等分|水平均分|垂直等分|垂直均分/i ok=false ms=4008
+[REG-DBG] toastText=连接状态：空闲
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForToast /对齐|左对齐|右对齐|顶部对齐|底部对齐|等分|均分|等间距|水平等分|水平均分|垂直等分|垂直均分/i ok=false ms=4008
+[REG-DBG] toastText=连接状态：空闲
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForToast /对齐|左对齐|右对齐|顶部对齐|底部对齐|等分|均分|等间距|水平等分|水平均分|垂直等分|垂直均分/i ok=false ms=4006
+[REG-DBG] toastText=连接状态：空闲
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForToast /对齐|左对齐|右对齐|顶部对齐|底部对齐|等分|均分|等间距|水平等分|水平均分|垂直等分|垂直均分/i ok=false ms=4010
+[REG-DBG] toastText=连接状态：空闲
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForToast /对齐|左对齐|右对齐|顶部对齐|底部对齐|等分|均分|等间距|水平等分|水平均分|垂直等分|垂直均分/i ok=false ms=4014
+[REG-DBG] toastText=连接状态：空闲
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForToast /对齐|左对齐|右对齐|顶部对齐|底部对齐|等分|均分|等间距|水平等分|水平均分|垂直等分|垂直均分/i ok=false ms=4002
+[REG-DBG] toastText=连接状态：空闲
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForMenu mode=single ok=true ms=2
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForMenu mode=single ok=true ms=2
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-WAIT3] rafNoop n=2
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-WAIT3] rafNoop n=2
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-WAIT3] rafNoop n=2
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForMenu mode=multi ok=true ms=1
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-WAIT3] rafNoop n=2
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-WAIT3] rafNoop n=2
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-DBG] menuItems=[新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置]
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] stableFrames=4/4 ms=248
+[REG-DBG] groupMove dx=0.00 dy=0.00 threshold=16
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3009
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3014
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3008
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3011
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3004
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3010
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3006
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3011
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3014
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3001
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3003
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT2] waitForEdgesCount min=1 ok=false ms=3006
+[REG-WAIT3] waitEdgePathNonEmpty count<1 timeout
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForToast /清空|已清空|清空完成|画布已清空/i ok=false ms=5005
+[REG-DBG] toastText=已粘贴 2 个节点
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForToast /清空|已清空|清空完成|画布已清空/i ok=false ms=5017
+[REG-DBG] toastText=已粘贴 2 个节点
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] waitForToast /清空|已清空|清空完成|画布已清空/i ok=false ms=5008
+[REG-DBG] toastText=已粘贴 2 个节点
+[REG-DBG] nodes(before→after)=7→7
+[REG-WAIT2] clear-toast disappear checked
+[REG-WAIT3] rafNoop n=2
+[REG-WAIT3] rafNoop n=2
+[REG-STATS]
+asserts=36 fails=15 retries=19
+drawer.ops=0 drawer.avg_ms=0
+ALIGN: 失败
+DISTRIB: 失败
+EDGE_STYLE: 首次通过
+AA: 失败
+GRID: 重试通过
+CLEAR: 失败
+=== Polish v6 E2E 回归摘要 ===
+时间: 2025-09-23T10:56:11.500Z
+总断言: 36 | 通过: 21 | 失败: 15 | 重试: 19
+
+[1] 启动前置与主界面就绪: PASS=1 FAIL=0
+  - PASS | 页面加载 | qaHooks=v6 | ms=0
+
+[2] 基础可用性断言: PASS=1 FAIL=1
+  - PASS | Toolbar 触达尺寸>=48 | btnTotal=10 ok=8 | ms=0
+  - FAIL | 对齐/分布/RM/? 可见 | ms=0
+
+[3] 节点创建与拖拽 + 网格/吸附/参考线: PASS=2 FAIL=3
+  - PASS | 添加两个节点 | n=2 | ms=0
+  - FAIL | 拖拽触发 snap-ring | ms=0
+  - FAIL | 网格尺寸=16 | grid=8 | ms=0
+  - FAIL | 网格尺寸=24 | grid=8 | ms=0
+  - PASS | 吸附到网格 | grid=8 | ms=0
+
+[4] 多选/对齐/分布 + 撤销/重做 + Toast: PASS=1 FAIL=2
+  - FAIL | 左对齐 Toast | ms=0
+  - FAIL | 水平等分 Toast | ms=0
+  - PASS | 撤销/重做快捷键 | ms=0
+
+[5] 复制/剪切/粘贴: PASS=2 FAIL=0
+  - PASS | 复制粘贴新增节点 | count=6 | ms=0
+  - PASS | 剪切/粘贴完成 | n=6 | ms=0
+
+[6] 右键菜单与锁定/组合/解组: PASS=3 FAIL=3
+  - PASS | 空白右键菜单项存在 | ms=0
+  - FAIL | 单节点右键项 | 新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置 | ms=0
+  - PASS | 锁定后不可拖动 | ms=0
+  - FAIL | 多选右键项 | 新建：输入节点|新建：LLM 节点|新建：输出节点|粘贴|对齐参考设置 | ms=0
+  - FAIL | 组合后整体拖动 | ΔA=0.00 ΔB=0.00 | ms=0
+  - PASS | 解组成功 | ms=0
+
+[7] 连接边样式（Smooth 默认 → Orthogonal → Smooth 往返）: PASS=6 FAIL=3
+  - PASS | 连接创建（默认） | ms=0
+  - PASS | 默认边样式=Smooth | edgeType=smooth len=0 | ms=0
+  - FAIL | QA Hook edgeStyle=orthogonal | edgeStyle=smooth | ms=0
+  - PASS | 连接创建（Orthogonal） | ms=0
+  - FAIL | 新边样式=Orthogonal(step) | lastEdgeType=smooth len=0 | ms=0
+  - PASS | QA Hook edgeStyle=smooth | edgeStyle=smooth | ms=0
+  - PASS | 连接创建（Smooth 回切） | ms=0
+  - PASS | 新边样式=Smooth(smoothstep) | lastEdgeType=orthogonal len=0 | ms=0
+  - FAIL | 边路径存在 | ok=false len=0 | ms=0
+
+[8] 导出/导入布局: PASS=2 FAIL=2
+  - PASS | 导出 JSON 存在 | nodes=7 edges=0 | ms=0
+  - FAIL | 显示清空 Toast | 已粘贴 2 个节点 | ms=26393
+  - FAIL | 清空画布后节点=0 | non-zero | ms=0
+  - PASS | 导入（重建）节点数 | n=9 | ms=0
+
+[9] 尺寸模式/Reduced Motion/?: PASS=3 FAIL=1
+  - PASS | 尺寸模式切换 | ms=0
+  - FAIL | Reduced Motion=开 | ms=0
+  - PASS | 帮助弹窗打开 | ms=0
+  - PASS | 帮助弹窗关闭 | ms=0
+
+[10] 结果汇总与落地: PASS=0 FAIL=0
+
+最终结果: FAIL
+UA: Node.js/23
+
+--- 2025-09-23T10:56:11.501Z [REGRESSION] ---
+UA=Node.js/23
+--- 2025-09-23T11:21:00.701Z [SMOKE] ---
+A(Input→LLM→Output): PASS | out="ping"
+B(Input→CodeBlock→Output): PASS | out="len=5"
+[DRAWER] Open: PASS
+[SELFTEST] lastSelfTest.items.length=0
+[SELFTEST] E: WS Events captured: 4
+[CREDS] Drawer+Modal: N/A
+[CREDS] ActiveGroupSelect: PASS
+SelfTest(wait=13727ms)
+Creds(wait=466ms)
+ClearCanvas(wait=91ms): DONE
+--- 2025-09-23T11:27:10.258Z [NETWORK-200] PASS | network_200_20250923_192706.json | warnings=0
+--- 2025-09-23T11:33:26.361Z [NETWORK-200] PASS | network_200_20250923_193322.json | warnings=0

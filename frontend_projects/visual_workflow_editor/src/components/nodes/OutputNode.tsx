@@ -80,33 +80,48 @@ const OutputNode: React.FC<OutputNodeProps> = ({ data, selected }) => {
     <div
       tabIndex={0}
       aria-label={`输出 节点: ${label}`}
-      className={`relative ${selected ? 'ring-1 ring-black' : ''} focus:outline-none focus-visible:ring-2 focus-visible:ring-black cursor-grab active:cursor-grabbing`}
-      style={{ willChange: 'transform' }}
+      data-qa="node-output"
+      data-node-type="output"
+      className={`relative inline-block ${selected ? 'ring-1 ring-black' : ''} focus:outline-none focus-visible:ring-2 focus-visible:ring-black cursor-grab active:cursor-grabbing`}
+      style={{ willChange: 'transform', height: 'auto', width: 'auto', aspectRatio: 'auto' }}
     >
-      {/* 左侧目标句柄（输入） - 增大尺寸并确保48x48px触摸区域 */}
-      <div className="absolute left-[-14px] top-1/2 -translate-y-1/2">
-        <Handle
-          type="target"
-          position={Position.Left}
-          className="rf-handle-hit"
-          style={{
-            width: 20,
-            height: 20,
-            borderWidth: 2,
-            borderColor: '#FFFFFF',
-            background: '#0B0B0B',
-          }}
-        />
+      {/* 左侧目标句柄（输入） - 确保48x48px触摸区域 */}
+      <div className="absolute left-[-24px] top-1/2 -translate-y-1/2">
+        <div className="relative w-12 h-12 flex items-center justify-center">
+          <Handle
+            id="in"
+            data-qa="handle-target"
+            data-handle-id="in"
+            data-handle-type="target"
+            data-handle-position="left"
+            type="target"
+            position={Position.Left}
+            className="rf-handle-hit"
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: '2px',
+              borderWidth: 2,
+              borderColor: '#FFFFFF',
+              background: '#0B0B0B',
+            }}
+          />
+        </div>
       </div>
 
       {/* 极简卡片：图标 + 标题 + 一行徽标（类型）。名称可换行，节点随内容伸缩 */}
       <div
         ref={cardRef}
-        className={`group rounded-sm border border-gray-200 bg-white text-black shadow-sm hover:shadow-md transition-shadow duration-150 focus-within:ring-2 focus-within:ring-black ${sizeClass}`}
+        className={`group inline-block rounded-sm border border-black bg-white text-black shadow-sm hover:shadow-md transition-shadow duration-150 focus-within:ring-2 focus-within:ring-black ${sizeClass}`}
         style={{
           ...(savedWidth ? { width: savedWidth } : {}),
-          ...(savedHeight ? { height: savedHeight } : {}),
-          ...(resizeEnabled ? { resize: 'both', overflow: 'auto' } as React.CSSProperties : {}),
+          // 高度仅在“调整尺寸模式”下固定；常态由内容自适应，避免节点被拉成正方形
+          ...(savedHeight && resizeEnabled ? { height: savedHeight } : {}),
+          // 明确解除宽高比并由内容决定布局
+          aspectRatio: 'auto',
+          height: 'auto',
+          width: 'auto',
+          ...(resizeEnabled ? { resize: 'both', overflow: 'auto', borderStyle: 'dashed' } as React.CSSProperties : { borderStyle: 'solid' } as React.CSSProperties),
         }}
       >
         <div className="p-4 space-y-3">
