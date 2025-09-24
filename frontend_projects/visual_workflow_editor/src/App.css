@@ -231,3 +231,69 @@ html, body, #root {
     padding: 0 8px;
   }
 }
+/* 右侧属性栏容器样式（遵循黑/白/灰极简规范） */
+.right-panel-shell {
+  position: relative; /* 使内部绝对定位分割条以该容器为参照 */
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  border-left: 1px solid #e5e7eb;
+  background: #ffffff;
+  transition: none;
+}
+
+/* 显式右侧属性面板分割条（8px） */
+.right-panel-resize-handle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 8px;
+  cursor: col-resize;
+  background: transparent; /* 常态透明 */
+  z-index: 1450; /* 画布之上，且略高于展开手柄(1400) */
+  user-select: none;
+  touch-action: none;
+}
+
+/* 悬停时轻微显示一条浅灰参考线（黑白极简） */
+.right-panel-resize-handle::before {
+  content: '';
+  position: absolute;
+  left: 3px; /* 8px 宽度中心附近显示 2px 线条 */
+  top: 0;
+  width: 2px;
+  height: 100%;
+  background: transparent;
+  transition: background-color 0.15s ease;
+}
+
+.right-panel-resize-handle:hover::before {
+  background: #e5e7eb;
+}
+/* 右侧属性面板展开手柄
+   - 固定定位于视窗右侧中部（不随滚动偏移）
+   - 黑白极简风格、圆角≤4px、触达面积≥48×48
+   - z-index 1400：位于画布之上，低于 Drawer(1500)
+*/
+.right-panel-expand-handle {
+  position: fixed; /* 固定于视窗 */
+  right: 8px;      /* 4/8pt 间距规范 */
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  background: #FFFFFF;
+  color: #0B0B0B;
+  border: 1px solid #0B0B0B;
+  border-radius: 2px;
+  z-index: 1400;   /* 画布之上，Drawer(1500)之下 */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  cursor: pointer;
+}
+.right-panel-expand-handle:hover {
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+}

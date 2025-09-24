@@ -32,6 +32,34 @@ const LS_KEYS = {
   autoAlign: `${LS_PREFIX}autoAlign`,
 };
 
+// 右侧属性栏宽度持久化（本地存储键）
+const RIGHT_PANEL_LS_KEY = 'vw_right_panel_w';
+const RIGHT_PANEL_DEFAULT_W = 360;
+const RIGHT_PANEL_MIN_W = 280;
+const RIGHT_PANEL_MAX_W = 480;
+
+function clampWidth(w: number): number {
+  const n = Number.isFinite(w) ? Math.round(w) : RIGHT_PANEL_DEFAULT_W;
+  return Math.max(RIGHT_PANEL_MIN_W, Math.min(RIGHT_PANEL_MAX_W, n));
+}
+
+function initRightPanelWidth(): number {
+  let raw = RIGHT_PANEL_DEFAULT_W;
+  try {
+    const v = localStorage.getItem(RIGHT_PANEL_LS_KEY);
+    if (v !== null) {
+      const n = parseInt(v, 10);
+      if (!isNaN(n)) raw = n;
+    }
+  } catch {}
+  const c = clampWidth(raw);
+  try {
+    if (c !== raw) localStorage.setItem(RIGHT_PANEL_LS_KEY, String(c));
+  } catch {}
+  return c;
+}
+const ENABLE_LEGACY_CSS_RESIZE = false;
+
 const App: React.FC = () => {
   const [nodes, setNodes] = useState<WorkflowNode[]>([]);
   const [edges, setEdges] = useState<WorkflowEdge[]>([]);
@@ -50,6 +78,83 @@ const App: React.FC = () => {
   const [showLeftOverlay, setShowLeftOverlay] = useState(false);
   const [showRightOverlay, setShowRightOverlay] = useState(false);
 
+  // 右侧属性栏（桌面）宽度与折叠
+  const [rightPanelWidth, setRightPanelWidth] = useState<number>(initRightPanelWidth);
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState<boolean>(false);
+
+  // 右侧容器 ref（桌面）
+  const rightPanelRef = useRef<HTMLElement | null>(null);
+
+  // 显式右侧面板分割条拖拽（桌面）
+  const rpDragActiveRef = useRef(false);
+  const rpStartXRef = useRef(0);
+  const rpStartWRef = useRef(0);
+  const rpLatestWRef = useRef<number>(rightPanelWidth);
+  const onRightPanelResizeMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return; // 仅左键
+    if (rightPanelCollapsed) return;
+    e.preventDefault();
+    e.stopPropagation();
+    rpDragActiveRef.current = true;
+    rpStartXRef.current = e.clientX;
+    rpStartWRef.current = rightPanelWidth;
+
+    const prevUserSelect = document.body.style.userSelect;
+    const prevCursor = document.body.style.cursor;
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'col-resize';
+
+    const onMove = (ev: MouseEvent) => {
+      if (!rpDragActiveRef.current) return;
+      const dx = rpStartXRef.current - ev.clientX;
+      const newW = clampWidth(rpStartWRef.current + dx);
+      rpLatestWRef.current = newW;
+      setRightPanelWidth((prev) => {
+        const roundedPrev = Math.round(prev);
+        if (roundedPrev === newW) return prev;
+        return newW;
+      });
+      // 拖拽过程中不写入 localStorage，避免周期性覆盖造成“回弹”
+    };
+    
+    const onUp = () => {
+      rpDragActiveRef.current = false;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.body.style.userSelect = prevUserSelect;
+      document.body.style.cursor = prevCursor;
+      // MouseUp 时一次性持久化最终宽度
+      try { localStorage.setItem(RIGHT_PANEL_LS_KEY, String(clampWidth(rpLatestWRef.current || rpStartWRef.current))); } catch {}
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }, [rightPanelCollapsed, rightPanelWidth]);
+
+  // 切换右侧面板折叠（桌面）；在移动端则切换浮层显示
+  const toggleRightPanelCollapsed = useCallback(() => {
+    try {
+      const isMobile = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 767.98px)').matches;
+      if (isMobile) {
+        setShowRightOverlay(v => !v);
+        return;
+      }
+    } catch {}
+    setRightPanelCollapsed(v => !v);
+  }, []);
+
+  // 处理右侧面板尺寸变化：持久化到 localStorage
+  const handleRightPanelResize = useCallback((w: number) => {
+    if (rightPanelCollapsed) return;
+    const c = clampWidth(w);
+    setRightPanelWidth(prev => {
+      const roundedPrev = Math.round(prev);
+      if (roundedPrev === c) return prev;
+      try { localStorage.setItem(RIGHT_PANEL_LS_KEY, String(c)); } catch {}
+      return c;
+    });
+  }, [rightPanelCollapsed]);
+ 
   // Polish v3/v4: 画布控制（网格吸附/尺寸/fitView）与持久化
   const [snapEnabled, setSnapEnabled] = useState<boolean>(true);
   const [gridSize, setGridSize] = useState<number>(8);
@@ -179,6 +284,25 @@ const App: React.FC = () => {
     } catch {}
   }, []);
 
+  // 监听右侧属性栏尺寸变化（桌面）—旧 CSS resize 方案（禁用）
+  useEffect(() => {
+    if (!ENABLE_LEGACY_CSS_RESIZE) return;
+    const el = rightPanelRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const width = entry.contentRect?.width;
+        if (typeof width === 'number' && Number.isFinite(width)) {
+          handleRightPanelResize(width);
+        }
+      }
+    });
+    try { ro.observe(el); } catch {}
+    return () => {
+      try { ro.disconnect(); } catch {}
+    };
+  }, [handleRightPanelResize]);
+
   // ESC 关闭 overlay，打开时聚焦容器
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -303,18 +427,48 @@ const App: React.FC = () => {
 
   const handleSaveWorkflow = async (name: string, description?: string) => {
     try {
-      const workflow: Omit<Workflow, 'id' | 'createdAt' | 'updatedAt'> = {
-        name,
-        description,
-        nodes,
-        edges,
-      };
-      const response = await workflowApi.createWorkflow(workflow);
-      if (response.success && response.data) {
-        setCurrentWorkflow(response.data);
-        message.success('工作流保存成功');
+      // 通过画布句柄导出布局（优先使用 exportLayout）
+      const layout = canvasRef.current?.exportLayout?.();
+      const nodesToSave = layout && Array.isArray(layout.nodes) ? layout.nodes : nodes;
+      const edgesToSave = layout && Array.isArray(layout.edges) ? layout.edges : edges;
+
+      // 更新或新建
+      if (currentWorkflow?.id) {
+        const response = await workflowApi.updateWorkflow(
+          currentWorkflow.id,
+          name,
+          description,
+          { nodes: nodesToSave, edges: edgesToSave }
+        );
+        if (response.success) {
+          setCurrentWorkflow((prev) => {
+            const now = new Date().toISOString();
+            return {
+              id: prev?.id || currentWorkflow.id,
+              name: name || prev?.name || '',
+              description: (description !== undefined ? description : (prev?.description || '')) || '',
+              nodes: nodesToSave,
+              edges: edgesToSave,
+              createdAt: prev?.createdAt || now,
+              updatedAt: now,
+            };
+          });
+          message.success('工作流更新成功');
+        } else {
+          throw new Error(response.message || '更新失败');
+        }
       } else {
-        throw new Error(response.message || '保存失败');
+        const response = await workflowApi.createWorkflow(
+          name,
+          description,
+          { nodes: nodesToSave, edges: edgesToSave }
+        );
+        if (response.success && response.data) {
+          setCurrentWorkflow(response.data);
+          message.success('工作流保存成功');
+        } else {
+          throw new Error(response.message || '保存失败');
+        }
       }
     } catch (error) {
       console.error('保存工作流失败:', error);
@@ -341,9 +495,14 @@ const App: React.FC = () => {
       const response = await workflowApi.getWorkflow(workflowId);
       if (response.success && response.data) {
         const workflow = response.data;
+        // 将布局导入画布（复用 importLayout 能力）
+        try {
+          canvasRef.current?.importLayout?.({
+            nodes: workflow.nodes || [],
+            edges: workflow.edges || []
+          });
+        } catch {}
         setCurrentWorkflow(workflow);
-        setNodes(workflow.nodes);
-        setEdges(workflow.edges);
         message.success('工作流加载成功');
       } else {
         throw new Error(response.message || '加载失败');
@@ -768,9 +927,9 @@ const App: React.FC = () => {
       onDebugToggle={() => handleDebugToggle(!isDebugging)}
       isDebugging={isDebugging}
       onShowMonitor={() => setShowExecutionMonitor(!showExecutionMonitor)}
-      // 移动端按钮控制浮层
+      // 移动端按钮控制浮层/桌面折叠
       onToggleLeftPanel={() => setShowLeftOverlay(true)}
-      onToggleRightPanel={() => setShowRightOverlay(true)}
+      onToggleRightPanel={toggleRightPanelCollapsed}
       // Polish v3: 画布控制
       snapEnabled={snapEnabled}
       gridSize={gridSize}
@@ -944,6 +1103,7 @@ const App: React.FC = () => {
                     <PropertyPanel
                       selectedNode={selectedNode}
                       onNodeUpdate={handleUpdateNode}
+                      onCollapseRightPanel={toggleRightPanelCollapsed}
                     />
                   </div>
                 </div>
@@ -967,12 +1127,39 @@ const App: React.FC = () => {
                   {workflowCanvas}
                 </ErrorBoundary>
               </main>
-              <aside className="hidden md:flex shrink-0 w-[320px] lg:w_[360px]">
+              <aside
+                ref={rightPanelRef}
+                className="right-panel-shell hidden md:block shrink-0"
+                data-qa="right-panel-shell"
+                aria-label="属性面板容器"
+                style={{
+                  flex: `0 0 ${rightPanelCollapsed ? 0 : rightPanelWidth}px`,
+                  flexShrink: 0,
+                  width: rightPanelCollapsed ? 0 : `${rightPanelWidth}px`,
+                  boxSizing: 'border-box',
+                  display: rightPanelCollapsed ? 'none' : undefined,
+                  overflow: 'auto',
+                  minWidth: '280px',
+                  maxWidth: '480px',
+                  height: 'calc(100vh - var(--toolbar-height))',
+                }}
+              >
+                {/* 显式拖拽分割条（左侧 8px），折叠态不渲染 */}
+                {!rightPanelCollapsed && (
+                  <div
+                    className="right-panel-resize-handle"
+                    aria-label="调整属性面板宽度"
+                    data-qa="right-panel-resize-handle"
+                    onMouseDown={onRightPanelResizeMouseDown}
+                    title="拖动调整属性面板宽度"
+                  />
+                )}
                 <div className="w-full h-full flex flex-col gap-4">
                   <div className="property-panel overflow-auto rounded border border-gray-200 bg-white p-4 space-y-4">
                     <PropertyPanel
                       selectedNode={selectedNode}
                       onNodeUpdate={handleUpdateNode}
+                      onCollapseRightPanel={toggleRightPanelCollapsed}
                     />
                   </div>
                   {showExecutionMonitor && (
@@ -1008,6 +1195,18 @@ const App: React.FC = () => {
                   )}
                 </div>
               </aside>
+              {rightPanelCollapsed && (
+                <button
+                  type="button"
+                  aria-label="展开属性面板"
+                  data-qa="btn-right-panel-expand"
+                  onClick={toggleRightPanelCollapsed}
+                  className="right-panel-expand-handle focus:outline-none focus:ring-2 focus:ring-black"
+                  title="展开属性面板"
+                >
+                  ⮜
+                </button>
+              )}
             </div>
             <ErrorBoundary
               level="component"

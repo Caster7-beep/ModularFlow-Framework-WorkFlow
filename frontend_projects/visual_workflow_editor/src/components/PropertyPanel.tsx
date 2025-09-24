@@ -22,9 +22,10 @@ const { Option } = Select;
 interface PropertyPanelProps {
   selectedNode: WorkflowNode | null;
   onNodeUpdate: (nodeId: string, updates: Partial<WorkflowNode>) => void;
+  onCollapseRightPanel?: () => void;
 }
 
-const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedNode, onNodeUpdate }) => {
+const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedNode, onNodeUpdate, onCollapseRightPanel }) => {
   const [form] = Form.useForm();
 
   // 辅助：将 switch_map 转换为可编辑的键值对列表
@@ -478,15 +479,26 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedNode, onNodeUpdat
         <h2 className="text-black text-xl font-semibold leading-7 m-0">
           节点属性
         </h2>
-        <Button 
-          type="text" 
-          danger 
-          icon={<DeleteOutlined />}
-          onClick={handleDeleteNode}
-          size="small"
-        >
-          删除
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            aria-label="折叠属性面板"
+            data-qa="btn-prop-collapse"
+            onClick={() => onCollapseRightPanel?.()}
+            className="flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-black"
+            style={{ height: 48, width: 48, padding: 0, backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '2px' }}
+          >
+            <span style={{ fontSize: 18, lineHeight: 1 }}>⮜</span>
+          </Button>
+          <Button
+            type="text"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={handleDeleteNode}
+            size="small"
+          >
+            删除
+          </Button>
+        </div>
       </div>
       
       <Card size="small" style={{ marginBottom: 0 }}>

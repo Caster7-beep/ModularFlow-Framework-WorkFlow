@@ -16,6 +16,7 @@ import {
   type CredentialsStoreV1,
   type ProviderCredentialGroup,
 } from '../utils/credentials';
+import { credsApi } from '../services/api';
 
 /**
  * 说明（遵照 ui美化规范.md 与现有 theme/App.css 变量）：
@@ -41,12 +42,32 @@ const providerOptions = [
 
 
 const popupInModal = (trigger?: HTMLElement): HTMLElement => {
-  return (
-    (trigger?.closest('.ant-modal-root') as HTMLElement) ||
-    (trigger?.closest('.ant-modal-wrap') as HTMLElement) ||
-    (trigger?.parentElement as HTMLElement) ||
-    document.body
-  );
+  // 优先定位到凭证 Modal 容器（通过 rootClassName 标记）
+  const modalContainer = document.querySelector('.vw-credentials-modal') as HTMLElement | null;
+
+  // 回退：触发元素最近的 AntD Modal 容器
+  const fallbackContainer =
+    (trigger?.closest('.ant-modal-root, .ant-modal-wrap') as HTMLElement | null) ||
+    null;
+
+  const container: HTMLElement = modalContainer || fallbackContainer || document.body;
+
+  // 保障容器具备相对定位与足够的层级，避免被 Drawer 遮罩压制
+  try {
+    if (container !== document.body) {
+      const computed = window.getComputedStyle(container);
+      const pos = computed.position;
+      const z = Number(computed.zIndex) || 0;
+      if (pos === 'static') {
+        container.style.position = 'relative';
+      }
+      if (z < 2500) {
+        container.style.zIndex = '2500';
+      }
+    }
+  } catch {}
+
+  return container;
 };
 
 const fieldStyle: React.CSSProperties = {
@@ -66,6 +87,8 @@ const CredentialManager: React.FC<Props> = ({ open, onClose }) => {
   const { t } = useTranslation();
   const [store, setStore] = useState<CredentialsStoreV1>(loadCredentials());
   const [activeGroupId, setActiveGroupId] = useState<string | null>(store.groups[0]?.groupId ?? null);
+  const [connecting, setConnecting] = useState(false);
+  const [testing,   setTesting]   = useState(false);
 
   const modeOptions = useMemo(() => ([
     { label: t('credentials.mode.direct'), value: 'direct' },
@@ -179,6 +202,75 @@ const CredentialManager: React.FC<Props> = ({ open, onClose }) => {
     message.success(t('credentials.saved'));
   };
 
+  // ====== 新增：连接/测试 处理 ======
+  const getActiveGroupAuth = () => {
+    const g = activeGroup;
+    if (!g) return { ok: false as const, provider: '', baseUrl: '', apiKey: '' };
+    const provider = g.provider || '';
+    const baseUrl  = (g.base_url || '').trim();
+    const apiKey   = (g.keys && g.keys[0]?.api_key) ? String(g.keys[0].api_key).trim() : '';
+    if (!provider || !baseUrl || !apiKey) {
+      return { ok: false as const, provider, baseUrl, apiKey };
+    }
+    return { ok: true as const, provider, baseUrl, apiKey };
+  };
+
+  const handleConnect = async () => {
+    if (!activeGroup) {
+      message.warning(t('credentials.incompleteConfig'));
+      return;
+    }
+    const info = getActiveGroupAuth();
+    if (!info.ok) {
+      message.warning(t('credentials.incompleteConfig'));
+      return;
+    }
+    try {
+      setConnecting(true);
+      const res = await credsApi.getModels(info.provider, info.baseUrl, info.apiKey);
+      if (res.success) {
+        // 合并并去重 models
+        const existing = Array.isArray(activeGroup.models) ? activeGroup.models : [];
+        const merged = Array.from(new Set([...(existing || []), ...(res.models || [])]));
+        const mergedGroup: ProviderCredentialGroup = { ...activeGroup, models: merged };
+        const next = upsertGroup(store, mergedGroup);
+        persist(next);
+        message.success(`${t('credentials.connectSuccess') || '连接成功'} (${res.models.length})`);
+      } else {
+        message.error(res.detail || t('credentials.connectFail') || '连接失败');
+      }
+    } catch (e: any) {
+      message.error(e?.message || t('credentials.connectFail') || '连接失败');
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  const handleTest = async () => {
+    if (!activeGroup) {
+      message.warning(t('credentials.incompleteConfig'));
+      return;
+    }
+    const info = getActiveGroupAuth();
+    if (!info.ok) {
+      message.warning(t('credentials.incompleteConfig'));
+      return;
+    }
+    try {
+      setTesting(true);
+      const res = await credsApi.testProvider(info.provider, info.baseUrl, info.apiKey);
+      if (res.success) {
+        message.success(t('credentials.testSuccess') || '测试通过');
+      } else {
+        message.error(res.detail || t('credentials.testFail') || '测试失败');
+      }
+    } catch (e: any) {
+      message.error(e?.message || t('credentials.testFail') || '测试失败');
+    } finally {
+      setTesting(false);
+    }
+  };
+
   const handleExport = () => {
     try {
       const data = exportCredentials(store);
@@ -244,6 +336,9 @@ const CredentialManager: React.FC<Props> = ({ open, onClose }) => {
     ? (activeGroup.mode === 'proxy' && (activeGroup.provider === 'openai' || activeGroup.provider === 'anthropic' || activeGroup.provider === 'gemini'))
     : false;
 
+  // 超时字段渲染开关（按需恢复）：仅隐藏 UI，不移除存储结构
+  const SHOW_TIMEOUT_FIELDS = false;
+
   return (
     <Modal
         title={t('credentials.title')}
@@ -253,7 +348,7 @@ const CredentialManager: React.FC<Props> = ({ open, onClose }) => {
         width={860}
         maskClosable={true}
         keyboard={true}
-        zIndex={2100}
+        zIndex={2200}
         getContainer={() => document.body}
         rootClassName="vw-credentials-modal"
       >
@@ -421,27 +516,60 @@ const CredentialManager: React.FC<Props> = ({ open, onClose }) => {
                   </div>
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-2" style={{ marginTop: 8 }}>
-                  <div>
-                    <div className="text-xs" style={{ color: '#666', marginBottom: 4 }}>{t('credentials.timeout')}</div>
-                    <Input
-                      type="number"
-                      min={1}
-                      value={activeGroup.timeout ?? undefined}
-                      onChange={(e) => handleGroupChange({ timeout: Number(e.target.value || 0) || undefined })}
-                      style={fieldStyle}
-                    />
-                  </div>
-                  <div>
-                    <div className="text-xs" style={{ color: '#666', marginBottom: 4 }}>{t('credentials.connectTimeout')}</div>
-                    <Input
-                      type="number"
-                      min={1}
-                      value={activeGroup.connect_timeout ?? undefined}
-                      onChange={(e) => handleGroupChange({ connect_timeout: Number(e.target.value || 0) || undefined })}
-                      style={fieldStyle}
-                    />
-                  </div>
+                {/* 分组操作：连接 / 测试 */}
+                <div className="flex items-center justify-end gap-2" style={{ marginTop: 8 }}>
+                  <Button
+                    onClick={handleConnect}
+                    loading={connecting}
+                    disabled={connecting || !activeGroup}
+                    aria-label={t('credentials.connect')}
+                    data-qa="btn-creds-connect"
+                    size="large"
+                    className="focus:ring-2 ring-black"
+                    style={{ backgroundColor: '#0B0B0B', color: '#FFFFFF', borderColor: '#0B0B0B', borderRadius: 2, minHeight: 48, minWidth: 48 }}
+                  >
+                    {t('credentials.connect')}
+                  </Button>
+                  <Button
+                    onClick={handleTest}
+                    loading={testing}
+                    disabled={testing || !activeGroup}
+                    aria-label={t('credentials.test')}
+                    data-qa="btn-creds-test"
+                    size="large"
+                    className="focus:ring-2 ring-black"
+                    style={{ ...fieldStyle, minHeight: 48, minWidth: 48 }}
+                  >
+                    {t('credentials.test')}
+                  </Button>
+                </div>
+
+                {/* 超时字段按需隐藏：仅 UI 层隐藏，保留存储结构（按需恢复） */}
+                <div className={`grid ${SHOW_TIMEOUT_FIELDS ? 'md:grid-cols-3' : 'md:grid-cols-1'} gap-2`} style={{ marginTop: 8 }}>
+                  {SHOW_TIMEOUT_FIELDS && (
+                    <div>
+                      <div className="text-xs" style={{ color: '#666', marginBottom: 4 }}>{t('credentials.timeout')}</div>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={activeGroup.timeout ?? undefined}
+                        onChange={(e) => handleGroupChange({ timeout: Number(e.target.value || 0) || undefined })}
+                        style={fieldStyle}
+                      />
+                    </div>
+                  )}
+                  {SHOW_TIMEOUT_FIELDS && (
+                    <div>
+                      <div className="text-xs" style={{ color: '#666', marginBottom: 4 }}>{t('credentials.connectTimeout')}</div>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={activeGroup.connect_timeout ?? undefined}
+                        onChange={(e) => handleGroupChange({ connect_timeout: Number(e.target.value || 0) || undefined })}
+                        style={fieldStyle}
+                      />
+                    </div>
+                  )}
                   <div>
                     <div className="text-xs" style={{ color: '#666', marginBottom: 4 }}>{t('credentials.enableLogging')}</div>
                     <Select

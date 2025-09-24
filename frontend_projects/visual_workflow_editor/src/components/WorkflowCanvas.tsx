@@ -137,6 +137,14 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({
   // 初始视野标记（仅首次设定默认缩放/视野）
   const didInitRef = useRef(false);
 
+  // 中键拖拽视野（禁用左键 pan；保留框选与多选）
+  const middlePanActiveRef = useRef(false);
+  const middlePanStartRef = useRef<{ x: number; y: number } | null>(null);
+  const viewportStartRef = useRef<{ x: number; y: number; zoom: number } | null>(null);
+  const currentViewportRef = useRef<{ x: number; y: number; zoom: number } | null>(null);
+  const prevCursorRef = useRef<string>('');
+  const prevUserSelectRef = useRef<string>('');
+
   // 对齐参考线（屏幕坐标，单位 px，相对于 canvas-wrap 内部）
   const [guideX, setGuideX] = React.useState<number | null>(null);
   const [guideY, setGuideY] = React.useState<number | null>(null);
@@ -176,6 +184,77 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({
     // 其余情况视为空白区域，关闭菜单
     setMenuOpen(false);
   }, [menuOpen]);
+
+  // 中键拖拽视野：在 wrapper 捕获阶段启动
+  const handleWrapperMouseDownCapture = React.useCallback((e: React.MouseEvent) => {
+    // 当事件已被默认阻止或目标位于可编辑控件时，不启动中键拖拽
+    if (e.defaultPrevented || isEditableTarget(e.target)) {
+      handleBlankMouseDownCapture(e);
+      return;
+    }
+    // 仅中键
+    // @ts-ignore
+    const btn = (e as any).button;
+    if (btn === 1) {
+      e.preventDefault();
+      middlePanActiveRef.current = true;
+      middlePanStartRef.current = { x: e.clientX, y: e.clientY };
+      // 记录起始视口
+      const vp = currentViewportRef.current ||
+        (reactFlowInstance?.getViewport?.() as any) ||
+        { x: 0, y: 0, zoom: 0.85 };
+      viewportStartRef.current = { x: vp.x || 0, y: vp.y || 0, zoom: vp.zoom || 1 };
+      // 反馈与选择禁用
+      try {
+        prevCursorRef.current = document.body.style.cursor;
+        prevUserSelectRef.current = document.body.style.userSelect;
+        document.body.style.cursor = 'grabbing';
+        document.body.style.userSelect = 'none';
+      } catch {}
+      return; // 中键时不再走空白关闭逻辑
+    }
+
+    // 非中键：保留原空白关闭菜单逻辑（左键）
+    handleBlankMouseDownCapture(e);
+  }, [reactFlowInstance, handleBlankMouseDownCapture]);
+
+  // 中键拖拽移动
+  const handleWrapperMouseMoveCapture = React.useCallback((e: React.MouseEvent) => {
+    if (!middlePanActiveRef.current) return;
+    e.preventDefault();
+    const start = middlePanStartRef.current;
+    const vp0 = viewportStartRef.current;
+    if (!start || !vp0 || !reactFlowInstance) return;
+    const dx = e.clientX - start.x;
+    const dy = e.clientY - start.y;
+    try {
+      reactFlowInstance.setViewport({ x: vp0.x + dx, y: vp0.y + dy, zoom: vp0.zoom });
+    } catch {}
+  }, [reactFlowInstance]);
+
+  // 结束中键拖拽（鼠标抬起/离开）
+  const endMiddlePan = React.useCallback(() => {
+    if (!middlePanActiveRef.current) return;
+    middlePanActiveRef.current = false;
+    try {
+      document.body.style.cursor = prevCursorRef.current || '';
+      document.body.style.userSelect = prevUserSelectRef.current || '';
+    } catch {}
+  }, []);
+
+  const handleWrapperMouseUpCapture = React.useCallback((e: React.MouseEvent) => {
+    if (middlePanActiveRef.current) {
+      e.preventDefault();
+      endMiddlePan();
+    }
+  }, [endMiddlePan]);
+
+  const handleWrapperMouseLeave = React.useCallback((e: React.MouseEvent) => {
+    if (middlePanActiveRef.current) {
+      e.preventDefault();
+      endMiddlePan();
+    }
+  }, [endMiddlePan]);
 
   // 处理节点变化（占位：此处保留日志便于调试）
   const handleNodesChange = useCallback((changes: any) => {
@@ -459,8 +538,57 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({
   }, []);
 
   // 键盘删除
+// 工具函数：判断事件目标是否处于可编辑上下文（输入框/编辑器/选择控件/Modal/Drawer/PropertyPanel 等）
+// 注意：返回 true 时表示应该忽略画布的删除逻辑
+function isEditableTarget(target: EventTarget | null): boolean {
+  const el = target as Element | null;
+  if (!el) return false;
+
+  // 原生可编辑控件
+  const tag = (el as HTMLElement).tagName?.toUpperCase?.();
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+
+  // contenteditable 或其祖先可编辑
+  try {
+    const he = el as HTMLElement;
+    if ((he as any).isContentEditable) return true;
+    const ceAttr = he.getAttribute?.('contenteditable');
+    if (ceAttr && ceAttr.toLowerCase() === 'true') return true;
+  } catch {}
+
+  // ARIA textbox 角色
+  try {
+    const role = (el as HTMLElement).getAttribute?.('role');
+    if (role === 'textbox') return true;
+  } catch {}
+
+  // 常见编辑容器（AntD/Monaco/PropertyPanel/Modal/Drawer）
+  const classes = ['ant-input','ant-select','ant-select-dropdown','ant-modal','ant-drawer','monaco-editor','property-panel'];
+  for (const cls of classes) {
+    try {
+      if ((el as Element).closest?.(`.${cls}`)) return true;
+    } catch {}
+  }
+
+  return false;
+}
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    // 若默认行为已被阻止（例如控件内部处理），则不触发画布删除
+    if (event.defaultPrevented) return;
+
+    // 仅处理 Delete/Backspace
     if (event.key === 'Delete' || event.key === 'Backspace') {
+      // 焦点在可编辑上下文（输入框/编辑器/选择控件/Modal/Drawer/PropertyPanel等）时，不触发画布删除
+      if (isEditableTarget(event.target)) {
+        return;
+      }
+
+      // 适度忽略组合键（Ctrl/Meta），避免误删（本次非强制，但对常见场景安全）
+      // @ts-ignore
+      if ((event as any).ctrlKey || (event as any).metaKey) {
+        return;
+      }
+
       const selectedNodes = nodes.filter(node => (node as any).selected);
       const selectedEdges = edges.filter(edge => (edge as any).selected);
 
@@ -1225,8 +1353,11 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({
         className="w-full h-full rf-host"
         onDrop={handleDrop}
         onDragOver={handleDragOver}
-        // A) 捕获阶段拦截左键点击空白以关闭右键菜单
-        onMouseDownCapture={handleBlankMouseDownCapture}
+        // A) 捕获阶段：左键空白关闭菜单 + 中键拖拽视野
+        onMouseDownCapture={handleWrapperMouseDownCapture}
+        onMouseMoveCapture={handleWrapperMouseMoveCapture}
+        onMouseUpCapture={handleWrapperMouseUpCapture}
+        onMouseLeave={handleWrapperMouseLeave}
       >
         <ReactFlowProvider>
           <ReactFlow
@@ -1245,6 +1376,7 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({
             onNodeClick={handleNodeClick}
             onPaneClick={handlePaneClick}
             onInit={setReactFlowInstance}
+            onMove={(evt, viewport) => { currentViewportRef.current = viewport as any; }}
             nodeTypes={nodeTypes}
             connectionMode={ConnectionMode.Loose}
             isValidConnection={isValidConnection}

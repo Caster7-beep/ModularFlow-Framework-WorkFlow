@@ -5,6 +5,7 @@
  * - 结果写入 window.__qaHooks.lastSelfTest
  */
 import { workflowApi, websocketApi } from '../services/api';
+import { loadCredentials } from './credentials';
 
 // ====== 类型定义 ======
 export interface SelfTestItem {
@@ -21,6 +22,9 @@ export interface SelfTestSegmentResult {
   pass: boolean;
   output: string;
   error?: string;
+  provider?: string;
+  model?: string;
+  polled?: number;
 }
 
 // ====== URL 推导 ======
@@ -94,6 +98,25 @@ function extractFinalText(result: any): string {
   }
 }
 
+// 文本归一化：去掉首尾引号、trim、合并多余空白与换行
+function normalizeText(s: string): string {
+  try {
+    if (s === undefined || s === null) return '';
+    let t = String(s);
+    t = t.trim();
+    if ((t.startsWith('"') && t.endsWith('"')) || (t.startsWith("'") && t.endsWith("'"))) {
+      t = t.slice(1, -1);
+    }
+    t = t.replace(/\r\n/g, '\n');
+    // 将换行统一为空格，并压缩连续空白
+    t = t.replace(/\n+/g, ' ');
+    t = t.replace(/\s+/g, ' ').trim();
+    return t;
+  } catch {
+    return '';
+  }
+}
+
 // 保障已有 WS 连接以便后续 LLM/Code 测试采样事件（不影响本任务 WS 自检）
 async function ensureWS(): Promise<void> {
   try {
@@ -103,6 +126,31 @@ async function ensureWS(): Promise<void> {
   } catch {
     // 忽略连接失败，不影响自检流程
   }
+}
+
+// 轻量轮询执行结果，等待至 completed 或拿到 outputs（<=2s）
+async function pollExecutionResult(executionId: string, initial?: any, maxWaitMs = 2000, stepMs = 200): Promise<{ final: any; polled: number }> {
+  let last = initial;
+  let polled = 0;
+  const deadline = Date.now() + maxWaitMs;
+  while (Date.now() < deadline) {
+    try {
+      const res = await workflowApi.getExecutionStatus(executionId);
+      if (res?.success && res.data) {
+        last = res.data;
+        polled++;
+        const st = String((last as any)?.status || '').toLowerCase();
+        const hasOutputs = !!(last as any)?.results && Object.keys((last as any).results || {}).length > 0;
+        if (st === 'completed' || st === 'failed' || hasOutputs) break;
+      } else {
+        polled++;
+      }
+    } catch {
+      polled++;
+    }
+    await new Promise(r => setTimeout(r, stepMs));
+  }
+  return { final: last, polled };
 }
 
 // ====== 五项测试实现 ======
@@ -132,37 +180,86 @@ async function testHealth(): Promise<SelfTestItem> {
 async function testDocs(): Promise<SelfTestItem> {
   const base = getApiBase();
   const origin = getHttpOriginFromBase(base);
-  // 首选 /docs（一般为 Swagger/文档页），回退 /api/v1/visual_workflow/list
-  try {
-    const res = await withTimeout(fetch(`${origin}/docs`, { method: 'GET' }), 2500, 'docs timeout');
-    if (res.ok) {
-      const text = await res.text().catch(() => '');
-      const hasKey = /visual[_-]?work\s*flow|visual[_-]?workflow/i.test(text);
-      return {
-        name: 'Docs',
-        pass: hasKey,
-        detail: hasKey ? '/docs ok' : '/docs ok but keyword missing'
-      };
-    }
-  } catch {
-    // ignore and try fallback
-  }
 
-  try {
-    const res2 = await withTimeout(fetch(`${origin}/api/v1/visual_workflow/list`, { method: 'GET' }), 2500, 'list timeout');
-    if (!res2.ok) {
-      return { name: 'Docs', pass: false, detail: `Fallback HTTP ${res2.status}` };
+  // 记录探测链路
+  const tried: string[] = [];
+  const addTried = (p: string) => { tried.push(p); };
+
+  // 统一 detail 构造，附带 tried/hit 与类型
+  const makeDetail = (status: 'PASS' | 'FAIL', via?: string, type?: 'html' | 'openapi' | 'list200') => {
+    const triedStr = `[${tried.map(s => `'${s}'`).join(',')}]`;
+    const hitStr = via ? `, hit='${via}'` : '';
+    const typeStr = type ? `, type=${type}` : '';
+    return `Docs: ${status}${via ? ` via ${via}` : ''}${typeStr} tried=${triedStr}${hitStr}`.trim();
+  };
+
+  // HTML 文档判定：content-type 包含 text/html
+  const checkHtml = async (path: string): Promise<SelfTestItem | null> => {
+    addTried(path);
+    try {
+      const res = await withTimeout(fetch(`${origin}${path}`, { method: 'GET', redirect: 'follow' }), 2500, 'docs timeout');
+      if (res.ok) {
+        const ct = (res.headers.get('content-type') || '').toLowerCase();
+        if (ct.includes('text/html')) {
+          return { name: 'Docs', pass: true, detail: makeDetail('PASS', path, 'html') };
+        }
+      }
+    } catch {
+      // 继续下一候选
     }
-    const j = await res2.json().catch(() => ({}));
-    const hasKey = j && (j.workflows !== undefined || j.visual_workflow !== undefined || j.visualWorkflow !== undefined);
-    return {
-      name: 'Docs',
-      pass: !!hasKey,
-      detail: hasKey ? '/visual_workflow/list ok' : 'list ok but field missing'
-    };
-  } catch (e: any) {
-    return { name: 'Docs', pass: false, detail: e?.message || 'docs error' };
-  }
+    return null;
+  };
+
+  // OpenAPI 判定：JSON 含 openapi 与 paths 为对象
+  const checkOpenapi = async (path: string): Promise<SelfTestItem | null> => {
+    addTried(path);
+    try {
+      const res = await withTimeout(fetch(`${origin}${path}`, { method: 'GET', redirect: 'follow' }), 2500, 'docs timeout');
+      if (res.ok) {
+        const j = await res.json().catch(() => null);
+        if (j && j.openapi && j.paths && typeof j.paths === 'object') {
+          return { name: 'Docs', pass: true, detail: makeDetail('PASS', path, 'openapi') };
+        }
+      }
+    } catch {
+      // 继续下一候选
+    }
+    return null;
+  };
+
+  // 最后兜底：仅需 HTTP 200
+  const checkList200 = async (path: string): Promise<SelfTestItem | null> => {
+    addTried(path);
+    try {
+      const res = await withTimeout(fetch(`${origin}${path}`, { method: 'GET', redirect: 'follow' }), 2500, 'docs timeout');
+      if (res.ok) {
+        return { name: 'Docs', pass: true, detail: makeDetail('PASS', path, 'list200') };
+      }
+    } catch {
+      // 继续下一候选
+    }
+    return null;
+  };
+
+  // 顺序探测（命中任一即 PASS）
+  let r = await checkHtml('/docs');
+  if (r) return r;
+
+  r = await checkHtml('/redoc');
+  if (r) return r;
+
+  r = await checkOpenapi('/openapi.json');
+  if (r) return r;
+
+  // 回退新前缀 /api/v1
+  r = await checkOpenapi('/api/v1/openapi.json');
+  if (r) return r;
+
+  r = await checkList200('/api/v1/visual_workflow/list');
+  if (r) return r;
+
+  // 全部未命中则 FAIL，并附探测链路
+  return { name: 'Docs', pass: false, detail: makeDetail('FAIL') };
 }
 
 async function testWS(): Promise<SelfTestItem> {
@@ -288,6 +385,26 @@ async function runSegmentLLM(): Promise<SelfTestSegmentResult> {
   try {
     await ensureWS();
 
+    // 与活动凭证对齐：读取本地 store
+    const store = loadCredentials();
+    const activeId = store.active_group_id;
+    const group = activeId ? store.groups.find(g => g.groupId === activeId) : undefined;
+    const provider = group?.provider;
+    // 模型解析：优先分组 models[0]，否则按 provider 选默认
+    const fallbackModels: Record<string, string[]> = {
+      openai: ['gpt-4o-mini', 'gpt-3.5-turbo', 'gpt-4o'],
+      anthropic: ['claude-3-haiku-20240307', 'claude-3-sonnet-20240229'],
+      gemini: ['gemini-1.5-flash', 'gemini-1.0-pro', 'gemini-2.0-flash-exp'],
+      openai_compatible: ['gpt-4o-mini', 'gpt-3.5-turbo', 'custom-model'],
+    };
+    const modelCand1 = (group?.models && group.models[0]) || undefined;
+    const modelCand2 = provider ? (fallbackModels[provider] || [])[0] : undefined;
+    const model = modelCand1 || modelCand2;
+
+    if (!group || !provider || !model) {
+      return { pass: false, output: '', error: '凭证未配置', provider: provider || undefined, model: model || undefined };
+    }
+
     const wfId = await createWorkflowQuick('SelfTest-LLM', 'Quick smoke for LLM node');
     const labelInput = 'SelfTest_Input_A';
     const labelLLM = 'SelfTest_LLM_A';
@@ -296,8 +413,8 @@ async function runSegmentLLM(): Promise<SelfTestSegmentResult> {
     await workflowApi.addNode(wfId, 'input', { x: 50, y: 100 }, { label: labelInput });
     await workflowApi.addNode(wfId, 'llm', { x: 250, y: 100 }, {
       label: labelLLM,
-      provider: 'gemini',
-      model: 'gemini-2.5-flash',
+      provider,
+      model,
       prompt: 'Return a single word: ping'
     });
     await workflowApi.addNode(wfId, 'output', { x: 450, y: 100 }, { label: labelOutput });
@@ -313,13 +430,31 @@ async function runSegmentLLM(): Promise<SelfTestSegmentResult> {
 
     const exec = await workflowApi.executeWorkflow(wfId, {});
     if (!exec.success || !exec.data) {
-      return { pass: false, output: '', error: '执行失败' };
+      return { pass: false, output: '', error: '执行失败', provider, model };
     }
 
-    const out = extractFinalText((exec.data as any).results || exec.data);
-    const normalized = (out || '').trim().replace(/^["'\s]+|["'\s]+$/g, '');
+    let finalExec = exec.data as any;
+    let polled = 0;
+    const st0 = String(finalExec?.status || '').toLowerCase();
+    const has0 = !!finalExec?.results && Object.keys(finalExec.results || {}).length > 0;
+    const execId = finalExec?.id || finalExec?.execution_id;
+
+    if (st0 !== 'completed' || !has0) {
+      const polledRes = await pollExecutionResult(String(execId || ''), finalExec);
+      finalExec = polledRes.final || finalExec;
+      polled = polledRes.polled || 0;
+    }
+
+    const out = extractFinalText(finalExec?.results || finalExec);
+    const normalized = normalizeText(out);
     const pass = normalized.toLowerCase() === 'ping';
-    return { pass, output: out || '' };
+    const err = Array.isArray(finalExec?.errors) ? finalExec.errors.join('; ') : undefined;
+
+    if ((import.meta as any)?.env?.DEV) {
+      console.log(`[SelfTest LLM] provider=${provider}, model=${model}, polled=${polled}x, status=${String(finalExec?.status)}, out="${normalized}"`);
+    }
+
+    return { pass, output: out || '', error: err, provider, model, polled };
   } catch (e: any) {
     return { pass: false, output: '', error: e?.message || 'LLM 段异常' };
   }
@@ -359,10 +494,28 @@ async function runSegmentCode(): Promise<SelfTestSegmentResult> {
       return { pass: false, output: '', error: '执行失败' };
     }
 
-    const out = extractFinalText((exec.data as any).results || exec.data);
-    const normalized = (out || '').trim();
+    let finalExec = exec.data as any;
+    let polled = 0;
+    const st0 = String(finalExec?.status || '').toLowerCase();
+    const has0 = !!finalExec?.results && Object.keys(finalExec.results || {}).length > 0;
+    const execId = finalExec?.id || finalExec?.execution_id;
+
+    if (st0 !== 'completed' || !has0) {
+      const polledRes = await pollExecutionResult(String(execId || ''), finalExec);
+      finalExec = polledRes.final || finalExec;
+      polled = polledRes.polled || 0;
+    }
+
+    const out = extractFinalText(finalExec?.results || finalExec);
+    const normalized = normalizeText(out);
     const pass = normalized === 'len=5';
-    return { pass, output: out || '' };
+    const err = Array.isArray(finalExec?.errors) ? finalExec.errors.join('; ') : undefined;
+
+    if ((import.meta as any)?.env?.DEV) {
+      console.log(`[SelfTest Code] polled=${polled}x, status=${String(finalExec?.status)}, out="${normalized}"`);
+    }
+
+    return { pass, output: out || '', error: err, polled };
   } catch (e: any) {
     return { pass: false, output: '', error: e?.message || 'Code 段异常' };
   }
@@ -370,18 +523,24 @@ async function runSegmentCode(): Promise<SelfTestSegmentResult> {
 
 async function testLLM(): Promise<SelfTestItem> {
   const r = await runSegmentLLM();
+  const provider = r.provider || 'n/a';
+  const model = r.model || 'n/a';
+  const polledInfo = r.polled && r.polled > 0 ? ` polled=${r.polled}x` : '';
   return {
     name: 'LLM',
     pass: r.pass,
-    detail: r.pass ? 'Final=ping' : `error=${r.error || ''} output=${r.output || ''}`.trim()
+    detail: r.pass
+      ? `Final=ping provider=${provider} model=${model}${polledInfo}`
+      : `error=${r.error || ''} output=${normalizeText(r.output || '')} provider=${provider} model=${model}${polledInfo}`.trim()
   };
 }
 async function testCodeBlock(): Promise<SelfTestItem> {
   const r = await runSegmentCode();
+  const polledInfo = r.polled && r.polled > 0 ? ` polled=${r.polled}x` : '';
   return {
     name: 'CodeBlock',
     pass: r.pass,
-    detail: r.pass ? 'Final=len=5' : `error=${r.error || ''} output=${r.output || ''}`.trim()
+    detail: r.pass ? `Final=len=5${polledInfo}` : `error=${r.error || ''} output=${normalizeText(r.output || '')}${polledInfo}`.trim()
   };
 }
 
@@ -409,6 +568,13 @@ export async function runQuickSelfTest(): Promise<SelfTestSummary> {
   } catch {
     // ignore
   }
+
+  // DEV 诊断日志（一次）
+  try {
+    if ((import.meta as any)?.env?.DEV) {
+      console.log('[SelfTest] items:', summary.items.map(i => `${i.name}:${i.pass ? 'PASS' : 'FAIL'} ${i.detail}`));
+    }
+  } catch {}
 
   return summary;
 }

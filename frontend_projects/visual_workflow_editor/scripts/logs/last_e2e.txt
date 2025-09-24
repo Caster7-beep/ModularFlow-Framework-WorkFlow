@@ -1425,3 +1425,23 @@ Creds(wait=466ms)
 ClearCanvas(wait=91ms): DONE
 --- 2025-09-23T11:27:10.258Z [NETWORK-200] PASS | network_200_20250923_192706.json | warnings=0
 --- 2025-09-23T11:33:26.361Z [NETWORK-200] PASS | network_200_20250923_193322.json | warnings=0
+--- 2025-09-24T05:17:51.781Z [SMOKE] ---
+A(Input→LLM→Output): PASS | out="ping"
+B(Input→CodeBlock→Output): PASS | out="len=5"
+[DRAWER] Open: PASS
+[SELFTEST] lastSelfTest.items.length=5
+[SELFTEST] Health: PASS
+[SELFTEST] Docs: FAIL
+[SELFTEST] WS: PASS
+[SELFTEST] LLM: FAIL
+[SELFTEST] CodeBlock: FAIL
+[SELFTEST] E: WS Events captured: 4
+[CREDS] Drawer+Modal: FAIL
+[CREDS] ActiveGroupSelect: PASS
+[CREDS] ProviderSelectDropdown: FAIL
+[CREDS] ModeSelectDropdown: FAIL
+[CREDS] AddGroup: PASS
+SelfTest(wait=3732ms)
+Creds(wait=16762ms)
+ClearCanvas(wait=77ms): DONE
+--- 2025-09-24T05:19:14.695Z [NETWORK-200] PASS | network_200_20250924_131910.json | warnings=0

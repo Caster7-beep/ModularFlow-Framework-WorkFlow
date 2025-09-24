@@ -6,7 +6,7 @@
 // - 保持对外导出方法签名不变，并在内部完成入参与返回值的整形
 
 import axios from 'axios';
-import type { Workflow, WorkflowExecution, ApiResponse } from '../types/workflow';
+import type { Workflow, WorkflowExecution, ApiResponse, WorkflowNode, WorkflowEdge } from '../types/workflow';
 
 // ========= 基础配置 =========
 const DEFAULT_BASE_URL = 'http://localhost:6502/api/v1';
@@ -41,9 +41,14 @@ api.interceptors.response.use(
   },
   (error) => {
     console.error('API Error:', error);
+    const status = error?.response?.status;
     const errData = error?.response?.data;
     const message = errData?.message || errData?.error || error.message || '请求失败';
-    return Promise.reject(new Error(message));
+    const e: any = new Error(message);
+    if (typeof status !== 'undefined') {
+      (e as any).status = status;
+    }
+    return Promise.reject(e);
   }
 );
 
@@ -62,16 +67,15 @@ async function requestWithFallback<T>(
     });
     return res as T;
   } catch (err: any) {
-    // 由于全局错误拦截器抛出的是 new Error(message)，这里只能从 message 识别 404/405
+    // 优先使用状态码判断；若无状态码则回退到 message 正则识别
     const msg = String(err?.message || '');
-    const is404 = /(^|[^0-9])404([^0-9]|$)|not\s*found/i.test(msg);
-    const is405 = /(^|[^0-9])405([^0-9]|$)|method\s*not\s*allowed/i.test(msg);
+    const statusCode = (err as any)?.status ?? (err?.response?.status);
+    const is404 = (statusCode === 404) || /(^|[^0-9])404([^0-9]|$)|not\s*found/i.test(msg);
+    const is405 = (statusCode === 405) || /(^|[^0-9])405([^0-9]|$)|method\s*not\s*allowed/i.test(msg);
 
     if ((is404 || is405) && fallbacks && fallbacks.length > 0) {
       const fb = fallbacks[0];
-      if ((import.meta as any)?.env?.DEV) {
-        console.warn(`Fallback route engaged: primary ${primary.url} → fallback ${fb.url}`);
-      }
+      console.warn(`Fallback route engaged: primary ${primary.url} → fallback ${fb.url}`);
       // 仅一次回退重试，方法与 data/params 沿用 primary
       return (await api.request({
         method: primary.method,
@@ -102,6 +106,18 @@ function toApiResponse<T>(payload: any, mapper?: (raw: any) => T): ApiResponse<T
 function ensureArray<T>(arr: any): T[] {
   if (Array.isArray(arr)) return arr as T[];
   return [];
+}
+
+// 构造绝对回退路径（绕过 baseURL 前缀 /api/v1）
+function buildAbsoluteFallback(path: string): string {
+  try {
+    const u = new URL(BASE_URL);
+    const origin = `${u.protocol}//${u.hostname}${u.port ? ':' + u.port : ''}`;
+    return `${origin}${path}`;
+  } catch {
+    const origin = `${window.location.protocol}//${window.location.hostname}${window.location.port ? ':' + window.location.port : ''}`;
+    return `${origin}${path}`;
+  }
 }
 
 // 将后端执行状态映射为前端 WorkflowExecution 类型的尽量兼容结构
@@ -197,82 +213,149 @@ export function normalizeNodeConfig(nodeType: string, config: any): any {
 
 // ========= 工作流API =========
 export const workflowApi = {
-  // 获取所有工作流 → GET /visual_workflow/list_workflows
-  getWorkflows: async (): Promise<ApiResponse<Workflow[]>> => {
+  // 列出工作流 → 首选 GET /api/v1/visual_workflow/list；回退 GET /visual_workflow/list
+  listWorkflows: async (): Promise<ApiResponse<Workflow[]>> => {
     const payload = await requestWithFallback<any>(
-      { method: 'GET', url: '/visual_workflow/list_workflows' },
-      [{ url: '/visual_workflow/list' }]
+      { method: 'GET', url: '/visual_workflow/list' },
+      [{ url: buildAbsoluteFallback('/visual_workflow/list') }]
     );
-    // 后端返回 {workflows, success, message} 或数组；确保返回数组
     return toApiResponse<Workflow[]>(payload, (raw) => {
-      const list = raw?.workflows ?? raw;
-      if (!Array.isArray(list) && (import.meta as any)?.env?.DEV) {
-        console.warn('[getWorkflows] raw.workflows 缺失，已容错为空数组');
-      }
-      return ensureArray<Workflow>(list);
+      const arr = Array.isArray(raw) ? raw : (raw?.workflows ?? raw?.data ?? []);
+      const list = ensureArray<any>(arr).map((item) => {
+        const id = item?.id || item?.workflow_id || '';
+        const name = item?.name || '';
+        const description = item?.description || '';
+        const nodes = ensureArray<WorkflowNode>(item?.nodes ?? []);
+        const edges = ensureArray<WorkflowEdge>(item?.edges ?? []);
+        const updatedAt =
+          item?.updatedAt ||
+          item?.updated_at ||
+          item?.update_time ||
+          new Date().toISOString();
+        const createdAt =
+          item?.createdAt ||
+          item?.created_at ||
+          item?.create_time ||
+          updatedAt;
+        return {
+          id,
+          name,
+          description,
+          nodes,
+          edges,
+          createdAt,
+          updatedAt,
+        } as Workflow;
+      });
+      return list;
     });
   },
 
-  // 获取单个工作流 → POST /visual_workflow/get_workflow
+  // 兼容旧方法名：getWorkflows → listWorkflows
+  getWorkflows: async (): Promise<ApiResponse<Workflow[]>> => {
+    return workflowApi.listWorkflows();
+  },
+
+  // 获取单个工作流 → 首选 GET /api/v1/visual_workflow/get；回退 GET /visual_workflow/get?id={id}
   getWorkflow: async (id: string): Promise<ApiResponse<Workflow>> => {
     const payload = await requestWithFallback<any>(
-      { method: 'POST', url: '/visual_workflow/get_workflow', data: { workflow_id: id } },
-      [{ url: '/visual_workflow/get' }]
+      { method: 'GET', url: '/visual_workflow/get', params: { id } },
+      [{ url: buildAbsoluteFallback(`/visual_workflow/get?id=${encodeURIComponent(id)}`) }]
     );
     return toApiResponse<Workflow>(payload, (raw) => {
-      const wf = raw?.workflow_data ?? raw?.workflow ?? raw;
-      if (!wf && (import.meta as any)?.env?.DEV) {
-        console.warn('[getWorkflow] raw.workflow_data 缺失，返回原始载荷');
+      const wfRaw = raw?.workflow ?? raw?.workflow_data ?? raw?.data ?? raw;
+      const resultRaw = raw?.result;
+      const idVal = wfRaw?.id || wfRaw?.workflow_id || id || '';
+      const name = wfRaw?.name || '';
+      const description = wfRaw?.description || '';
+      let nodes: WorkflowNode[] = ensureArray<WorkflowNode>(wfRaw?.nodes ?? []);
+      let edges: WorkflowEdge[] = ensureArray<WorkflowEdge>(wfRaw?.edges ?? []);
+
+      // 若后端返回 raw.result，仅镜像至 data.nodes/edges 并 DEV 警告
+      if ((nodes.length === 0 && edges.length === 0) && resultRaw) {
+        if ((import.meta as any)?.env?.DEV) {
+          console.warn('[getWorkflow] nodes/edges 缺失，已从 raw.result 兜底镜像');
+        }
+        nodes = ensureArray<WorkflowNode>(resultRaw?.nodes ?? []);
+        edges = ensureArray<WorkflowEdge>(resultRaw?.edges ?? []);
+      }
+
+      const updatedAt =
+        wfRaw?.updatedAt || wfRaw?.updated_at || wfRaw?.update_time || new Date().toISOString();
+      const createdAt =
+        wfRaw?.createdAt || wfRaw?.created_at || wfRaw?.create_time || updatedAt;
+
+      const wf: Workflow = {
+        id: idVal,
+        name,
+        description,
+        nodes,
+        edges,
+        createdAt,
+        updatedAt,
+      };
+      return wf;
+    });
+  },
+
+  // 创建工作流 → 首选 POST /api/v1/visual_workflow/create；回退 /visual_workflow/create
+  createWorkflow: async (
+    name: string,
+    description?: string,
+    payload?: { nodes?: WorkflowNode[]; edges?: WorkflowEdge[] }
+  ): Promise<ApiResponse<Workflow>> => {
+    const body: any = {
+      name,
+      description,
+      nodes: ensureArray<WorkflowNode>(payload?.nodes ?? []),
+      edges: ensureArray<WorkflowEdge>(payload?.edges ?? []),
+    };
+    const payloadRes = await requestWithFallback<any>(
+      { method: 'POST', url: '/visual_workflow/create', data: body },
+      [{ url: buildAbsoluteFallback('/visual_workflow/create') }]
+    );
+    return toApiResponse<Workflow>(payloadRes, (raw) => {
+      const id = raw?.id || raw?.workflow_id || raw?.data?.id || '';
+      const now = new Date().toISOString();
+      const createdAt = raw?.createdAt || raw?.created_at || now;
+      const updatedAt = raw?.updatedAt || raw?.updated_at || now;
+      const wf: Workflow = {
+        id,
+        name: body.name || '',
+        description: body.description || '',
+        nodes: body.nodes,
+        edges: body.edges,
+        createdAt,
+        updatedAt,
+      };
+      if (!id && (import.meta as any)?.env?.DEV) {
+        console.warn('[createWorkflow] 未从响应中解析到工作流ID，使用空字符串占位');
       }
       return wf;
     });
   },
 
-  // 创建工作流 → POST /visual_workflow/create_workflow
-  createWorkflow: async (
-    workflowOrName: any,
-    description?: string
+  // 更新工作流 → 首选 POST /api/v1/visual_workflow/update；回退 /visual_workflow/update
+  updateWorkflow: async (
+    id: string,
+    name?: string,
+    description?: string,
+    payload?: { nodes?: WorkflowNode[]; edges?: WorkflowEdge[] }
   ): Promise<ApiResponse<Workflow>> => {
-    // 兼容：既支持 createWorkflow({ name, description }) 也支持 createWorkflow(name, description)
-    const body =
-      typeof workflowOrName === 'string'
-        ? { name: workflowOrName, description }
-        : { name: (workflowOrName as any)?.name, description: (workflowOrName as any)?.description };
-    const payload = await requestWithFallback<any>(
-      { method: 'POST', url: '/visual_workflow/create_workflow', data: body },
-      [{ url: '/visual_workflow/create' }]
+    const body: any = {
+      id,
+      workflow_id: id, // 兼容旧字段
+      name,
+      description,
+      nodes: ensureArray<WorkflowNode>(payload?.nodes ?? []),
+      edges: ensureArray<WorkflowEdge>(payload?.edges ?? []),
+    };
+    const res = await requestWithFallback<any>(
+      { method: 'POST', url: '/visual_workflow/update', data: body },
+      [{ url: buildAbsoluteFallback('/visual_workflow/update') }]
     );
-    // 后端返回 {workflow_id, success, message}；返回占位 Workflow（避免新增往返）
-    return toApiResponse<Workflow>(payload, (raw) => {
-      const id = raw?.workflow_id || '';
-      if (!id && (import.meta as any)?.env?.DEV) {
-        console.warn('[createWorkflow] raw.workflow_id 缺失，返回占位 ID 空字符串');
-      }
-      return {
-        id,
-        name: body.name,
-        description: body.description ?? '',
-        nodes: [],
-        edges: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      } as any as Workflow;
-    });
-  },
-
-  // 更新工作流 → POST /visual_workflow/update_workflow
-  updateWorkflow: async (id: string, workflow: Partial<Workflow>): Promise<ApiResponse<Workflow>> => {
-    const body: any = { workflow_id: id };
-    if ('name' in workflow && (workflow as any).name !== undefined) body.name = (workflow as any).name;
-    if ('description' in workflow && (workflow as any).description !== undefined) body.description = (workflow as any).description;
-    const payload = await requestWithFallback<any>(
-      { method: 'POST', url: '/visual_workflow/update_workflow', data: body },
-      [{ url: '/visual_workflow/update' }]
-    );
-    // 后端仅返回 {success, message}；拦截器已解包为 data，但类型仍可能为 AxiosResponse，显式转 any 防止 TS 报错
-    const raw: any = payload as any;
-    const success = raw?.success === true || raw === true;
-    return { success } as any;
+    const ok = (res?.success === true) || (res === true);
+    return { success: ok };
   },
 
   // 删除工作流 → POST /visual_workflow/delete_workflow
@@ -297,22 +380,25 @@ export const workflowApi = {
     return toApiResponse<WorkflowExecution>(payload, (raw) => mapToWorkflowExecution(id, raw));
   },
 
-  // 获取执行状态 → POST /visual_workflow/get_execution_state
-  // 兼容说明：后端返回 {state, success, message}
-  getExecutionStatus: async (executionId: string): Promise<ApiResponse<WorkflowExecution>> => {
-    const payload = await api.post('/visual_workflow/get_execution_state', {
-      workflow_id: executionId
-    });
-    return toApiResponse<WorkflowExecution>(payload, (raw) => {
-      const state = raw?.state ?? raw;
-      if (!state && (import.meta as any)?.env?.DEV) {
-        console.warn('[getExecutionStatus] raw.state 缺失，直接使用原始 payload');
-      }
-      // 将 state 展开映射到 WorkflowExecution
-      const hydrated = { ...(state || {}), execution_id: state?.execution_id || executionId };
-      return mapToWorkflowExecution(undefined, hydrated);
-    });
-  },
+   // 获取执行状态 → 首选 POST /api/v1/visual_workflow/get_execution_state；404/405 一次性回退至短路由
+   // 兼容提交参数：execution_id 与 workflow_id 均填充为 executionId
+   getExecutionStatus: async (executionId: string): Promise<ApiResponse<WorkflowExecution>> => {
+     const body = { execution_id: executionId, workflow_id: executionId };
+     const fbUrl = buildAbsoluteFallback('/visual_workflow/get_execution_state');
+     const payload = await requestWithFallback<any>(
+       { method: 'POST', url: '/visual_workflow/get_execution_state', data: body },
+       [{ url: fbUrl }]
+     );
+     return toApiResponse<WorkflowExecution>(payload, (raw) => {
+       const state = raw?.state ?? raw;
+       if (!state && (import.meta as any)?.env?.DEV) {
+         console.warn('[getExecutionStatus] raw.state 缺失，直接使用原始 payload');
+       }
+       // 将 state 展开映射到 WorkflowExecution
+       const hydrated = { ...(state || {}), execution_id: state?.execution_id || executionId };
+       return mapToWorkflowExecution(undefined, hydrated);
+     });
+   },
 
   // 停止执行 → 后端暂无对应函数；前端占位返回
   stopExecution: async (_executionId: string): Promise<ApiResponse<void>> => {
@@ -395,6 +481,107 @@ export const llmApi = {
   },
   testConnection: (provider: string, config: any): Promise<ApiResponse<boolean>> => {
     return api.post(`/llm/providers/${provider}/test`, config);
+  },
+};
+// ========= 凭证统一API（连接/测试，带一次性路由回退） =========
+export const credsApi = {
+  // 获取模型列表：首选 /api/v1/visual_workflow/get_models，404/405 一次回退到旧短路由（相同段名以便兼容）
+  getModels: async (
+    provider: string,
+    baseUrl?: string,
+    apiKey?: string
+  ): Promise<{ success: boolean; models: string[]; detail?: string }> => {
+    try {
+      const body = { provider, base_url: baseUrl, api_key: apiKey };
+      const fbUrl_models = (() => {
+        try {
+          const u = new URL(BASE_URL);
+          const origin = `${u.protocol}//${u.hostname}${u.port ? ':' + u.port : ''}`;
+          return `${origin}/visual_workflow/get_models`;
+        } catch {
+          const origin = `${window.location.protocol}//${window.location.hostname}${window.location.port ? ':' + window.location.port : ''}`;
+          return `${origin}/visual_workflow/get_models`;
+        }
+      })();
+      const payload = await requestWithFallback<any>(
+        { method: 'POST', url: '/visual_workflow/get_models', data: body },
+        [{ url: fbUrl_models }]
+      );
+
+      // 健壮解析：data.models -> models -> result.models；否则 []
+      const raw = payload as any;
+      const modelsRaw =
+        (raw?.data && raw.data?.models) ??
+        raw?.models ??
+        (raw?.result && raw.result?.models);
+
+      const models =
+        Array.isArray(modelsRaw)
+          ? (modelsRaw as any[]).filter((m) => typeof m === 'string')
+          : [];
+
+      if (Array.isArray(modelsRaw)) {
+        return { success: true, models };
+      }
+
+      // 200 但返回体不可识别，视为失败
+      const detail =
+        typeof raw?.detail === 'string'
+          ? raw.detail
+          : typeof raw?.message === 'string'
+          ? raw.message
+          : '未识别的响应结构';
+      return { success: false, models: [], detail };
+    } catch (err: any) {
+      return {
+        success: false,
+        models: [],
+        detail: err?.message || '请求失败',
+      };
+    }
+  },
+
+  // 最小连通性测试：首选 /api/v1/visual_workflow/test_provider，404/405 一次回退旧短路由
+  testProvider: async (
+    provider: string,
+    baseUrl?: string,
+    apiKey?: string
+  ): Promise<{ success: boolean; detail?: string }> => {
+    try {
+      const body = { provider, base_url: baseUrl, api_key: apiKey };
+      const fbUrl_test = (() => {
+        try {
+          const u = new URL(BASE_URL);
+          const origin = `${u.protocol}//${u.hostname}${u.port ? ':' + u.port : ''}`;
+          return `${origin}/visual_workflow/test_provider`;
+        } catch {
+          const origin = `${window.location.protocol}//${window.location.hostname}${window.location.port ? ':' + window.location.port : ''}`;
+          return `${origin}/visual_workflow/test_provider`;
+        }
+      })();
+      const payload = await requestWithFallback<any>(
+        { method: 'POST', url: '/visual_workflow/test_provider', data: body },
+        [{ url: fbUrl_test }]
+      );
+
+      const raw = payload as any;
+      const success =
+        raw?.success === true ||
+        raw?.ok === true ||
+        raw === true ||
+        String(raw?.result || '').toLowerCase() === 'ok';
+
+      const detail =
+        typeof raw?.detail === 'string'
+          ? raw.detail
+          : typeof raw?.message === 'string'
+          ? raw.message
+          : undefined;
+
+      return { success, detail };
+    } catch (err: any) {
+      return { success: false, detail: err?.message || '请求失败' };
+    }
   },
 };
 

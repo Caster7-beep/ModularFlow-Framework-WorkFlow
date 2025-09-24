@@ -1,0 +1,111 @@
+{
+  "meta": {
+    "stamp": "2025-09-24T05:19:10.422Z",
+    "UI_URL": "http://localhost:3002",
+    "API_BASE": "http://localhost:6502/api/v1",
+    "note": "UI-context in-page fetch; primary→fallback only on 404/405. Console warnings captured for potential \"Fallback route engaged ...\" emitted by services if UI triggers it."
+  },
+  "evidence": {
+    "screenshot": "scripts/logs/network_200_20250924_131910.png",
+    "json": "scripts/logs/network_200_20250924_131910.json"
+  },
+  "consoleWarnings": [],
+  "apis": [
+    {
+      "api": "create_workflow",
+      "primaryUrl": "/visual_workflow/create_workflow",
+      "fallbackUrl": "/visual_workflow/create",
+      "usedFallback": true,
+      "statusPrimary": 404,
+      "statusFinal": 200,
+      "ok": true,
+      "urlUsed": "/visual_workflow/create",
+      "requestBody": "{\"name\":\"vw_e2e_network_1758691153977\",\"description\":\"network 200 probe\"}",
+      "responseSummary": "{\"success\":true,\"data\":{\"workflow_id\":\"f62c2dad-c096-4303-a1b6-2ecda3c200e5\",\"success\":true,\"message\":\"工作流创建成功\"},\"function\":\"visual_workflow.create\"}"
+    },
+    {
+      "api": "list_workflows",
+      "primaryUrl": "/visual_workflow/list_workflows",
+      "fallbackUrl": "/visual_workflow/list",
+      "usedFallback": true,
+      "statusPrimary": 404,
+      "statusFinal": 200,
+      "ok": true,
+      "urlUsed": "/visual_workflow/list",
+      "requestBody": null,
+      "responseSummary": "{\"success\":true,\"data\":{\"workflows\":[{\"id\":\"791de0c6-c7bd-4961-bbf4-73b81a985d47\",\"name\":\"SelfTest-LLM\",\"description\":\"Quick smoke for LLM node\",\"version\":\"1.0.0\",\"created_at\":1758502882.34049,\"updated_at\":1758502882.34049,\"node_count\":0,\"edge_count\":0},{\"id\":\"c0b90905-0069-400a-80df-bbe7de92a057\",\" ..."
+    },
+    {
+      "api": "get_workflow",
+      "primaryUrl": "/visual_workflow/get_workflow",
+      "fallbackUrl": "/visual_workflow/get",
+      "usedFallback": true,
+      "statusPrimary": 404,
+      "statusFinal": 200,
+      "ok": true,
+      "urlUsed": "/visual_workflow/get",
+      "requestBody": "{\"workflow_id\":\"f62c2dad-c096-4303-a1b6-2ecda3c200e5\"}",
+      "responseSummary": "{\"success\":true,\"data\":{\"workflow_data\":{\"workflow_definition\":{\"id\":\"f62c2dad-c096-4303-a1b6-2ecda3c200e5\",\"name\":\"vw_e2e_network_1758691153977\",\"description\":\"network 200 probe\",\"version\":\"1.0.0\",\"nodes\":[],\"edges\":[],\"metadata\":{},\"created_at\":1758691154.4647524,\"updated_at\":1758691154.4647524},\" ..."
+    },
+    {
+      "api": "update_workflow",
+      "primaryUrl": "/visual_workflow/update_workflow",
+      "fallbackUrl": "/visual_workflow/update",
+      "usedFallback": true,
+      "statusPrimary": 404,
+      "statusFinal": 200,
+      "ok": true,
+      "urlUsed": "/visual_workflow/update",
+      "requestBody": "{\"workflow_id\":\"f62c2dad-c096-4303-a1b6-2ecda3c200e5\",\"name\":\"vw_e2e_network_1758691153977_updated\"}",
+      "responseSummary": "{\"success\":true,\"data\":{\"success\":true,\"message\":\"工作流更新成功\"},\"function\":\"visual_workflow.update\"}"
+    },
+    {
+      "api": "get_workflow_templates",
+      "primaryUrl": "/visual_workflow/get_workflow_templates",
+      "fallbackUrl": "/visual_workflow/get_templates",
+      "usedFallback": true,
+      "statusPrimary": 404,
+      "statusFinal": 200,
+      "ok": true,
+      "urlUsed": "/visual_workflow/get_templates",
+      "requestBody": null,
+      "responseSummary": "{\"success\":true,\"data\":{\"templates\":[{\"id\":\"text_processing\",\"name\":\"文本处理工作流\",\"description\":\"基础的文本处理工作流，包含输入、LLM处理和输出\",\"category\":\"文本处理\",\"nodes\":[{\"type\":\"input\",\"name\":\"文本输入\",\"position\":{\"x\":100,\"y\":100},\"data\":{\"default_value\":\"请输入要处理的文本\"}},{\"type\":\"llm_call\",\"name\":\"LLM处理\",\"position\":{\"x\":300,\"y\" ..."
+    },
+    {
+      "api": "execute_workflow",
+      "primaryUrl": "/visual_workflow/execute_workflow",
+      "fallbackUrl": "/visual_workflow/execute",
+      "usedFallback": true,
+      "statusPrimary": 404,
+      "statusFinal": 200,
+      "ok": true,
+      "urlUsed": "/visual_workflow/execute",
+      "requestBody": "{\"workflow_id\":\"f62c2dad-c096-4303-a1b6-2ecda3c200e5\",\"input_data\":{\"input\":\"ping\"}}",
+      "responseSummary": "{\"success\":true,\"data\":{\"execution_id\":\"30f7531d-b3c6-4549-b338-f3ef98dd9b6f\",\"result\":{\"execution_id\":\"ca412b22-a4fc-4c69-9359-f3beea5b29e1\",\"status\":\"completed\",\"start_time\":1758691154.584442,\"current_node\":null,\"completed_nodes\":[],\"errors\":[],\"end_time\":1758691154.584442,\"duration\":0,\"results\":{ ..."
+    },
+    {
+      "api": "get_execution_state",
+      "primaryUrl": "/visual_workflow/get_execution_state",
+      "fallbackUrl": null,
+      "usedFallback": false,
+      "statusPrimary": 200,
+      "statusFinal": 200,
+      "ok": true,
+      "urlUsed": "/visual_workflow/get_execution_state",
+      "requestBody": "{\"tried\":[\"{execution_id}\",\"{workflow_id}\"],\"executionId\":\"30f7531d-b3c6-4549-b338-f3ef98dd9b6f\"}",
+      "responseSummary": "{\"success\":false,\"error\":\"get_execution_state() got an unexpected keyword argument 'execution_id'\",\"function\":\"visual_workflow.get_execution_state\"}"
+    },
+    {
+      "api": "delete_workflow",
+      "primaryUrl": "/visual_workflow/delete_workflow",
+      "fallbackUrl": "/visual_workflow/delete",
+      "usedFallback": true,
+      "statusPrimary": 404,
+      "statusFinal": 200,
+      "ok": true,
+      "urlUsed": "/visual_workflow/delete",
+      "requestBody": "{\"workflow_id\":\"f62c2dad-c096-4303-a1b6-2ecda3c200e5\"}",
+      "responseSummary": "{\"success\":true,\"data\":{\"success\":true,\"message\":\"工作流删除成功\"},\"function\":\"visual_workflow.delete\"}"
+    }
+  ]
+}

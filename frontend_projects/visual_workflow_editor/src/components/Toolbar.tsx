@@ -31,6 +31,7 @@ import { runQuickSelfTest } from '../utils/selfTest';
 import { showToast } from './Toast';
 import QAReporter from './QAReporter';
 import CredentialManager from './CredentialManager';
+import { workflowApi } from '../services/api';
 const FEATURE_QA_REPORT = Boolean((import.meta as any)?.env?.VITE_FEATURE_QA_REPORT);
 
 interface ToolbarProps {
@@ -142,6 +143,19 @@ const Toolbar: React.FC<ToolbarProps> = ({
   const [selfTestLoading, setSelfTestLoading] = useState(false);
   const [selfTestSummary, setSelfTestSummary] = useState<string>('');
   // QA Reporter 面板可见性
+
+  // 打开“加载工作流”对话框时拉取列表（一次性回退由服务层处理）
+  useEffect(() => {
+    if (!loadModalVisible) return;
+    (async () => {
+      try {
+        const res = await workflowApi.listWorkflows();
+        setWorkflows(res.data || []);
+      } catch {
+        setWorkflows([]);
+      }
+    })();
+  }, [loadModalVisible]);
   const [qaVisible, setQaVisible] = useState(false);
   // 凭证管理面板可见性
   const [credVisible, setCredVisible] = useState(false);
@@ -561,7 +575,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
               <Button
                 aria-label={t('toolbar.credentials')}
                 data-qa="btn-credentials"
-                onClick={() => { setToolsExpanded(false); setTimeout(() => setCredVisible(true), 200); }}
+                onClick={() => { setToolsExpanded(false); setTimeout(() => setCredVisible(true), 450); }}
                 className="flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-black"
                 style={{ height: 48, minWidth: 48, padding: '0 16px', backgroundColor: '#FFFFFF', color: '#0B0B0B', borderColor: '#0B0B0B', borderRadius: '2px', fontWeight: 700 }}
                 title={t('toolbar.credentials')}
